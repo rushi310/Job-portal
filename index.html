@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FreshHire — a simulated job portal that helps freshers find entry-level jobs and internships.">
+  <title>FreshHire · Jobs &amp; Internships for Freshers</title>
+  <link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/layout.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/utilities.css">
+  <link rel="stylesheet" href="assets/css/pages/landing.css">
+
+  <script type="module" src="assets/js/pages/landing.js"></script>
+</head>
+<body id="top">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div data-mount="navbar"></div>
+
+  <main id="main-content" tabindex="-1">
+    <!-- Hero -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero__inner">
+        <div class="hero__content">
+          <p class="hero__eyebrow"><span class="badge badge--primary">Built for freshers</span></p>
+          <h1 class="hero__title" id="hero-title">Your first job starts here</h1>
+          <p class="hero__subtitle">
+            Discover entry-level jobs and internships from companies that hire freshers.
+            Check your eligibility, apply in minutes, and track every application in one place.
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn--primary btn--lg" href="#featured-jobs">Explore featured jobs</a>
+            <button class="btn btn--outline btn--lg" type="button" disabled title="Coming soon">
+              Create free account <span class="tag-soon">Soon</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="hero__visual" aria-hidden="true">
+          <div class="hero-card">
+            <div class="hero-card__row">
+              <span class="hero-card__logo">TN</span>
+              <div>
+                <p class="hero-card__title">Junior Frontend Developer</p>
+                <p class="hero-card__meta">TechNova · Pune · Hybrid</p>
+              </div>
+            </div>
+            <div class="hero-card__row">
+              <span class="badge badge--status-shortlisted">Shortlisted</span>
+              <span class="badge badge--success">₹3.0 – 4.5 LPA</span>
+            </div>
+          </div>
+          <div class="hero-card hero-card--offset">
+            <div class="hero-card__row">
+              <span class="hero-card__logo hero-card__logo--alt">BP</span>
+              <div>
+                <p class="hero-card__title">Data Science Intern</p>
+                <p class="hero-card__meta">BrightPath · Hyderabad</p>
+              </div>
+            </div>
+            <div class="progress" role="presentation"><div class="progress__bar hero-card__progress"></div></div>
+            <p class="hero-card__meta">Profile 80% complete</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats strip (filled from job data by landing.js) -->
+    <section class="stats-strip" aria-label="FreshHire at a glance">
+      <div class="container">
+        <dl class="stats-strip__list">
+          <div class="stats-strip__item">
+            <dt class="stats-strip__label">Open jobs</dt>
+            <dd class="stats-strip__value" data-stat="openJobs">—</dd>
+          </div>
+          <div class="stats-strip__item">
+            <dt class="stats-strip__label">Hiring companies</dt>
+            <dd class="stats-strip__value" data-stat="hiringCompanies">—</dd>
+          </div>
+          <div class="stats-strip__item">
+            <dt class="stats-strip__label">Internships</dt>
+            <dd class="stats-strip__value" data-stat="internships">—</dd>
+          </div>
+          <div class="stats-strip__item">
+            <dt class="stats-strip__label">Remote / hybrid roles</dt>
+            <dd class="stats-strip__value" data-stat="remoteOrHybrid">—</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section section--alt" id="how-it-works" aria-labelledby="how-title">
+      <div class="container">
+        <header class="section__header section__header--center">
+          <p class="section__eyebrow">How it works</p>
+          <h2 class="section__title" id="how-title">Three steps to your first offer</h2>
+          <p class="section__subtitle">FreshHire keeps the job hunt simple for students and recruiters alike.</p>
+        </header>
+
+        <ol class="grid grid--3 steps" role="list">
+          <li class="card step">
+            <span class="step__number">1</span>
+            <span class="step__icon" data-icon="userPlus"></span>
+            <h3 class="step__title">Create your profile</h3>
+            <p class="step__text">Add your college, degree, skills and projects. Upload or generate a resume.</p>
+          </li>
+          <li class="card step">
+            <span class="step__number">2</span>
+            <span class="step__icon" data-icon="search"></span>
+            <h3 class="step__title">Find the right job</h3>
+            <p class="step__text">Search and filter jobs and internships, and check eligibility before you apply.</p>
+          </li>
+          <li class="card step">
+            <span class="step__number">3</span>
+            <span class="step__icon" data-icon="send"></span>
+            <h3 class="step__title">Apply &amp; track</h3>
+            <p class="step__text">Apply in one click and follow every status update, from Applied to Selected.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Featured jobs (rendered by landing.js) -->
+    <section class="section" id="featured-jobs" aria-labelledby="featured-title">
+      <div class="container">
+        <header class="section__header">
+          <p class="section__eyebrow">Featured jobs</p>
+          <h2 class="section__title" id="featured-title">Latest openings for freshers</h2>
+          <p class="section__subtitle">
+            A preview of the newest approved jobs. Log in to view full details and apply
+            <span class="tag-soon">Soon</span>
+          </p>
+        </header>
+
+        <div class="grid grid--3" data-featured-jobs aria-live="polite" aria-busy="true">
+          <div class="card featured-skeleton"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+          <div class="card featured-skeleton"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+          <div class="card featured-skeleton"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recruiter call to action -->
+    <section class="section section--alt" aria-labelledby="cta-title">
+      <div class="container">
+        <div class="cta-band">
+          <div>
+            <h2 class="cta-band__title" id="cta-title">Hiring freshers?</h2>
+            <p class="cta-band__text">Post jobs, review applicants, and shortlist the right candidates — all in one place.</p>
+          </div>
+          <button class="btn btn--lg cta-band__btn" type="button" disabled title="Coming soon">
+            Register as recruiter <span class="tag-soon">Soon</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div data-mount="footer"></div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

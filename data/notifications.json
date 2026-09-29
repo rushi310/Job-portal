@@ -1,0 +1,92 @@
+[
+  {
+    "id": "ntf_001",
+    "userId": "usr_stu01",
+    "type": "status",
+    "title": "Application shortlisted",
+    "message": "Your application for Junior Frontend Developer at TechNova Pvt Ltd has been shortlisted.",
+    "link": "pages/student/applications.html",
+    "read": false,
+    "createdAt": "2026-09-26T15:00:00.000Z"
+  },
+  {
+    "id": "ntf_002",
+    "userId": "usr_stu01",
+    "type": "announcement",
+    "title": "Welcome to FreshHire",
+    "message": "Complete your profile to get better job recommendations.",
+    "link": "pages/student/profile.html",
+    "read": true,
+    "createdAt": "2026-09-01T09:00:00.000Z"
+  },
+  {
+    "id": "ntf_003",
+    "userId": "usr_rec01",
+    "type": "application",
+    "title": "New applicant",
+    "message": "Priya Nair applied for Junior Frontend Developer.",
+    "link": "pages/recruiter/applicants.html?jobId=job_001",
+    "read": false,
+    "createdAt": "2026-09-22T17:00:00.000Z"
+  },
+  {
+    "id": "ntf_004",
+    "userId": "usr_rec01",
+    "type": "job",
+    "title": "Job approved",
+    "message": "Your job \"UI/UX Design Intern\" is now live for students.",
+    "link": "pages/recruiter/my-jobs.html",
+    "read": true,
+    "createdAt": "2026-09-19T10:30:00.000Z"
+  },
+  {
+    "id": "ntf_005",
+    "userId": "usr_rec02",
+    "type": "job",
+    "title": "Job rejected",
+    "message": "\"Site Reliability Trainee\" was rejected: salary details and eligibility criteria are incomplete.",
+    "link": "pages/recruiter/my-jobs.html",
+    "read": false,
+    "createdAt": "2026-09-17T10:00:00.000Z"
+  },
+  {
+    "id": "ntf_006",
+    "userId": "usr_stu02",
+    "type": "status",
+    "title": "Interview scheduled",
+    "message": "CloudNest Solutions moved your Associate Software Engineer application to Interview.",
+    "link": "pages/student/applications.html",
+    "read": false,
+    "createdAt": "2026-09-22T12:00:00.000Z"
+  },
+  {
+    "id": "ntf_007",
+    "userId": "usr_stu03",
+    "type": "status",
+    "title": "Application under review",
+    "message": "BrightPath Analytics is reviewing your application for Data Analyst Trainee.",
+    "link": "pages/student/applications.html",
+    "read": false,
+    "createdAt": "2026-09-26T09:30:00.000Z"
+  },
+  {
+    "id": "ntf_008",
+    "userId": "usr_rec03",
+    "type": "application",
+    "title": "New applicant",
+    "message": "Sneha Kulkarni applied for Data Science Intern.",
+    "link": "pages/recruiter/applicants.html?jobId=job_012",
+    "read": false,
+    "createdAt": "2026-09-27T10:45:00.000Z"
+  },
+  {
+    "id": "ntf_009",
+    "userId": "usr_stu05",
+    "type": "status",
+    "title": "Application shortlisted",
+    "message": "Your application for UI/UX Design Intern at TechNova Pvt Ltd has been shortlisted.",
+    "link": "pages/student/applications.html",
+    "read": true,
+    "createdAt": "2026-09-25T14:00:00.000Z"
+  }
+]

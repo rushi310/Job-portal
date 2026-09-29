@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="32" viewBox="0 0 150 32" role="img" aria-labelledby="logo-title">
+  <title id="logo-title">FreshHire</title>
+  <rect x="0" y="2" width="28" height="28" rx="7" fill="#4F46E5"/>
+  <path d="M9 22V10h10M9 16h7" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="21.5" cy="21.5" r="2.5" fill="#0EA5E9"/>
+  <text x="36" y="22.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="19" font-weight="700" fill="#111827">Fresh<tspan fill="#4F46E5">Hire</tspan></text>
+</svg>

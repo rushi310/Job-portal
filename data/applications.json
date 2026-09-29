@@ -1,0 +1,233 @@
+[
+  {
+    "id": "app_001",
+    "jobId": "job_001",
+    "studentId": "usr_stu01",
+    "recruiterId": "usr_rec01",
+    "coverNote": "I have built several responsive websites and would love to grow with TechNova's web team.",
+    "resumeFileName": null,
+    "status": "shortlisted",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-21T10:00:00.000Z", "note": "" },
+      { "status": "under_review", "at": "2026-09-23T11:30:00.000Z", "note": "" },
+      { "status": "shortlisted", "at": "2026-09-26T15:00:00.000Z", "note": "Strong project portfolio." }
+    ],
+    "appliedAt": "2026-09-21T10:00:00.000Z",
+    "updatedAt": "2026-09-26T15:00:00.000Z"
+  },
+  {
+    "id": "app_002",
+    "jobId": "job_007",
+    "studentId": "usr_stu01",
+    "recruiterId": "usr_rec02",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "applied",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-23T09:15:00.000Z", "note": "" }
+    ],
+    "appliedAt": "2026-09-23T09:15:00.000Z",
+    "updatedAt": "2026-09-23T09:15:00.000Z"
+  },
+  {
+    "id": "app_003",
+    "jobId": "job_003",
+    "studentId": "usr_stu01",
+    "recruiterId": "usr_rec01",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "rejected",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-08-15T10:00:00.000Z", "note": "" },
+      { "status": "under_review", "at": "2026-08-20T12:00:00.000Z", "note": "" },
+      { "status": "rejected", "at": "2026-09-02T16:00:00.000Z", "note": "Position filled." }
+    ],
+    "appliedAt": "2026-08-15T10:00:00.000Z",
+    "updatedAt": "2026-09-02T16:00:00.000Z"
+  },
+  {
+    "id": "app_004",
+    "jobId": "job_018",
+    "studentId": "usr_stu01",
+    "recruiterId": "usr_rec01",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "under_review",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-20T14:00:00.000Z", "note": "" },
+      { "status": "under_review", "at": "2026-09-24T10:00:00.000Z", "note": "" }
+    ],
+    "appliedAt": "2026-09-20T14:00:00.000Z",
+    "updatedAt": "2026-09-24T10:00:00.000Z"
+  },
+  {
+    "id": "app_005",
+    "jobId": "job_008",
+    "studentId": "usr_stu02",
+    "recruiterId": "usr_rec02",
+    "coverNote": "Comfortable with Java, DSA and SQL; keen to work on platform tools.",
+    "resumeFileName": null,
+    "status": "interview",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-13T09:00:00.000Z", "note": "" },
+      { "status": "under_review", "at": "2026-09-15T10:00:00.000Z", "note": "" },
+      { "status": "shortlisted", "at": "2026-09-18T11:00:00.000Z", "note": "" },
+      { "status": "interview", "at": "2026-09-22T12:00:00.000Z", "note": "Technical interview on 3 Oct 2026." }
+    ],
+    "appliedAt": "2026-09-13T09:00:00.000Z",
+    "updatedAt": "2026-09-22T12:00:00.000Z"
+  },
+  {
+    "id": "app_006",
+    "jobId": "job_006",
+    "studentId": "usr_stu02",
+    "recruiterId": "usr_rec02",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "applied",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-19T16:30:00.000Z", "note": "" }
+    ],
+    "appliedAt": "2026-09-19T16:30:00.000Z",
+    "updatedAt": "2026-09-19T16:30:00.000Z"
+  },
+  {
+    "id": "app_007",
+    "jobId": "job_005",
+    "studentId": "usr_stu02",
+    "recruiterId": "usr_rec01",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "selected",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-08-03T10:00:00.000Z", "note": "" },
+      { "status": "under_review", "at": "2026-08-06T10:00:00.000Z", "note": "" },
+      { "status": "shortlisted", "at": "2026-08-12T10:00:00.000Z", "note": "" },
+      { "status": "interview", "at": "2026-08-20T10:00:00.000Z", "note": "" },
+      { "status": "selected", "at": "2026-08-28T10:00:00.000Z", "note": "Offer letter shared by email." }
+    ],
+    "appliedAt": "2026-08-03T10:00:00.000Z",
+    "updatedAt": "2026-08-28T10:00:00.000Z"
+  },
+  {
+    "id": "app_008",
+    "jobId": "job_011",
+    "studentId": "usr_stu03",
+    "recruiterId": "usr_rec03",
+    "coverNote": "I enjoy building dashboards in Power BI and cleaning data with Pandas.",
+    "resumeFileName": null,
+    "status": "under_review",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-24T12:00:00.000Z", "note": "" },
+      { "status": "under_review", "at": "2026-09-26T09:30:00.000Z", "note": "" }
+    ],
+    "appliedAt": "2026-09-24T12:00:00.000Z",
+    "updatedAt": "2026-09-26T09:30:00.000Z"
+  },
+  {
+    "id": "app_009",
+    "jobId": "job_012",
+    "studentId": "usr_stu03",
+    "recruiterId": "usr_rec03",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "applied",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-27T10:45:00.000Z", "note": "" }
+    ],
+    "appliedAt": "2026-09-27T10:45:00.000Z",
+    "updatedAt": "2026-09-27T10:45:00.000Z"
+  },
+  {
+    "id": "app_010",
+    "jobId": "job_013",
+    "studentId": "usr_stu03",
+    "recruiterId": "usr_rec03",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "selected",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-08-07T10:00:00.000Z", "note": "" },
+      { "status": "under_review", "at": "2026-08-12T10:00:00.000Z", "note": "" },
+      { "status": "shortlisted", "at": "2026-08-18T10:00:00.000Z", "note": "" },
+      { "status": "interview", "at": "2026-08-26T10:00:00.000Z", "note": "" },
+      { "status": "selected", "at": "2026-09-10T10:00:00.000Z", "note": "Joining date to be confirmed." }
+    ],
+    "appliedAt": "2026-08-07T10:00:00.000Z",
+    "updatedAt": "2026-09-10T10:00:00.000Z"
+  },
+  {
+    "id": "app_011",
+    "jobId": "job_014",
+    "studentId": "usr_stu04",
+    "recruiterId": "usr_rec03",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "applied",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-28T11:00:00.000Z", "note": "" }
+    ],
+    "appliedAt": "2026-09-28T11:00:00.000Z",
+    "updatedAt": "2026-09-28T11:00:00.000Z"
+  },
+  {
+    "id": "app_012",
+    "jobId": "job_002",
+    "studentId": "usr_stu04",
+    "recruiterId": "usr_rec01",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "withdrawn",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-25T13:00:00.000Z", "note": "" },
+      { "status": "withdrawn", "at": "2026-09-27T09:00:00.000Z", "note": "Withdrawn by student." }
+    ],
+    "appliedAt": "2026-09-25T13:00:00.000Z",
+    "updatedAt": "2026-09-27T09:00:00.000Z"
+  },
+  {
+    "id": "app_013",
+    "jobId": "job_018",
+    "studentId": "usr_stu05",
+    "recruiterId": "usr_rec01",
+    "coverNote": "My Figma portfolio includes three complete app redesigns.",
+    "resumeFileName": null,
+    "status": "shortlisted",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-19T15:00:00.000Z", "note": "" },
+      { "status": "under_review", "at": "2026-09-22T10:00:00.000Z", "note": "" },
+      { "status": "shortlisted", "at": "2026-09-25T14:00:00.000Z", "note": "" }
+    ],
+    "appliedAt": "2026-09-19T15:00:00.000Z",
+    "updatedAt": "2026-09-25T14:00:00.000Z"
+  },
+  {
+    "id": "app_014",
+    "jobId": "job_001",
+    "studentId": "usr_stu05",
+    "recruiterId": "usr_rec01",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "applied",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-09-22T17:00:00.000Z", "note": "" }
+    ],
+    "appliedAt": "2026-09-22T17:00:00.000Z",
+    "updatedAt": "2026-09-22T17:00:00.000Z"
+  },
+  {
+    "id": "app_015",
+    "jobId": "job_017",
+    "studentId": "usr_stu04",
+    "recruiterId": "usr_rec05",
+    "coverNote": "",
+    "resumeFileName": null,
+    "status": "rejected",
+    "statusHistory": [
+      { "status": "applied", "at": "2026-07-22T10:00:00.000Z", "note": "" },
+      { "status": "rejected", "at": "2026-07-30T10:00:00.000Z", "note": "" }
+    ],
+    "appliedAt": "2026-07-22T10:00:00.000Z",
+    "updatedAt": "2026-07-30T10:00:00.000Z"
+  }
+]

@@ -1,0 +1,237 @@
+[
+  {
+    "id": "usr_admin01",
+    "role": "admin",
+    "name": "FreshHire Admin",
+    "email": "admin@freshhire.com",
+    "password": "Admin@123",
+    "phone": "9000000001",
+    "status": "active",
+    "createdAt": "2026-08-01T09:00:00.000Z",
+    "profile": {}
+  },
+  {
+    "id": "usr_stu01",
+    "role": "student",
+    "name": "Asha Patil",
+    "email": "student@freshhire.com",
+    "password": "Student@123",
+    "phone": "9876543210",
+    "status": "active",
+    "createdAt": "2026-08-20T10:15:00.000Z",
+    "profile": {
+      "college": "Pune Institute of Engineering",
+      "degree": "B.E.",
+      "branch": "Computer Engineering",
+      "graduationYear": 2026,
+      "cgpa": 8.2,
+      "location": "Pune",
+      "about": "Final-year computer engineering student who enjoys building clean, accessible web interfaces.",
+      "skills": ["HTML", "CSS", "JavaScript", "Git", "Responsive Design"],
+      "education": [
+        { "level": "HSC", "institute": "Fergusson College", "year": 2022, "score": "86%" },
+        { "level": "SSC", "institute": "Modern High School", "year": 2020, "score": "91%" }
+      ],
+      "projects": [
+        { "title": "Campus Events Portal", "description": "A responsive site listing college events with filters.", "link": "" }
+      ],
+      "links": { "linkedin": "", "github": "", "portfolio": "" },
+      "resume": null
+    }
+  },
+  {
+    "id": "usr_stu02",
+    "role": "student",
+    "name": "Rohan Deshmukh",
+    "email": "rohan.deshmukh@example.com",
+    "password": "Password@123",
+    "phone": "9822011223",
+    "status": "active",
+    "createdAt": "2026-08-05T08:30:00.000Z",
+    "profile": {
+      "college": "Mumbai College of Technology",
+      "degree": "B.Tech",
+      "branch": "Information Technology",
+      "graduationYear": 2025,
+      "cgpa": 7.8,
+      "location": "Mumbai",
+      "about": "Backend-focused graduate interested in Java and cloud systems.",
+      "skills": ["Java", "Spring Boot", "SQL", "DSA", "Linux"],
+      "education": [
+        { "level": "HSC", "institute": "Ruia College", "year": 2021, "score": "81%" }
+      ],
+      "projects": [
+        { "title": "Library Management System", "description": "Java + SQL desktop application.", "link": "" }
+      ],
+      "links": { "linkedin": "", "github": "", "portfolio": "" },
+      "resume": null
+    }
+  },
+  {
+    "id": "usr_stu03",
+    "role": "student",
+    "name": "Sneha Kulkarni",
+    "email": "sneha.kulkarni@example.com",
+    "password": "Password@123",
+    "phone": "9765400112",
+    "status": "active",
+    "createdAt": "2026-08-12T11:45:00.000Z",
+    "profile": {
+      "college": "Nagpur Institute of Computer Applications",
+      "degree": "BCA",
+      "branch": "Computer Applications",
+      "graduationYear": 2026,
+      "cgpa": 8.8,
+      "location": "Nagpur",
+      "about": "Data enthusiast who loves turning spreadsheets into insights.",
+      "skills": ["Python", "Excel", "SQL", "Pandas", "Power BI"],
+      "education": [],
+      "projects": [],
+      "links": { "linkedin": "", "github": "", "portfolio": "" },
+      "resume": null
+    }
+  },
+  {
+    "id": "usr_stu04",
+    "role": "student",
+    "name": "Arjun Mehta",
+    "email": "arjun.mehta@example.com",
+    "password": "Password@123",
+    "phone": "9900112233",
+    "status": "active",
+    "createdAt": "2026-07-18T14:20:00.000Z",
+    "profile": {
+      "college": "Bengaluru Science College",
+      "degree": "B.Sc",
+      "branch": "Computer Science",
+      "graduationYear": 2025,
+      "cgpa": 6.9,
+      "location": "Bengaluru",
+      "about": "",
+      "skills": ["Python", "Django", "HTML", "Git"],
+      "education": [],
+      "projects": [],
+      "links": { "linkedin": "", "github": "", "portfolio": "" },
+      "resume": null
+    }
+  },
+  {
+    "id": "usr_stu05",
+    "role": "student",
+    "name": "Priya Nair",
+    "email": "priya.nair@example.com",
+    "password": "Password@123",
+    "phone": "9447001122",
+    "status": "active",
+    "createdAt": "2026-08-25T09:10:00.000Z",
+    "profile": {
+      "college": "Kochi School of Computer Science",
+      "degree": "MCA",
+      "branch": "Computer Applications",
+      "graduationYear": 2026,
+      "cgpa": 8.5,
+      "location": "Kochi",
+      "about": "Designer-developer who enjoys UI design and front-end work.",
+      "skills": ["Figma", "UI Design", "HTML", "CSS", "JavaScript"],
+      "education": [],
+      "projects": [],
+      "links": { "linkedin": "", "github": "", "portfolio": "" },
+      "resume": null
+    }
+  },
+  {
+    "id": "usr_rec01",
+    "role": "recruiter",
+    "name": "Karan Shah",
+    "email": "recruiter@freshhire.com",
+    "password": "Recruiter@123",
+    "phone": "9811122233",
+    "status": "active",
+    "createdAt": "2026-08-02T09:30:00.000Z",
+    "profile": {
+      "companyName": "TechNova Pvt Ltd",
+      "designation": "HR Manager",
+      "companyWebsite": "https://technova.example.com",
+      "companyLocation": "Pune",
+      "companySize": "51-200",
+      "industry": "IT Services",
+      "about": "TechNova builds web and mobile products for small and medium businesses."
+    }
+  },
+  {
+    "id": "usr_rec02",
+    "role": "recruiter",
+    "name": "Neha Iyer",
+    "email": "neha.iyer@example.com",
+    "password": "Password@123",
+    "phone": "9845566778",
+    "status": "active",
+    "createdAt": "2026-08-03T10:00:00.000Z",
+    "profile": {
+      "companyName": "CloudNest Solutions",
+      "designation": "Talent Acquisition Lead",
+      "companyWebsite": "https://cloudnest.example.com",
+      "companyLocation": "Bengaluru",
+      "companySize": "201-500",
+      "industry": "Cloud Computing",
+      "about": "CloudNest provides managed cloud hosting and DevOps services."
+    }
+  },
+  {
+    "id": "usr_rec03",
+    "role": "recruiter",
+    "name": "Vikram Rao",
+    "email": "vikram.rao@example.com",
+    "password": "Password@123",
+    "phone": "9848012345",
+    "status": "active",
+    "createdAt": "2026-08-04T12:00:00.000Z",
+    "profile": {
+      "companyName": "BrightPath Analytics",
+      "designation": "Hiring Manager",
+      "companyWebsite": "https://brightpath.example.com",
+      "companyLocation": "Hyderabad",
+      "companySize": "11-50",
+      "industry": "Data Analytics",
+      "about": "BrightPath helps retail brands make decisions with data."
+    }
+  },
+  {
+    "id": "usr_rec04",
+    "role": "recruiter",
+    "name": "Meera Joshi",
+    "email": "meera.joshi@example.com",
+    "password": "Password@123",
+    "phone": "9820098765",
+    "status": "pending",
+    "createdAt": "2026-09-27T16:40:00.000Z",
+    "profile": {
+      "companyName": "GreenLeaf Digital",
+      "designation": "HR Executive",
+      "companyWebsite": "https://greenleaf.example.com",
+      "companyLocation": "Mumbai",
+      "companySize": "11-50",
+      "industry": "Digital Marketing",
+      "about": ""
+    }
+  },
+  {
+    "id": "usr_rec05",
+    "role": "recruiter",
+    "name": "Sameer Khan",
+    "email": "sameer.khan@example.com",
+    "password": "Password@123",
+    "phone": "9811099887",
+    "status": "blocked",
+    "createdAt": "2026-07-10T09:00:00.000Z",
+    "profile": {
+      "companyName": "QuickHire Staffing",
+      "designation": "Recruiter",
+      "companyWebsite": "https://quickhire.example.com",
+      "companyLocation": "Delhi",
+      "companySize": "1-10",
+      "industry": "Staffing",
+      "about": ""
+    }
+  }
+]
