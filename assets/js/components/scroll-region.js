@@ -11,14 +11,20 @@ const regions = new Map(); // wrapper element → accessible name
 let resizeTimer = 0;
 let isListeningForResize = false;
 
+/** Scrolls sideways only if CSS allows it (stacked cards on phones use overflow: visible). */
+function canScroll(wrapperEl) {
+  const overflowX = getComputedStyle(wrapperEl).overflowX;
+  return (overflowX === 'auto' || overflowX === 'scroll') && wrapperEl.scrollWidth > wrapperEl.clientWidth + 1;
+}
+
 function updateEdges(wrapperEl) {
-  const maxScroll = wrapperEl.scrollWidth - wrapperEl.clientWidth;
+  const maxScroll = canScroll(wrapperEl) ? wrapperEl.scrollWidth - wrapperEl.clientWidth : 0;
   wrapperEl.classList.toggle('has-more-left', maxScroll > 1 && wrapperEl.scrollLeft > 1);
   wrapperEl.classList.toggle('has-more-right', maxScroll > 1 && wrapperEl.scrollLeft < maxScroll - 1);
 }
 
 function updateRegion(wrapperEl, label) {
-  const isScrollable = wrapperEl.scrollWidth > wrapperEl.clientWidth + 1;
+  const isScrollable = canScroll(wrapperEl);
   if (isScrollable) {
     wrapperEl.setAttribute('role', 'region');
     wrapperEl.setAttribute('aria-label', `${label} (scroll sideways to see every column)`);

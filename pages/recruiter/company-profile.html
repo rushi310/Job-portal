@@ -95,25 +95,24 @@
                     <p class="form-error" id="cp-company-location-error" hidden></p>
                   </div>
                 </div>
-                <div class="form-row form-row--2">
+                <div class="form-group">
+                  <label class="form-label" for="cp-company-website">Website</label>
+                  <input class="form-control" id="cp-company-website" name="companyWebsite" type="url" inputmode="url"
+                    maxlength="200" placeholder="https://" aria-describedby="cp-company-website-error">
+                  <p class="form-error" id="cp-company-website-error" hidden></p>
+                </div>
+                <!-- Own row (was nested beside Website): the size select was too narrow to show "51-200 employees" -->
+                <div class="form-row form-row--2 form-row--pair">
                   <div class="form-group">
-                    <label class="form-label" for="cp-company-website">Website</label>
-                    <input class="form-control" id="cp-company-website" name="companyWebsite" type="url" inputmode="url"
-                      maxlength="200" placeholder="https://" aria-describedby="cp-company-website-error">
-                    <p class="form-error" id="cp-company-website-error" hidden></p>
+                    <label class="form-label" for="cp-company-size">Company size</label>
+                    <select class="form-control" id="cp-company-size" name="companySize" aria-describedby="cp-company-size-error"></select>
+                    <p class="form-error" id="cp-company-size-error" hidden></p>
                   </div>
-                  <div class="form-row form-row--2 form-row--pair">
-                    <div class="form-group">
-                      <label class="form-label" for="cp-company-size">Company size</label>
-                      <select class="form-control" id="cp-company-size" name="companySize" aria-describedby="cp-company-size-error"></select>
-                      <p class="form-error" id="cp-company-size-error" hidden></p>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label" for="cp-industry">Industry</label>
-                      <input class="form-control" id="cp-industry" name="industry" type="text" maxlength="100"
-                        aria-describedby="cp-industry-error">
-                      <p class="form-error" id="cp-industry-error" hidden></p>
-                    </div>
+                  <div class="form-group">
+                    <label class="form-label" for="cp-industry">Industry</label>
+                    <input class="form-control" id="cp-industry" name="industry" type="text" maxlength="100"
+                      aria-describedby="cp-industry-error">
+                    <p class="form-error" id="cp-industry-error" hidden></p>
                   </div>
                 </div>
                 <div class="form-group">

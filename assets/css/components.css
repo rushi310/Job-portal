@@ -204,10 +204,12 @@
   border-color: var(--color-text-muted);
 }
 
-.form-control:focus {
+/* :focus-within also covers stops inside a field, e.g. the date input's calendar button. */
+.form-control:focus,
+.form-control:focus-within {
   border-color: var(--color-primary);
   outline: none;
-  box-shadow: 0 0 0 3px var(--color-primary-light);
+  box-shadow: var(--focus-shadow);
 }
 
 .form-control:disabled {
@@ -247,8 +249,10 @@ select.form-control {
 }
 
 .form-group.has-error .form-control:focus,
-.form-control[aria-invalid="true"]:focus {
-  box-shadow: 0 0 0 3px var(--color-danger-light);
+.form-group.has-error .form-control:focus-within,
+.form-control[aria-invalid="true"]:focus,
+.form-control[aria-invalid="true"]:focus-within {
+  box-shadow: var(--focus-shadow-danger);
 }
 
 .form-check {
@@ -287,11 +291,17 @@ select.form-control {
    Cards
    ========================================================================== */
 .card {
-  padding: var(--space-5);
+  padding: var(--space-4); /* phones: more room for content inside cards */
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 576px) {
+  .card {
+    padding: var(--space-5);
+  }
 }
 
 .card__header {
@@ -339,12 +349,6 @@ select.form-control {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-}
-
-@media (max-width: 575px) {
-  .stat-card {
-    padding: var(--space-4);
-  }
 }
 
 .stat-card__icon {
@@ -1302,6 +1306,14 @@ a.quick-action:hover {
   color: var(--color-danger-text);
 }
 
+/* From 768px these are real tables: keep the first column (job / name) readable instead of one word
+   per line; if the table gets wider than its box it scrolls inside it (components/scroll-region.js). */
+@media (min-width: 768px) {
+  .table-wrapper--stack .table tbody > tr > :first-child {
+    min-width: 12rem;
+  }
+}
+
 /* Below 768px each table row becomes a card with labelled cells (no sideways scrolling). */
 @media (max-width: 767px) {
   .table-wrapper--stack {
@@ -1351,9 +1363,15 @@ a.quick-action:hover {
   .table-wrapper--stack td {
     display: grid;
     grid-template-columns: minmax(6rem, 35%) minmax(0, 1fr);
-    gap: var(--space-3);
+    gap: var(--space-1) var(--space-3);
     align-items: center;
+    justify-items: start; /* badges and buttons keep their own width */
     border-top: 1px solid var(--color-border);
+  }
+
+  /* Every part of the value (e.g. status badge + note) stays in the value column. */
+  .table-wrapper--stack td > * {
+    grid-column: 2;
   }
 
   .table-wrapper--stack td::before {

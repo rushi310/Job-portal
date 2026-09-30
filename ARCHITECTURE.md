@@ -114,7 +114,7 @@ Job portal/                     (project root)
 │   │   │   ├── form-field.js       Inline field errors, password toggle, loading button
 │   │   │   ├── app-shell.js        Protected-page start-up: seed → guard → navbar/sidebar/footer → flash
 │   │   │   ├── save-button.js      "♡ Save / ♥ Saved" toggle shared by job cards and Job Details
-│   │   │   ├── tabs.js             Accessible tabs (arrow keys, URL hash) — Profile, later Applicants
+│   │   │   ├── tabs.js             Accessible tabs (arrow keys, URL hash) — used on Profile & Resume
 │   │   │   ├── resume-sheet.js     Printable resume generated from a student profile (also the applicant profile view)
 │   │   │   ├── approval-banner.js  "Awaiting admin approval" banner for pending recruiters (Phase 8)
 │   │   │   ├── navbar.js           Top bar (logo, role menu, bell, user menu)
@@ -124,8 +124,9 @@ Job portal/                     (project root)
 │   │   │   ├── modal.js
 │   │   │   ├── job-card.js
 │   │   │   ├── pagination.js
-│   │   │   ├── empty-state.js
-│   │   │   └── charts.js           Canvas/SVG bar, donut, line charts (Phase 11)
+│   │   │   ├── empty-state.js      Friendly empty message (optional heading level, Phase 12)
+│   │   │   ├── scroll-region.js    Wide tables: focusable, named scroll region + edge fade (Phase 12)
+│   │   │   └── charts.js           Hand-written inline-SVG bar, donut and line charts (Phase 11)
 │   │   └── pages/
 │   │       ├── landing.js
 │   │       ├── auth/        login.js, register.js
@@ -133,7 +134,7 @@ Job portal/                     (project root)
 │   │       ├── recruiter/   dashboard.js, post-job.js, my-jobs.js, applicants.js, company-profile.js
 │   │       ├── admin/       dashboard.js, users.js, jobs.js, announcements.js, reports.js
 │   │       └── shared/      notifications.js
-│   └── images/                     Logo (SVG), illustrations, placeholder avatars
+│   └── images/                     logo.svg (avatars are initials drawn with CSS; no other images)
 │
 ├── data/
 │   ├── users.json
@@ -141,7 +142,15 @@ Job portal/                     (project root)
 │   ├── applications.json
 │   └── notifications.json
 │
-└── docs/                           Created in Phase 13–14 (test cases, viva notes, screenshots)
+└── docs/                           Created in Phase 14 (submission material)
+    ├── USER_GUIDE.md               Step-by-step guide per role
+    ├── PROJECT_REPORT.md           Project report
+    ├── SECURITY.md                 Frontend-only security model and limits
+    ├── VIVA_QUESTIONS.md           Viva questions and answers (incl. hard follow-ups)
+    ├── PRESENTATION_OUTLINE.md     Slide plan
+    ├── DEMO_FLOW.md                Live demo script
+    ├── SCREENSHOT_CHECKLIST.md     List of screenshots
+    └── screenshots/                24 PNG screenshots of the final UI
 ```
 
 **Rules**
@@ -263,6 +272,25 @@ Each HTML page loads exactly one script: `<script type="module" src="..."></scri
 Services return plain objects/arrays or `{ ok: true, data }` / `{ ok: false, error }` for operations that can fail.
 
 Services are created with the read-only queries the current phase needs and grow in later phases (e.g. `application-service`, `saved-job-service` and `notification-service` were added in Phase 3 with read-only queries for the student dashboard; their write operations arrive in Phases 5, 6 and 10). There is no separate dashboard service: dashboard pages compose these services. Phase 8 added to `job-service`: `getJobsByRecruiter`, `getOwnJobs`, `getOwnJob`, `isActiveRecruiter`, `canEditJob`, `canCloseJob`, `validateJobField` / `validateJobForm` / `validateJobSkill`, `createJob`, `updateJob`, `closeJob` (job-service now imports `auth.getCurrentUser`); to `application-service`: `getApplicationsForRecruiter`, `getRecruiterApplicants`, `getApplicantsForJob`, `getApplicantDetails`, `getApplicantResumeFile`, `getNextStatuses` (from `RECRUITER_STATUS_FLOW` in config) and `updateApplicationStatus` — ownership is always `application.jobId` → `job.recruiterId`, and applicant data never includes passwords; to `profile-service`: `updateCompanyProfile`, `validateCompanyField` and the shared `decodeResumeFile`; to `user-service`: `updateRecruiterRecord` (same whitelist as students). Shared dashboard styles (stat grid, lists, quick actions, status-filter tabs, `.avatar--lg`) moved from `pages/student.css` to `components.css` so every role dashboard uses them. Phase 7 added `profile-service.js` (`updateProfileSection`, `validateProfileField`, `validateNewSkill`, `uploadResume`, `removeResume`, `getResumeInfo`, `getOwnResumeFile`; file reading uses the browser `FileReader`/`Blob` APIs, never the DOM), `updateStudentRecord` in `user-service` (only `name`, `phone`, `profile` can change), and `components/tabs.js` + `components/resume-sheet.js`. Phase 6 added `saveJob`, `unsaveJob`, `isJobSaved`, `getSavedJobsWithDetails` to `saved-job-service`, `canWithdraw` / `withdrawApplication` to `application-service`, `getJobAvailability` to `job-service`, and `components/save-button.js`; all writes take the student from the session. Phase 5 added `getVisibleJob(id)` to `job-service` and `checkEligibility`, `getApplyStatus`, `validateApplicationForm` and `applyToJob` to `application-service`; `applyToJob` takes the student from `auth.getCurrentUser()` (core), never from a parameter, and re-checks every rule before writing. Phase 4 added `searchJobs(criteria)` and `getJobFilterOptions()` to `job-service` (pure functions over derived arrays; stored jobs are never modified), `paginate()` to `utils.js`, and `components/pagination.js`.
+
+## 7a. Main Workflows
+
+Every workflow below runs in the browser. The page calls a service; the service takes the acting user from the
+session (`auth.getCurrentUser()`), checks the business rules, writes through `core/storage.js`, and — where
+PROJECT_SPEC §4.5 says so — creates a notification after the change is saved.
+
+| Workflow | Flow (page → service → storage) |
+|---|---|
+| **Authentication** | Register / login pages → `auth.register` / `auth.login` (uses `user-service`) → `fh_users`; session written to `fh_session` (sessionStorage). Logout removes the session. |
+| **Authorization** | `app-shell.initProtectedPage(role)` → `auth.requireRole`: no session → login with `returnTo`; wrong role → own dashboard; blocked / deleted → login. Services re-check role and ownership on every write. |
+| **Role separation** | Pages live in role folders; the sidebar menu is built per role (`components/sidebar.js`); `pages/shared/notifications.html` is open to every role. |
+| **Student** | Browse Jobs (`job-service.searchJobs`) → Job Details (`getVisibleJob`, `application-service.getApplyStatus`) → apply (`applyToJob`) → My Applications (`getApplicationsByStudent`, `withdrawApplication`); Saved Jobs (`saved-job-service`); Profile (`profile-service`). |
+| **Recruiter** | Company Profile (`profile-service.updateCompanyProfile`) → Post a Job (`job-service.createJob`, status `pending`) → My Jobs (`getOwnJobs`, `updateJob`, `closeJob`) → Applicants (`application-service.getApplicantsForJob`, `getApplicantDetails`, `updateApplicationStatus`). Requires an `active` account (BR-07). |
+| **Admin** | Dashboard / Users / Jobs / Announcements (`admin-service`: `approveRecruiter`, `blockUser`, `deleteUser`, `approveJob`, `rejectJob`, `deleteJob`, `sendAnnouncement`, `resetDemoData`); Reports (`analytics-service`). |
+| **Job lifecycle** | `pending` (created or core fields edited) → admin `approved` / `rejected` (with reason) → recruiter may `close` an approved job. "Expired" is computed from the deadline, never stored. |
+| **Application lifecycle** | `applied` → `under_review` → `shortlisted` → `interview` → `selected`, or `rejected` from any of these (recruiter); `withdrawn` from `applied` / `under_review` (student). Every change is appended to `statusHistory`. |
+| **Notifications** | Created inside the service that made the change (apply, status change, job decision, recruiter approval, announcement) → `fh_notifications`; read, counted and marked read only for the session user (`notification-service`); the bell count is read by `app-shell`. |
+| **Analytics** | `analytics-service` counts stored records on demand (student: own applications; recruiter: own jobs and their applicants; admin: platform report) → `components/charts.js` draws SVG; reports add a table and a CSV download (Blob). |
 
 ## 8. Running the Project
 

@@ -9,11 +9,12 @@
 
 | Field | Value |
 |---|---|
-| **Current phase** | **Phase 11 — Analytics & Reports** |
-| Phase status | ✅ Complete — awaiting user approval to start Phase 12 |
+| **Current phase** | **Phase 14 — Documentation & Viva** (final phase) |
+| Phase status | ✅ Complete |
+| **Overall project status** | **Documentation complete; NOT marked final** — Phase 13 (Testing & QA) was stopped before completion at the user's request (see "Phase 13" below) |
 | Last updated | 2026-09-30 |
 | Current task | None |
-| Next phase | **Phase 12 — Responsive Design & UI Polish** (not started; requires explicit user approval) |
+| Next phase | None — Phase 14 is the last phase. Open items: the unfinished Phase 13 deliverables (listed below). |
 
 ## Phase Overview
 
@@ -31,11 +32,11 @@
 | 9 | Admin Portal | ✅ Complete |
 | 10 | Notifications | ✅ Complete |
 | 11 | Analytics & Reports | ✅ Complete |
-| 12 | Responsive Design & UI Polish | ⏳ Not started |
-| 13 | Testing | ⏳ Not started |
-| 14 | Documentation & Viva | ⏳ Not started |
+| 12 | Responsive Design & UI Polish | ✅ Complete |
+| 13 | Testing | ⚠️ Stopped before completion (tests run and 3 defects fixed; test-case document and final write-up not done) |
+| 14 | Documentation & Viva | ✅ Complete |
 
-Legend: ⏳ Not started · 🔄 In progress · ✅ Complete
+Legend: ⏳ Not started · 🔄 In progress · ✅ Complete · ⚠️ Incomplete
 
 ## Phase 0 Checklist (complete)
 
@@ -476,13 +477,197 @@ Task split note: the user defined P2-T02 as the login UI only, so registration m
 - Rounded percentages may add up to 99 % or 101 %.
 - README.md was not updated in this phase (the phase request limited documentation changes to PROJECT_STATUS.md and DEVELOPMENT_PHASES.md); its status line still says Phase 10.
 
+## Phase 12 Checklist (complete)
+
+| ID | Task | Status |
+|---|---|---|
+| P12-T01 | Review every page and role at 360 / 375 / 390 / 414 / 768 / 1024 / 1280 / 1440 px in the browser (layout audit + screenshots) and Lighthouse accessibility baseline | ✅ |
+| P12-T02 | Mobile shell: header spacing below 576px so the ☰ button keeps its 40px target; icon buttons never shrink; drawer, user menu, bell re-verified | ✅ |
+| P12-T03 | Tables: stacked cards with label and value side by side; readable first column from 768px; scrolling tables become named, focusable regions with an edge fade (`components/scroll-region.js`); report tables fit at 360px | ✅ |
+| P12-T04 | Forms and panels: form pairs one column below 576px; checkbox labels ≥ 24px; "Application submitted" alert stacked (`alert--stacked`); card header links on one line with a 24px+ target; cards 16px padding below 576px; resume preview wider on phones | ✅ |
+| P12-T05 | Accessibility: contrast (register role toggle, unread notification time), label-in-name ("Mark as read", admin status totals), heading order (empty-state `headingLevel`), register radio target | ✅ |
+| P12-T06 | Consistency: stale landing "Soon" tag removed; Applicants back link matches Job Details; footer "About this demo" as an outline button; obsolete `.back-link` CSS removed | ✅ |
+| P12-T07 | Validation, regression, documentation | ✅ |
+
+### Phase 12 Acceptance Criteria (DEVELOPMENT_PHASES.md)
+
+| Criterion | Result |
+|---|---|
+| No horizontal page scroll at any breakpoint | ✅ PASS (30 page / role views × 8 widths = 240 renders: `scrollWidth ≤ clientWidth` everywhere; wide tables scroll only inside their own box) |
+| Lighthouse (Chrome DevTools) Accessibility score ≥ 90 on key pages | ✅ PASS (Lighthouse 13.5.0, 20 key pages × desktop and mobile: **100** on all 40 runs; before Phase 12: 96–100) |
+| UI matches `UI_SPEC.md` tokens and components | ✅ PASS (no hex colours outside `variables.css`, no undefined tokens, no new `!important`; existing button / card / table / modal / toast / empty-state components reused) |
+
+### Phase 12 Decisions
+- Presentation-only phase: no business rules, data models, storage keys, authentication or authorization changed. Two small JS changes were needed for accessibility: `createEmptyState({ headingLevel })` and `components/scroll-region.js`.
+- Tables keep the Phase 9 pattern (stacked cards below 768px, real tables above) as UI_SPEC says ("tables stay scrollable" at md). Between 768px and ~1200px the management tables are wider than their box, so they scroll inside it; the wrapper then becomes `role="region"` with a name and `tabindex="0"` and fades the edge that has hidden columns. When the table fits, none of this is added (no pointless tab stop).
+- Stat cards keep the UI_SPEC column counts (1 / 2 / 4); phones get compact card padding (16px for every card below 576px) instead of a different grid.
+- Form pairs (job type / work mode, openings / apply by, company size / industry) are two columns only from 576px; at 360px the date and select values were cut off.
+- The user-menu button keeps `aria-label="Account menu for <name>"`. Lighthouse's experimental, unscored "label-content-name-mismatch" audit flags it only because the decorative avatar initials count as visible text; the name shown on desktop is contained in the label.
+- The profile page's second `h1` belongs to the print-only resume copy (`display: none` on screen, the only heading when printed), so it was left as is.
+- Checkbox / radio targets are measured on their label (the whole label toggles the box); labels are at least 24px tall.
+- `prefers-reduced-motion` was already handled globally in `base.css` (Phase 1); no new animations were added.
+
+### Phase 12 Validation
+- Baseline before Phase 12 (re-run at the start): **1125/1125** (15 earlier suites + analytics). The analytics suite once hit its 85 s watchdog under load and passed 116/116 alone twice; the harness time budget was raised (browser 90 → 180 s, analytics watchdog 85 → 170 s). No test logic changed for this.
+- New suite `ui-test`: **60/60** — header at 360 / 576 / 768 / 1280 (☰ 40px, everything inside the viewport), drawer open / Esc / focus return, persistent sidebar at 1280; form pairs (360 one column, 768 two), full-width date input, company-size select, checkbox label targets; stacked tables (label / value grid, multi-part values in the value column, natural badge width, not a scroll region, never faded on admin pages); 1024px scroll region (named, focusable, right fade, left fade after scrolling to the end, readable job column), 1440px plain box; admin users / jobs regions; report tables and charts fit at 360; card header links; status-total names; stat-card padding 360 / 1280; stacked apply alert; resume preview padding and unchanged print copy; contrast of unread notification time and register role options (computed ≥ 4.5:1); role radio covers the option and still selects it; "Mark as read" name; h2 empty states under the h1 (admin notifications, pending Post a Job) and default h3 elsewhere; landing without "Soon"; footer button opens the dialog; Applicants back link; candidate dialog fits at 360, scrolls inside, takes focus, closes on Esc; toasts inside the viewport and not overlapping; reduced-motion rule present; key pages without horizontal scroll at all 8 widths; no console errors.
+- Layout audit (scratch tool, not counted as tests): 240 renders (30 page / role views × 8 widths) — no horizontal overflow, no unlabelled controls, no nameless buttons / links, no targets under 24px, one visible `h1` and no skipped heading levels, scrolling boxes keyboard-reachable and named, no console errors.
+- Regression on the final code: **1125/1125** (Phase 1 42, auth 56, login 59, registration 57, navigation 79, guards 51, links 16, student dashboard 45, jobs 74, details 62, tracking 69, profile 127, recruiter 119, admin 85, notifications 68, analytics 116). One check updated for an intended change: the notification "Mark as read" name is now "Mark as read: <title>" (was `Mark "<title>" as read`).
+- Total: **1185/1185 passed**.
+- Lighthouse 13.5.0 accessibility (run with Node 24 from a scratch folder; nothing added to the project): 20 key pages logged in as each role, desktop and mobile — 100 on all 40 runs.
+- Resume printed to PDF: single clean A4 page, unchanged.
+- Static: `node --check` on all 50 JS files; imports / exports and HTML references (50 modules, 20 pages); every page's tag balance, duplicate ids, doctype / lang / viewport / title and `aria-labelledby` / `aria-describedby` / `aria-controls` targets; CSS braces, no hex colours outside `variables.css`, no undefined tokens, no new `!important`; JSON; storage-access rule; no `console.log` / `var` / `eval` / inline styles or handlers — clean; `git diff --check` clean; new files have no trailing whitespace. No build step exists. Screenshots reviewed for every page at 360 and key pages at 768 / 1024 / 1280 / 1440, plus drawer, user menu, apply dialog, candidate dialog, reject and reset dialogs at 360.
+
+### Phase 12 Known Limitations
+- Headless Edge and Lighthouse (Chromium) only; Chrome / Firefox checks are Phase 13. Headless Edge does not fire `resize` in a test frame, so resize tests send the event (as earlier suites do).
+- No official W3C HTML / CSS validator was run (not available offline here); the structural checks above were used.
+- Between 768px and ~1200px the admin Users / Jobs and recruiter My Jobs tables scroll sideways inside their box (by design, UI_SPEC "tables stay scrollable").
+- Page titles (h1, 2rem token) wrap to two lines on phones for long titles such as "Create your account"; the typography tokens were kept as specified.
+- README.md was not updated (the phase request limited documentation changes to PROJECT_STATUS.md and DEVELOPMENT_PHASES.md); its status line still names an earlier phase.
+
+## Final Project Summary
+
+**Project:** FreshHire — a simulated job portal for freshers (final-year college project).
+**Architecture:** frontend-only — HTML5, CSS3, Vanilla JavaScript ES6+ modules; JSON seed data in `/data`;
+`localStorage` for data, `sessionStorage` for the login session; no backend, database, API, framework or build
+step. Runs from any static file server.
+
+**Final features**
+- **Public:** landing page (hero, how it works, stats, 6 newest open jobs), registration (student / recruiter),
+  login with demo-account buttons.
+- **Student:** dashboard (stats, profile completeness, recent applications and updates, recommendations, status
+  chart); Browse Jobs (search, filters, sort, pagination, show expired); Job Details with eligibility check; apply
+  with cover note; save / unsave; Saved Jobs; My Applications (status filter, timeline, withdraw); Profile &
+  Resume (5 tabs, PDF upload ≤ 500 KB, printable resume); notifications.
+- **Recruiter:** approval banner while pending; dashboard (stats, recent applicants, applicants-per-job chart,
+  application funnel); Post / Edit Job with preview; close jobs; My Jobs; Applicants (profile, resume, status
+  flow); Company Profile; notifications.
+- **Admin:** dashboard (totals, jobs by status, pending lists, reset demo data); Users (search, filters, approve,
+  block / unblock, delete); Moderate Jobs (view, approve, reject with reason, delete); Announcements; Reports (4
+  charts + tables + CSV); notifications.
+
+**Testing summary (recorded in Phase 13; details below):** 19 automated browser suites with 1,254 checks — all
+passed in Microsoft Edge 154 and Firefox 157 on the final code (Chrome for Testing 154: 1,247 / 1,247 on 18 suites
+before the last fixes); layout audit 240 renders clean; Lighthouse accessibility 100 on 20 pages (desktop and
+mobile); keyboard 22 / 22; mobile emulation 24 / 24; static checks clean. The test pages are **not** in the
+repository.
+
+**Known limitations:** frontend-only (data per browser, not shared); not secure (plain-text demo passwords,
+editable storage, client-side checks only); ~5 MB storage (500 KB resumes); no email or real-time
+notifications; minimum width 360px; must be served by a static server; automated tests not in the repository;
+Phase 13's test-case document not written.
+
+**Future scope:** backend API and database, hashed passwords and secure sessions, server-side authorization,
+resume file storage, email / real-time notifications, recruiter verification, richer search, production
+deployment (see `docs/PROJECT_REPORT.md` §19).
+
+## Phase 13 — Testing & QA (stopped before completion)
+
+The user moved to Phase 14 before Phase 13 was finished. Everything below was actually run; nothing else is
+claimed.
+
+### Done
+- **Baseline** (start of Phase 13): 17 suites, **1,185 / 1,185** passed in Edge.
+- **New QA suites** `qa-test` (62 checks) and `qa2-test` (7 checks): access matrix (17 protected pages × logged
+  out / student / recruiter / pending recruiter / admin, direct URLs), landing links, assets and network requests
+  on all 20 pages, `fh_` storage keys, no password in any page, empty storage, corrupted storage (invalid JSON,
+  object, number, null for each collection), malformed records, 14 invalid-URL cases, deleted-user session,
+  storage full (quota) on save / apply / profile / mark read / status change / approve, journey 1 (student
+  registers and logs in through the forms → saves and applies → recruiter sees and moves the application → another
+  recruiter and another student are isolated → notifications and analytics, with reloads), journey 2 (new
+  recruiter → admin approval → job → admin approval → students; own job cannot be self-approved), focus-ring
+  contrast, cut-off selects, long user-entered text at 360 / 768 / 1280, console noise.
+- **Final automated results (final code):**
+
+| Browser | Suites | Checks | Passed | Failed | Skipped |
+|---|---|---|---|---|---|
+| Microsoft Edge 154 (headless) | 19 | 1,254 | 1,254 | 0 | — (no skip state) |
+| Firefox 157 (headless, Puppeteer) | 19 | 1,254 | 1,254 | 0 | — |
+| Chrome for Testing 154 (headless) | 18 | 1,247 | 1,247 | 0 | — (run before the last three fixes; `qa2-test` did not exist yet) |
+
+  Per suite (Edge): Phase 1 42, auth 56, login 59, registration 57, navigation 79, guards 51, links 16, student
+  dashboard 45, jobs 74, details 62, tracking 69, profile 127, recruiter 119, admin 85, notifications 68,
+  analytics 116, UI polish 60, QA 62, QA 2 7.
+- **Layout audit:** 30 page / role views × 8 widths (360, 375, 390, 414, 768, 1024, 1280, 1440) = 240 renders — no
+  horizontal scroll, no unlabelled controls or nameless buttons / links, no targets under 24px, one visible `h1`,
+  no skipped heading levels, scroll regions focusable and named, no console errors.
+- **Lighthouse 13.5.0 accessibility:** 20 key pages × desktop and mobile — **100** on all 40 runs (only an
+  experimental, unscored note on the account-menu label remains; see Phase 12 decisions).
+- **Keyboard (real key presses, Edge):** 22 / 22 — skip link first and working on all 20 pages, every Tab stop
+  visible with a focus ring, no traps; apply dialog traps focus and restores it on Escape; mobile drawer by
+  keyboard.
+- **Mobile device emulation (Edge, touch):** 24 / 24 on Galaxy S8 (360), iPhone 13 Mini (375), iPhone 13 (390),
+  Pixel 5 (393), Galaxy S9+ (320 in Puppeteer's preset) and iPad Mini (768): tap login, every page of each role
+  without horizontal scroll, drawer by tap.
+- **Performance / quality review:** no duplicate event listeners (every page binds once in `init`; charts and
+  scroll regions share one resize listener); whole app 628 KB of source, largest file 38 KB, no libraries.
+
+### Defects found and fixed
+
+| ID | Severity | Defect | Fix |
+|---|---|---|---|
+| D-01 | Low (accessibility) | Form-field focus halo was almost invisible (#EEF2FF on white, 1.12 : 1) and missing on the date field's calendar-button stop | Tokens `--focus-shadow` / `--focus-shadow-danger` (70%, ≥ 3 : 1) in `variables.css`; `:focus-within` added in `components.css` |
+| D-02 | Low (UI) | Company Profile: "Company size" select cut off ("51-200 empl…") at desktop width | `pages/recruiter/company-profile.html`: Website on its own row, size + industry as a normal pair |
+| D-03 | Medium (responsive) | Long unbroken user text (e.g. a 46-character email) widened 11 page / width views — admin Users 480px wide at 360px; Job Details and Notifications even at 1280px | `base.css`: `overflow-wrap: anywhere` on `body`, headings, `p`, `li` (was `break-word`, which does not shrink grid / flex items) |
+
+Test-side issues found and resolved (not app defects): Firefox runner waited for a text marker older suites do
+not print; a synthetic-keyboard timing artefact; Chrome's password UI swallowing key presses after a form login in
+headless mode; drawer animation timing in the emulation script.
+
+Out of scope: at 320px (below the 360px minimum, UI_SPEC §2.5) the app header is tight; not changed.
+
+### Not done (open)
+- `docs/TEST_CASES.md`: manual test cases per feature and role with a defect log (a Phase 13 deliverable).
+- Phase 13's own final static-validation run and completion report (static checks were run in Phase 14 instead —
+  see below).
+- Chrome re-run after the last three fixes: the downloaded Chrome for Testing binary was removed from the
+  environment and could not be downloaded again.
+
+## Phase 14 — Documentation & Viva (complete)
+
+| ID | Task | Status |
+|---|---|---|
+| P14-T01 | README rewritten: what / why, features per role, technology, how to run, demo accounts, architecture, authentication, storage, browsers, testing, limitations, future scope | ✅ |
+| P14-T02 | `docs/USER_GUIDE.md`, `docs/PROJECT_REPORT.md` (20 sections), `docs/SECURITY.md` | ✅ |
+| P14-T03 | `docs/VIVA_QUESTIONS.md` (53 questions + 14 hard follow-ups), `docs/PRESENTATION_OUTLINE.md`, `docs/DEMO_FLOW.md` | ✅ |
+| P14-T04 | `docs/screenshots/` (24 PNGs of the running app, 1280 × 800 and 390px mobile) + `docs/SCREENSHOT_CHECKLIST.md` | ✅ |
+| P14-T05 | ARCHITECTURE (charts are SVG, images, `scroll-region.js`, `docs/` contents, workflow table), PROJECT_SPEC (§8 limitations, §9 final status), UI_SPEC (development-time wording removed, analytics, focus tokens, final accessibility rules), CODING_RULES (documented exceptions) corrected against the code | ✅ |
+| P14-T06 | Validation and status | ✅ |
+
+### Phase 14 Acceptance Criteria (DEVELOPMENT_PHASES.md)
+
+| Criterion | Result |
+|---|---|
+| A new person can run and demo the project using only the README | ✅ README has run steps, demo accounts, features per role, and links to the user guide and demo flow |
+| Documentation matches the implemented behaviour | ✅ Claims checked against the code (function names, labels, limits, seed counts, session shape, notification texts); stale wording fixed |
+| `PROJECT_STATUS.md` marks the project complete | ⚠️ **Not met by choice:** Phase 13 is incomplete, so the project is recorded as "documentation complete, not final" |
+
+### Phase 14 Decisions
+- `SECURITY.md` did not exist; it was created in `docs/` because the security model had to be documented.
+  `DATABASE_SCHEMA.md` and `API_SPEC.md` do not exist and were **not** created: there is no database or API; the
+  data model is PROJECT_SPEC §5 and the service interfaces are described in ARCHITECTURE §7 / §7a.
+- New documents are in `docs/` (the folder ARCHITECTURE reserves for them). The planned `VIVA_NOTES.md` is
+  `docs/VIVA_QUESTIONS.md` (the requested name); it covers the planned viva-notes content.
+- Screenshots were captured (the environment supports it) rather than only listed.
+- No application code was changed in Phase 14.
+
+### Phase 14 Validation
+- Static (final code): `node --check` on all 50 JS files — 0 failures; imports / exports and HTML references —
+  50 modules, 20 pages, 0 problems; JSON (4 files) valid; CSS braces balanced, no hex colours outside
+  `variables.css`, 0 undefined tokens; HTML structure (tag balance, duplicate ids, ARIA references) on 20 pages —
+  0 problems; no `console.log` / `var` / `eval` / inline styles or handlers.
+- Documentation: every relative Markdown link and image path resolves; screenshot files match the checklist;
+  test numbers are the recorded Phase 13 values; `git diff --check` clean.
+
 ## Next Task
 
-**Phase 12 — Responsive Design & UI Polish** (start only when the user explicitly approves).
+None — Phase 14 is the final phase. If the project is to be marked final, complete the open Phase 13 items above
+(`docs/TEST_CASES.md` with the defect log, and a Chrome re-run).
 
 ## Known Issues / Open Questions
 
-- None. Note: browsers block ES modules on `file://`, so the app must be opened through a static server (documented in README).
+- Phase 13 incomplete (see above): `docs/TEST_CASES.md` not written; Chrome not re-run after the last fixes.
+- Automated test pages are not stored in the repository.
+- Note: browsers block ES modules on `file://`, so the app must be opened through a static server (documented in README).
 
 ## Change Log
 
@@ -505,3 +690,6 @@ Task split note: the user defined P2-T02 as the login UI only, so registration m
 | 2026-09-30 | 9 | Phase 9: Admin Portal — dashboard (totals, jobs by status, pending quick lists, reset demo data), Users (search, filters, approve / block / unblock / delete with cleanup), Moderate Jobs (filter, view, approve / reject with reason / delete); admin-service; `ensureSeeded({ force })`; admin.css; shared table CSS moved to components.css. Docs: DEVELOPMENT_PHASES, PROJECT_SPEC §3.4, ARCHITECTURE §2/§7, README. 941/941. **Phase 9 complete.** |
 | 2026-09-30 | 10 | Phase 10: Notifications — notification-service (own list, unread count, mark read / all, safe links, create), §4.5 events wired into application-service and admin-service, navbar bell (app-shell → navbar), shared notification centre, admin Announcements (send + sent list); sidebar Notifications / Announcements available. Docs: DEVELOPMENT_PHASES, ARCHITECTURE §1, README. 1009/1009. **Phase 10 complete.** |
 | 2026-09-30 | 11 | Phase 11: Analytics & Reports — analytics-service (student breakdown, recruiter applicants per job + funnel, admin platform report, CSV), components/charts.js (SVG bar / donut / line), student and recruiter dashboard analytics sections, admin Reports page with tables and CSV export; sidebar Reports available. Docs: DEVELOPMENT_PHASES, PROJECT_STATUS. 1125/1125. **Phase 11 complete.** |
+| 2026-09-30 | 12 | Phase 12: Responsive Design & UI Polish — every page reviewed at 8 widths; header fit at 360, stacked tables with label / value rows, focusable scroll regions for wide tables (components/scroll-region.js), phone form pairs and card padding, apply alert, contrast and label-in-name fixes, empty-state heading levels, back link / footer / landing consistency. Lighthouse accessibility 100 on 20 pages (desktop + mobile). Docs: DEVELOPMENT_PHASES, PROJECT_STATUS. 1185/1185. **Phase 12 complete.** |
+| 2026-09-30 | 13 | Phase 13 (stopped before completion): QA suites (access matrix, empty / corrupted / full storage, invalid URLs, journeys, long data), cross-browser runs (Edge 1254/1254, Firefox 1254/1254, Chrome 1247/1247 before last fixes), keyboard 22/22, mobile emulation 24/24, Lighthouse 100. Fixed D-01 focus ring (variables.css, components.css), D-02 company-size select (company-profile.html), D-03 long words widening pages (base.css). Not done: docs/TEST_CASES.md, final write-up, Chrome re-run. |
+| 2026-09-30 | 14 | Phase 14: README rewritten; docs/ USER_GUIDE, PROJECT_REPORT, SECURITY, VIVA_QUESTIONS, PRESENTATION_OUTLINE, DEMO_FLOW, SCREENSHOT_CHECKLIST, 24 screenshots; ARCHITECTURE, PROJECT_SPEC, UI_SPEC, CODING_RULES corrected against the code; DEVELOPMENT_PHASES notes for Phases 13–14. **Phase 14 complete; project not marked final (Phase 13 incomplete).** |

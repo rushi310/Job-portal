@@ -77,6 +77,9 @@
   --header-height: 64px;
   --sidebar-width: 240px;
   --focus-ring: 2px solid var(--color-primary);
+  /* Focus halo for form fields (visible against white; the fields' own border also turns primary) */
+  --focus-shadow: 0 0 0 3px rgb(79 70 229 / 70%); /* ≥ 3:1 on white and the page background (WCAG 1.4.11) */
+  --focus-shadow-danger: 0 0 0 3px rgb(220 38 38 / 70%);
 
   /* Motion */
   --transition: 150ms ease;

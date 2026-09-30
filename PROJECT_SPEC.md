@@ -290,3 +290,25 @@ Seed data also includes additional students, recruiters (one `pending`, one `blo
 - Data is not shared between browsers/devices.
 - Any user can inspect/modify data via DevTools.
 - The `localStorage` quota limits resume uploads.
+- The login session is per browser tab (`sessionStorage`); closing the tab logs the user out.
+- Resumes are stored as Base64 inside `localStorage`, readable with DevTools like all other data.
+
+## 9. Final Implementation Status (Phase 14 review)
+
+Every feature listed in §3 is implemented as described (Phases 1–12). Decisions recorded during development that
+refine this specification:
+
+- **Pending recruiters** can log in, see an approval banner and edit their company profile; posting, editing and
+  closing jobs and viewing applicants are refused by the services until an admin approves them (§3.3).
+- **Withdraw** was delivered with application tracking in Phase 6 (it is listed there in §3.2).
+- **No recruiter delete** of jobs (only close); deleting jobs is an admin action (§3.3, §3.4).
+- **No admin application management**: the admin sees application totals and reports, not individual
+  applications (§3.4 does not list it).
+- **Notifications** are created only for the five events in §4.5 (not for withdrawals, job closing or blocking).
+- **Analytics** (§3.2–3.4) have no filters; "applications over time" is grouped by week up to 16 weeks, then by
+  month. Each report exports its own CSV file.
+- **Charts** are hand-written inline SVG; every chart has text values or a table.
+- **Responsiveness** is supported from 360px (§7); below that width the layout is not guaranteed.
+
+Not built (never specified as features): email / SMS, password reset, file types other than PDF for resumes,
+interview scheduling. See §1.2 and §8.

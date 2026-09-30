@@ -137,3 +137,16 @@
 .report-table .table td {
   font-variant-numeric: tabular-nums;
 }
+
+/* Report cells hold short labels and numbers; letting them wrap keeps 3 columns inside a phone-width card. */
+.report-table .table th,
+.report-table .table td {
+  white-space: normal;
+}
+
+@media (max-width: 575px) {
+  .report-table .table th,
+  .report-table .table td {
+    padding-inline: var(--space-2);
+  }
+}

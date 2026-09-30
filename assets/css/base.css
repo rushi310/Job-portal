@@ -25,6 +25,9 @@ body {
   line-height: var(--lh-base);
   color: var(--color-text);
   background-color: var(--color-bg);
+  /* User-entered text (names, emails, job titles) can be one long word; break it only when it would
+     otherwise overflow, so it can never make a page scroll sideways. */
+  overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -60,7 +63,7 @@ h5,
 h6 {
   font-weight: var(--fw-semibold);
   line-height: var(--lh-tight);
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere; /* long words also shrink in grid / flex layouts (break-word does not) */
 }
 
 h1 {
@@ -83,7 +86,7 @@ h6 {
 
 p,
 li {
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere; /* long words also shrink in grid / flex layouts (break-word does not) */
 }
 
 a {

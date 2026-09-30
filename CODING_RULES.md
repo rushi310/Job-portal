@@ -35,8 +35,11 @@
 - Class naming: **BEM** — `block`, `block__element`, `block--modifier` (e.g. `job-card`, `job-card__title`, `btn--primary`).
 - State classes prefixed `is-` / `has-` (e.g. `is-active`, `is-open`, `has-error`).
 - Mobile-first: base styles for small screens, then `@media (min-width: ...)` using the breakpoints in `UI_SPEC.md`.
+  Exception in the final code: four phone-only overrides use `max-width` (stacked tables below 768px; table,
+  report-table and resume-preview padding below 576px), because they only apply to the smallest screens.
 - Layout with Flexbox and Grid; no floats for layout.
-- Avoid IDs for styling; avoid `!important` (utilities may use it sparingly).
+- Avoid IDs for styling; avoid `!important` (utilities may use it sparingly). The only other uses are the
+  `prefers-reduced-motion` rule in `base.css` and the resume print rule in `student.css`, which must win.
 - Keep selector nesting shallow (max 3 levels).
 - Order inside a rule: positioning → box model → typography → visual → misc.
 
@@ -76,6 +79,7 @@
 ### 5.4 DOM & Security
 - Prefer `textContent`, `createElement`, and `<template>` elements.
 - If `innerHTML` is used with any data, every dynamic value must pass through `escapeHtml()` from `core/utils.js`.
+  In the final code `innerHTML` is used only in `components/icons.js`, for the project's own static SVG strings.
 - Never use `eval`, `new Function`, or `document.write`.
 - Validate and sanitise all form input in JS even if HTML validation attributes are present.
 - Validate uploaded resume: MIME type `application/pdf` and size ≤ 500 KB (`MAX_RESUME_SIZE`).

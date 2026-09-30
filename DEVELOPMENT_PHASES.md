@@ -220,6 +220,7 @@ File paths below refer to the structure in `ARCHITECTURE.md`.
 - Mobile sidebar drawer, filter drawer, scrollable tables verified.
 - Consistent spacing, empty states, loading states, hover/focus states, micro-transitions (respecting reduced motion).
 - Print styles for resume.
+- *Implementation note (Phase 12):* review done in real browser rendering at 360 / 375 / 390 / 414 / 768 / 1024 / 1280 / 1440 px on every page and role, plus Lighthouse accessibility (desktop and mobile). Changes are presentation-only (no business rules, data, auth or storage changes). Stacked table cards on phones show label and value side by side. From 768px, a management table that is wider than its box scrolls inside it and becomes a named, keyboard-focusable region with a faded edge (`components/scroll-region.js`); when it fits, it stays a plain box with no extra tab stop. Form pairs (e.g. job type / work mode) are two columns only from 576px. Cards use 16px padding below 576px. The app header uses tighter spacing below 576px so the ☰ button keeps its 40px target. `createEmptyState` accepts `headingLevel` (default 3) so an empty state directly under the page `h1` uses `h2`. The resume print styles (Phase 7) were re-verified unchanged.
 
 **Acceptance criteria**
 - No horizontal page scroll at any breakpoint.
@@ -236,6 +237,16 @@ File paths below refer to the structure in `ARCHITECTURE.md`.
 - Cross-browser check (Chrome, Edge, Firefox) and mobile emulation.
 - Edge cases: empty storage, corrupted storage, quota exceeded, invalid URL params, direct URL access by wrong role.
 - Bug fixes and a defect log in the same document.
+- *Implementation note (Phase 13 — stopped before completion at the user's request):* automated browser test
+  suites (run headless from the development environment; not stored in the repository) were extended with a QA
+  suite (access matrix for every protected page × every visitor type, empty / corrupted / full storage, invalid
+  URL parameters, deleted-user sessions, two cross-role journeys with reloads, password and storage-key scans,
+  focus-ring contrast, cut-off selects, long user-entered text). Cross-browser runs used Microsoft Edge 154,
+  Firefox 157 and Chrome for Testing 154; mobile emulation used six device profiles; keyboard checks used real
+  key presses. Three defects were fixed (form-field focus ring, company-size select, long words widening pages).
+  **Not done:** `docs/TEST_CASES.md` (manual test cases and defect log), the phase's final static-validation run
+  and status write-up, and a Chrome re-run after the last fixes (the downloaded Chrome binary was removed from
+  the environment). Results are recorded in PROJECT_STATUS.md.
 
 **Acceptance criteria**
 - All test cases executed and recorded; no open critical/high defects.
@@ -252,6 +263,12 @@ File paths below refer to the structure in `ARCHITECTURE.md`.
 - `docs/VIVA_NOTES.md` (architecture explanation, why frontend-only, storage design, likely questions and answers, limitations, future scope).
 - `docs/screenshots/` of key pages.
 - All documents reviewed for accuracy against the final code.
+- *Implementation note (Phase 14):* delivered as `README.md` (rewritten) and, in `docs/`: `USER_GUIDE.md`,
+  `PROJECT_REPORT.md`, `SECURITY.md`, `VIVA_QUESTIONS.md` (the viva notes: Q&A on architecture, storage,
+  frontend-only design, limitations and future scope, plus hard follow-up questions), `PRESENTATION_OUTLINE.md`,
+  `DEMO_FLOW.md`, `SCREENSHOT_CHECKLIST.md` and `screenshots/` (24 PNGs captured from the running app).
+  ARCHITECTURE, PROJECT_SPEC, UI_SPEC and CODING_RULES were corrected against the final code. No application
+  code was changed. Because Phase 13 was not completed, `PROJECT_STATUS.md` does not mark the project final.
 
 **Acceptance criteria**
 - A new person can run and demo the project using only the README.
