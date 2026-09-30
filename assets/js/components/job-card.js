@@ -3,9 +3,9 @@
  * Built with createElement/textContent so job data can never inject HTML.
  */
 
-import { MAX_CARD_SKILLS } from '../core/config.js';
+import { MAX_CARD_SKILLS, PAGE_PATHS } from '../core/config.js';
 import {
-  getLabel, formatSalary, formatDate, formatRelativeTime, getInitials, daysUntil,
+  getLabel, formatSalary, formatDate, formatRelativeTime, getInitials, daysUntil, toRoot,
 } from '../core/utils.js';
 import { createIcon } from './icons.js';
 
@@ -40,6 +40,19 @@ function describeDeadline(job, isExpired) {
   if (days === 0) return 'Apply by today';
   if (days <= 7) return `${days} day${days === 1 ? '' : 's'} left`;
   return `Apply by ${formatDate(job.deadline)}`;
+}
+
+/**
+ * "View details" link to the Job Details page (pass it in `actions`). The job title is part of
+ * the accessible name so a list of these links is still meaningful to screen readers.
+ * @param {object} job
+ * @returns {HTMLAnchorElement}
+ */
+export function createViewDetailsLink(job) {
+  const linkEl = createElement('a', 'btn btn--outline btn--sm', 'View details');
+  linkEl.href = toRoot(`${PAGE_PATHS.JOB_DETAILS}?id=${encodeURIComponent(job.id)}`);
+  linkEl.setAttribute('aria-label', `View details: ${job.title}`);
+  return linkEl;
 }
 
 /**

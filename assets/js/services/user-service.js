@@ -1,6 +1,7 @@
 /**
  * user-service.js — Business logic for user accounts.
- * Lookup, demo password check, login eligibility (P2-T01) and registration (P2-T03).
+ * Lookup, demo password check, login eligibility (P2-T01), registration (P2-T03),
+ * profile completeness (Phase 3) and saving profile edits (Phase 7).
  */
 
 import {
@@ -158,7 +159,8 @@ export const REGISTRATION_FIELDS = Object.freeze({
 const text = (value) => String(value ?? '').trim();
 const required = (label) => (value) => (text(value) ? '' : `Please enter ${label}.`);
 
-function isValidUrl(value) {
+/** http(s) URLs only, so a stored link can never run script (e.g. "javascript:"). */
+export function isValidUrl(value) {
   try {
     const url = new URL(value);
     return url.protocol === 'http:' || url.protocol === 'https:';
@@ -294,4 +296,33 @@ export function createUser(values) {
 
   const saved = setLocal(STORAGE_KEYS.USERS, [...getAllUsers(), user]);
   return saved.ok ? { ok: true, data: user } : { ok: false, error: saved.error };
+}
+
+/* ==========================================================================
+   Profile updates (Phase 7)
+   ========================================================================== */
+
+/**
+ * Save a student's own profile edits. Only `name`, `phone` and `profile` can change here;
+ * id, role, email, password, status and createdAt are always kept from the stored record.
+ * Callers (profile-service.js) validate first and take `userId` from the session.
+ * @param {string} userId
+ * @param {{ name?: string, phone?: string, profile?: object }} changes
+ * @returns {{ ok: true, data: object } | { ok: false, error: string }} data = updated public user
+ */
+export function updateStudentRecord(userId, changes) {
+  const users = getAllUsers();
+  const index = users.findIndex((user) => user.id === userId && user.role === ROLES.STUDENT);
+  if (index === -1) return { ok: false, error: 'Your account could not be found. Please log in again.' };
+
+  const current = users[index];
+  const updated = {
+    ...current,
+    name: changes.name ?? current.name,
+    phone: changes.phone ?? current.phone,
+    profile: changes.profile ?? current.profile,
+  };
+  const nextUsers = users.map((user, position) => (position === index ? updated : user));
+  const saved = setLocal(STORAGE_KEYS.USERS, nextUsers);
+  return saved.ok ? { ok: true, data: toPublicUser(updated) } : { ok: false, error: saved.error };
 }

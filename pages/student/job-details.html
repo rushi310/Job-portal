@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Job details and application on FreshHire.">
+  <title>Job Details · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/student.css">
+
+  <script type="module" src="../../assets/js/pages/student/job-details.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in student (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <a class="btn btn--ghost btn--sm mb-4" href="jobs.html" data-icon-before="arrowLeft">Back to jobs</a>
+        <!-- Rendered by job-details.js: job details, or "Job not found" -->
+        <div data-job-details></div>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

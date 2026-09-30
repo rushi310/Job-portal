@@ -20,9 +20,9 @@ export const NAV_ITEMS = Object.freeze({
   [ROLES.STUDENT]: [
     { label: 'Dashboard', path: ROLE_HOME_PATHS[ROLES.STUDENT], icon: 'home', isAvailable: true },
     { label: 'Browse Jobs', path: 'pages/student/jobs.html', icon: 'search', isAvailable: true },
-    { label: 'My Applications', path: 'pages/student/applications.html', icon: 'fileText', isAvailable: false },
-    { label: 'Saved Jobs', path: 'pages/student/saved-jobs.html', icon: 'bookmark', isAvailable: false },
-    { label: 'Profile & Resume', path: 'pages/student/profile.html', icon: 'user', isAvailable: false },
+    { label: 'My Applications', path: 'pages/student/applications.html', icon: 'fileText', isAvailable: true },
+    { label: 'Saved Jobs', path: 'pages/student/saved-jobs.html', icon: 'bookmark', isAvailable: true },
+    { label: 'Profile & Resume', path: 'pages/student/profile.html', icon: 'user', isAvailable: true },
     { label: 'Notifications', path: 'pages/shared/notifications.html', icon: 'bell', isAvailable: false },
   ],
   [ROLES.RECRUITER]: [

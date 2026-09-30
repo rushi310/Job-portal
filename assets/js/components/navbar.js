@@ -125,7 +125,7 @@ export function renderPublicNavbar(mountEl) {
 
 /** Profile page per role in the user menu (none for admin). Shown as "Soon" until built. */
 const PROFILE_MENU_ITEMS = {
-  [ROLES.STUDENT]: { label: 'Profile & Resume', path: 'pages/student/profile.html', isAvailable: false },
+  [ROLES.STUDENT]: { label: 'Profile & Resume', path: 'pages/student/profile.html', isAvailable: true },
   [ROLES.RECRUITER]: { label: 'Company Profile', path: 'pages/recruiter/company-profile.html', isAvailable: false },
 };
 
@@ -267,4 +267,17 @@ export function renderAppNavbar(mountEl, user, { sidebar } = {}) {
   headerEl.append(startEl, endEl);
   mountEl.replaceWith(headerEl);
   return headerEl;
+}
+
+/**
+ * Show a changed name in the app header without reloading (e.g. after the student edits it on Profile).
+ * @param {object} user updated public user
+ */
+export function updateNavbarUser(user) {
+  const menuEl = document.querySelector('.app-header .user-menu');
+  if (!menuEl) return;
+  menuEl.querySelector('.user-menu__button').setAttribute('aria-label', `Account menu for ${user.name}`);
+  menuEl.querySelector('.avatar').textContent = getInitials(user.name);
+  menuEl.querySelector('.user-menu__name').textContent = user.name;
+  menuEl.querySelector('.user-menu__full-name').textContent = user.name;
 }

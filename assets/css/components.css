@@ -432,6 +432,13 @@ select.form-control {
   color: var(--color-success-text);
 }
 
+/* Save toggle: state shown by text (♡ Save / ♥ Saved) and aria-pressed, colour is extra */
+.save-btn.is-saved {
+  color: var(--color-danger-text);
+  background-color: var(--color-danger-light);
+  border-color: var(--color-danger);
+}
+
 .job-card__footer {
   display: flex;
   flex-wrap: wrap;

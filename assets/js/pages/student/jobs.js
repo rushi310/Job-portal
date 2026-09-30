@@ -16,10 +16,12 @@ import {
 import { initProtectedPage } from '../../components/app-shell.js';
 import { createIcon } from '../../components/icons.js';
 import { keepFocusInside } from '../../components/modal.js';
-import { createJobCard } from '../../components/job-card.js';
+import { createJobCard, createViewDetailsLink } from '../../components/job-card.js';
 import { createEmptyState } from '../../components/empty-state.js';
 import { renderPagination } from '../../components/pagination.js';
 import { searchJobs, getJobFilterOptions, isJobExpired } from '../../services/job-service.js';
+import { getSavedJobsByStudent } from '../../services/saved-job-service.js';
+import { createSaveButton, bindSaveButtons } from '../../components/save-button.js';
 
 const DESKTOP_QUERY = window.matchMedia('(min-width: 1024px)');
 
@@ -50,6 +52,7 @@ const paginationEl = $('[data-pagination]');
 
 let state = { ...DEFAULT_STATE };
 let filterOptions = { locations: [], skills: [] };
+let currentUser = null; // the logged-in student (from the session)
 
 /* ---------- State ---------- */
 
@@ -175,13 +178,17 @@ function renderActiveFilterCount() {
 function render() {
   try {
     const page = paginate(searchJobs(state), state.page, JOBS_PER_PAGE);
+    const savedJobIds = new Set(getSavedJobsByStudent(currentUser.id).map((record) => record.jobId));
     state.page = page.page; // clamp an out-of-range page (e.g. restored from an older session)
 
     renderCount(page);
     if (page.total === 0) {
       renderEmptyState();
     } else {
-      resultsEl.replaceChildren(...page.items.map((job) => createJobCard(job, { isExpired: isJobExpired(job) })));
+      resultsEl.replaceChildren(...page.items.map((job) => createJobCard(job, {
+        isExpired: isJobExpired(job),
+        actions: [createSaveButton(job, savedJobIds.has(job.id)), createViewDetailsLink(job)],
+      })));
     }
     renderPagination(paginationEl, {
       page: page.page,
@@ -283,6 +290,7 @@ function bindEvents() {
 
 async function init() {
   const user = await initProtectedPage(ROLES.STUDENT);
+  currentUser = user;
   if (!user) return;
 
   try {
@@ -294,6 +302,7 @@ async function init() {
   state = sanitizeState(getSession(STORAGE_KEYS.JOB_FILTERS)); // restore this tab's last filters
   syncControls();
   bindEvents();
+  bindSaveButtons(resultsEl);
   render();
 }
 

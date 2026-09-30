@@ -12,7 +12,7 @@ import {
 import { initProtectedPage } from '../../components/app-shell.js';
 import { NAV_ITEMS } from '../../components/sidebar.js';
 import { createIcon } from '../../components/icons.js';
-import { createJobCard } from '../../components/job-card.js';
+import { createJobCard, createViewDetailsLink } from '../../components/job-card.js';
 import { createEmptyState } from '../../components/empty-state.js';
 import { getProfileCompleteness } from '../../services/user-service.js';
 import { getApplicationsByStudent, countApplicationsByStatus } from '../../services/application-service.js';
@@ -219,6 +219,7 @@ function renderRecommended(containerEl, user, applications) {
   containerEl.replaceChildren(...items.map(({ job, matchedSkills }) => createJobCard(job, {
     isExpired: isJobExpired(job),
     note: matchedSkills.length > 0 ? `Matches your skills: ${matchedSkills.join(', ')}` : '',
+    actions: [createViewDetailsLink(job)],
   })));
 }
 

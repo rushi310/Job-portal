@@ -104,14 +104,13 @@ File paths below refer to the structure in `ARCHITECTURE.md`.
 
 **Deliverables**
 - `pages/student/job-details.html?id=` + script.
-- `application-service.js`: apply, withdraw, eligibility check, duplicate check, status history.
+- `application-service.js`: apply, eligibility check, duplicate check, status history. (Withdraw moved to Phase 6 by user decision, 2026-09-30.)
 - Apply modal with optional cover note.
 
 **Acceptance criteria**
 - Invalid/missing `id` or non-approved job shows a friendly "Job not found" state.
 - Eligibility box shows ✓/✗ per rule; Apply disabled when ineligible, expired, or already applied (BR-12–BR-14).
 - Successful application stored in `fh_applications` with `statusHistory` (BR-16) and resume reference if present (BR-17).
-- Withdraw allowed only from `applied` / `under_review` (BR-15).
 
 ---
 
@@ -126,7 +125,7 @@ File paths below refer to the structure in `ARCHITECTURE.md`.
 **Acceptance criteria**
 - Save/unsave toggles consistently across jobs list, details, and saved page (BR-18).
 - Applications page shows every application with correct status badge and timeline.
-- Withdraw from this page works and updates the timeline.
+- Withdraw from this page works and updates the timeline; withdraw is allowed only from `applied` / `under_review` (BR-15) and `application-service.js` provides `withdraw`.
 
 ---
 

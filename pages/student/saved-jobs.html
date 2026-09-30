@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Jobs you saved on FreshHire.">
+  <title>Saved Jobs · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/student.css">
+
+  <script type="module" src="../../assets/js/pages/student/saved-jobs.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in student (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1>Saved Jobs</h1>
+            <p class="page-header__subtitle">Jobs you saved to come back to later.</p>
+          </div>
+        </header>
+
+        <section aria-labelledby="saved-list-title">
+          <h2 class="visually-hidden" id="saved-list-title">Saved job list</h2>
+          <p class="jobs-results__count" data-saved-count role="status" aria-live="polite"></p>
+          <div class="saved-jobs__grid" data-saved-list></div>
+        </section>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

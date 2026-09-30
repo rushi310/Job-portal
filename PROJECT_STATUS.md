@@ -9,11 +9,11 @@
 
 | Field | Value |
 |---|---|
-| **Current phase** | **Phase 4 — Job Listing & Search** |
-| Phase status | 🔄 In progress — implementation done; final regression re-run on the last CSS fixes pending |
-| Last updated | 2026-09-29 |
-| Current task | P4-T03 — re-run all 9 browser suites + static checks on the final code |
-| Next phase | Phase 5 — Job Details & Applications (only after Phase 4 is confirmed complete and the user approves) |
+| **Current phase** | **Phase 7 — Student Profile & Resume** |
+| Phase status | ✅ Complete — awaiting user approval to start Phase 8 |
+| Last updated | 2026-09-30 |
+| Current task | None |
+| Next phase | **Phase 8 — Recruiter Portal** (not started; requires explicit user approval) |
 
 ## Phase Overview
 
@@ -23,10 +23,10 @@
 | 1 | Project Setup & Base UI | ✅ Complete |
 | 2 | Login & Registration | ✅ Complete |
 | 3 | Student Dashboard | ✅ Complete |
-| 4 | Job Listing & Search | 🔄 In progress (final re-run pending) |
-| 5 | Job Details & Applications | ⏳ Not started |
-| 6 | Saved Jobs & Application Tracking | ⏳ Not started |
-| 7 | Student Profile & Resume | ⏳ Not started |
+| 4 | Job Listing & Search | ✅ Complete |
+| 5 | Job Details & Applications | ✅ Complete |
+| 6 | Saved Jobs & Application Tracking | ✅ Complete |
+| 7 | Student Profile & Resume | ✅ Complete |
 | 8 | Recruiter Portal | ⏳ Not started |
 | 9 | Admin Portal | ⏳ Not started |
 | 10 | Notifications | ⏳ Not started |
@@ -186,22 +186,130 @@ Task split note: the user defined P2-T02 as the login UI only, so registration m
 ### Deferred
 - Job search/filters (Phase 4), job details & apply (Phase 5), saved jobs & application tracking pages (Phase 6), profile & resume editing (Phase 7), notification centre / mark-as-read (Phase 10), charts (Phase 11).
 
-## Phase 4 Checklist (in progress)
+## Phase 4 Checklist (complete)
 
 | ID | Task | Status |
 |---|---|---|
 | P4-T01 | `job-service.js`: `searchJobs(criteria)` (search title/company/skills; location, job type, work mode, pay range, skills filters; sort newest/deadline/salary) + `getJobFilterOptions()`; `paginate()` in utils.js; `components/pagination.js`; config: `JOB_SORT_OPTIONS`, `PAY_RANGES`, `SEARCH_DEBOUNCE_MS` | ✅ |
 | P4-T02 | Browse Jobs page (`pages/student/jobs.html`, `assets/js/pages/student/jobs.js`, styles in `student.css`), filter drawer below 1024px, `fh_job_filters` persistence, sidebar "Browse Jobs" available | ✅ |
-| P4-T03 | Validation + regression on the final code | 🔄 Pending re-run (see below) |
+| P4-T03 | Validation + regression on the final code | ✅ (re-run 2026-09-30: 479/479, static checks and `git diff --check` clean) |
 
-### Phase 4 Validation so far
+### Phase 4 Validation
 - New suite `jobs-test`: **74/74 passed** — listing & counts vs an independent reference implementation, pagination, search (title/company/skill, case/whitespace, multi-word, special characters, debounce = 1 update for 5 keystrokes, Enter), each filter, combined filters, all sorts, no mutation of stored jobs, clear filters (panel + empty state), expired hidden / "Show expired" with labels, persistence + tampered-state sanitising, malformed records, recruiter/admin/anonymous blocked, dashboard quick action now links, 360/375/768/1024/1280 layouts, drawer focus trap / Esc / backdrop / "Show results", labels and live region.
 - Full regression before the last CSS fixes: Phase 1 42, auth 56, login 59, registration 57, navigation 79, guards 51, links 16, student dashboard 45, jobs 74 — **479/479 passed**, no console errors. (Navigation and dashboard assertions were made data-driven from `NAV_ITEMS` because "Browse Jobs" is now available.)
-- **Pending:** after that run, three CSS-only alignment fixes were made in `student.css` (toolbar `align-items: start`, drawer body `align-content: start`, Filters button top margin at ≥768px), verified by screenshots at 1280 / 768 / 360. The suites could not be re-run because the command-safety check returned no verdict repeatedly (a tooling issue, not a test failure). Phase 4 is marked complete only after that re-run passes.
+- After that run, three CSS-only alignment fixes were made in `student.css` (toolbar `align-items: start`, drawer body `align-content: start`, Filters button top margin at ≥768px), verified by screenshots. The re-run was blocked by a tooling issue on 2026-09-29 and completed on 2026-09-30 on the final code: **479/479 passed**, static checks clean, `git diff --check` clean. **Phase 4 complete.**
+
+## Phase 5 Checklist (complete)
+
+| ID | Task | Status |
+|---|---|---|
+| P5-T01 | Services: `getVisibleJob` (job-service); `getApplicationForJob`, `checkEligibility` (BR-14), `getApplyStatus`, `validateApplicationForm`, `applyToJob` (application-service); config `PAGE_PATHS.JOBS/JOB_DETAILS`, `COVER_NOTE_MAX_LENGTH` | ✅ |
+| P5-T02 | Job Details page (`pages/student/job-details.html`, `assets/js/pages/student/job-details.js`, styles in `student.css`) with apply modal; "View details" links on Browse Jobs + dashboard cards (`createViewDetailsLink` in job-card.js) | ✅ |
+| P5-T03 | Validation, regression, documentation | ✅ |
+
+### Phase 5 Acceptance Criteria (DEVELOPMENT_PHASES.md)
+
+| Criterion | Result |
+|---|---|
+| Invalid/missing `id` or non-approved job shows "Job not found" | ✅ PASS (no id, empty id, unknown id, pending, rejected, closed, malformed, script-like id) |
+| Eligibility box ✓/✗ per rule; Apply disabled when ineligible, expired, or already applied (BR-12–BR-14) | ✅ PASS (UI and service both enforce) |
+| Application stored in `fh_applications` with `statusHistory` (BR-16) and resume reference if present (BR-17) | ✅ PASS (schema compared key-by-key) |
+
+### Phase 5 Decisions
+- **Scope change (user decision):** application withdrawal moved from Phase 5 to Phase 6; DEVELOPMENT_PHASES and PROJECT_SPEC §3.2 updated.
+- Form fields follow PROJECT_SPEC §5.3: optional cover note only (≤ 1,000 characters — no limit was documented); the resume file name is attached automatically when the profile has one; no resume upload (Phase 7).
+- `applyToJob(jobId, form)` reads the student from the session (`getCurrentUser`), re-checks role, job visibility, expiry, duplicate (BR-13, also re-read right before writing), eligibility and the form, then writes once via `storage.js`; storage failures return an error without a partial record.
+- A student may open any approved job (expired included, shown as Expired); other statuses are "Job not found" (BR-08).
+- No artificial delay on submit; the button is disabled with "Submitting…" and a guard flag blocks repeated clicks.
+- On small screens the apply panel sits directly under the job header; from 1024px it is a sticky right column.
+
+### Phase 5 Validation
+- New suite `details-test`: **62/62** — job data shown correctly; 8 invalid/hidden job cases; XSS through every job field; modal accessibility (dialog, focus, labels, error association, Esc returns focus); cover-note validation (too long rejected, value kept, focus, error clears); storage failure (message, modal and text kept, retry works, no record, no success); successful submission with double click → exactly one record; record schema, ids, recruiter, status, history, timestamps, trimmed note; persistence after reload; seed application detected; dashboard count updates; expired and ineligible blocked in UI and service; two-student ownership; resume reference only (no file data); service refuses unknown/pending/rejected/closed jobs, non-string note, logged-out and recruiter sessions; View details links from Browse Jobs and dashboard; recruiter/admin blocked; logged-out → login → back to the same job; 360/375/768/1024/1280 layouts and modal fit; no console errors (apart from the intentional storage-failure log).
+- Regression on the final code: Phase 1 42, auth 56, login 59, registration 57, navigation 79, guards 51, links 16, student dashboard 45, jobs 74, details 62 — **541/541 passed**. Two older checks ("cards have no links") updated to expect the new "View details" link.
+- Static: imports, HTML links, CSS tokens/braces, JSON, storage-access rule — clean; `git diff --check` clean.
+
+### Phase 5 Known Limitations
+- Headless Edge only (cross-browser in Phase 13).
+- A student cannot open a job after it is closed (BR-10 keeps it visible "in existing applications", which is the My Applications page in Phase 6).
+- Notifications for new applications are created in Phase 10.
+
+## Phase 6 Checklist (complete)
+
+| ID | Task | Status |
+|---|---|---|
+| P6-T01 | Services: `saveJob` / `unsaveJob` / `isJobSaved` / `getSavedJobsWithDetails` (saved-job-service), `canWithdraw` / `withdrawApplication` (application-service), `getJobAvailability` (job-service); config `PAGE_PATHS.SAVED_JOBS/APPLICATIONS` | ✅ |
+| P6-T02 | `components/save-button.js`; Save toggle on Browse Jobs cards and Job Details; "Track in My Applications" link | ✅ |
+| P6-T03 | Saved Jobs page (`pages/student/saved-jobs.html` + `saved-jobs.js`) | ✅ |
+| P6-T04 | My Applications page (`pages/student/applications.html` + `applications.js`): status filter, timeline, withdraw | ✅ |
+| P6-T05 | Sidebar items available; validation, regression, documentation | ✅ |
+
+### Phase 6 Acceptance Criteria (DEVELOPMENT_PHASES.md)
+
+| Criterion | Result |
+|---|---|
+| Save/unsave toggles consistently across jobs list, details, and saved page (BR-18) | ✅ PASS |
+| Applications page shows every application with correct status badge and timeline | ✅ PASS |
+| Withdraw works and updates the timeline; only from `applied` / `under_review` (BR-15); `application-service` provides withdraw | ✅ PASS (with confirmation dialog; service-level checks) |
+
+### Phase 6 Decisions
+- Withdraw implemented because DEVELOPMENT_PHASES lists it under Phase 6 (moved there in Phase 5 by user decision).
+- No application sort control (none specified); default order = most recent activity. Status filter = All + the 7 defined statuses with counts.
+- Saved jobs store only `{ studentId, jobId, savedAt }`; stale links are never auto-deleted and can be removed by the student.
+- Save/unsave/withdraw take the student from the session; the save toggle is shared (`components/save-button.js`, documented layer-rule exception).
+- Dashboard: no layout change — Saved jobs / Applications stats already read live data; quick actions and "View all" became links via `NAV_ITEMS`.
+
+### Phase 6 Validation
+- New suite `tracking-test`: **69/69** — save/unsave on Browse Jobs (record shape, toast, no navigation), idempotent save, persistence after reload, search still works, Job Details save + apply still works, Saved Jobs page order/count/cards, dashboard saved count, unsave on Saved page (focus management), pending job cannot be saved / expired can, missing & closed & expired saved jobs, corrupted records ignored, stale removal; two-student ownership for saved jobs; service refuses logged-out and recruiter; My Applications order, card content, filter counts and filtering, empty filter + Show all, timeline + notes + cover note, Withdraw only where allowed, no status controls, expired/closed/missing jobs kept as history, confirm → cancel → withdraw, history appended, UI updated, service refuses non-withdrawable / other student's application, withdrawn blocks re-applying, two-student ownership, URL id ignored, XSS via cover note/history note, empty state, dashboard links, recruiter/admin/anonymous blocked on both pages, 360/375/768/1024/1280 on both pages, no console errors.
+- Regression on the final code: Phase 1 42, auth 56, login 59, registration 57, navigation 79, guards 51, links 16, student dashboard 45, jobs 74, details 62, tracking 69 — **610/610 passed**. Four older checks updated for intended changes (dashboard quick actions / "View all" now links; Job Details Save is a real toggle).
+- Static: imports, HTML links, CSS tokens/braces, JSON, storage-access rule — clean; `git diff --check` clean. Screenshots checked (My Applications 1280, Saved Jobs 360).
+
+### Phase 6 Known Limitations
+- Headless Edge only (cross-browser in Phase 13).
+- Recruiter-side status changes (which fill the timeline further) arrive in Phase 8; notifications in Phase 10.
+
+## Phase 7 Checklist (complete)
+
+| ID | Task | Status |
+|---|---|---|
+| P7-T01 | `services/profile-service.js` (per-tab validation + save, resume upload/replace/remove/view, student from session); `user-service.updateStudentRecord` (only `name`, `phone`, `profile` writable); config `PROFILE_LIMITS`, `PROFILE_LINK_FIELDS`, `RESUME_MIME_TYPE`, `PAGE_PATHS.PROFILE` | ✅ |
+| P7-T02 | `components/tabs.js` (accessible tabs, URL hash) and `components/resume-sheet.js` (generated resume) | ✅ |
+| P7-T03 | Profile & Resume page (`pages/student/profile.html` + `profile.js`): summary, completeness, tabs Personal / Education / Skills / Projects & Links / Resume | ✅ |
+| P7-T04 | Resume: PDF ≤ 500 KB as Base64, view / download / replace / remove; printable A4 resume (`@media print`, `window.print()`) | ✅ |
+| P7-T05 | Integration: sidebar + user-menu Profile link available, navbar name refresh, Job Details "Upload one on your profile" link; validation, regression, documentation | ✅ |
+
+### Phase 7 Acceptance Criteria (DEVELOPMENT_PHASES.md)
+
+| Criterion | Result |
+|---|---|
+| All profile edits persist and update profile completeness on the dashboard | ✅ PASS (reload + dashboard checks) |
+| Non-PDF or oversize files are rejected with a clear message; quota errors handled | ✅ PASS (text/docx/png, 500 KB + 1 byte, empty file; simulated `QuotaExceededError` keeps the old resume) |
+| Generated resume prints cleanly on A4 | ✅ PASS (headless print-to-PDF: one A4 page, 595 × 842 pt, only the resume printed) |
+
+### Phase 7 Decisions
+- Fields are exactly PROJECT_SPEC §5.1 (no new schema fields). Email is read-only (login ID); password, role, status, id and createdAt are never editable here — enforced by a whitelist in `user-service.updateStudentRecord`.
+- Each tab has its own "Save changes" and saves only its section, so unsaved edits in other tabs are not lost or saved by accident.
+- Registration's rules are reused for name, phone, college, degree, branch, graduation year and CGPA. Limits that were not documented (text lengths, 5 entries, 30 skills, education year range) were chosen for localStorage size and recorded in PROJECT_SPEC §3.2 "Profile rules".
+- URLs must be http(s); profile links are displayed as plain text only (no clickable links from profile data).
+- `profile-service.js` is a new service because the student must come from `auth.getCurrentUser()`, and `user-service` cannot import `auth` (auth already imports user-service).
+- Resume size/type shown on the page are computed from the stored data URL (no extra stored fields). View/Download use a temporary `blob:` URL of the logged-in student's own file.
+- Printing the Profile page prints only the generated resume (print styles scoped to `.profile-page`).
+- No simulated delay on profile saves (the prompt asked not to simulate latency); saving is synchronous, so double submits cannot happen; resume upload disables its button while the file is read.
+
+### Phase 7 Validation
+- New suite `profile-test`: **127/127** — access control (logged out → login with returnTo, recruiter → own dashboard); page load, URL user ids ignored, tabs (keyboard arrows/Home/End, hash deep link, missing-item shortcuts); personal validation (required, 10-digit phone, length limits, blur + submit, first invalid focused, values preserved) and save (trimmed, protected fields unchanged, navbar/summary refresh, toast, no reload); service whitelist against tampered `role`/`status`/`email`/`id`/`password`/`resume`; persistence after reload; education (selects, CGPA, entry add/remove/renumber, required + year range, max 5); skills (Enter/Add, duplicates ignoring case, empty, length, max 30, remove with focus management, empty list, completeness); projects & links (javascript:/ftp:/no-protocol rejected, saved, completeness); resume (no file, non-PDF, .docx, 500 KB + 1 rejected, empty rejected, exact 500 KB accepted, metadata, completeness 100%, view/download blob URLs, identical bytes, invalid replacement keeps old, quota failure keeps old + retry, remove with confirm/cancel, corrupted data URL and bad Base64 handled); application integration (resume file name recorded, history untouched by removal, Job Details link + attached resume, apply via UI); dashboard completeness; two-student ownership (Priya vs Asha: profile, resume, saved jobs, applications, notifications); logged-out and recruiter refused by the services; XSS in name/location/about/skills rendered as text; printable resume content + print copy + `window.print()`; labels, error associations, required markers, tab ARIA, progress bar, heading levels; 360/375/768/1024/1280 with every tab; no console errors (the two intentional quota-simulation logs are expected).
+- Regression on the final code: Phase 1 42, auth 56, login 59, registration 57, navigation 79, guards 51, links 16, student dashboard 45, jobs 74, details 62, tracking 69 — **610/610 passed**. Three older checks updated for the intended change "Profile & Resume is now available" (navbar user-menu item, dashboard quick actions ×2).
+- Static: imports/exports (36 modules), HTML references (11 pages), CSS tokens/braces, JSON, storage-access rule, no `console.log`/`var`/`innerHTML` — clean; `git diff --check` clean. Screenshots checked (1280 Personal, 768 Education, 375 Resume, 360 Skills/Projects/Resume); A4 print verified as PDF.
+
+### Phase 7 Known Limitations
+- Headless Edge only (cross-browser in Phase 13). Print verified via Edge print-to-PDF, not on paper.
+- Resumes live in this browser's localStorage (≤ 500 KB each), so several large resumes can fill the ~5 MB quota; the page then shows "Browser storage is full" and keeps the previous data.
+- The session's stored `name` is not refreshed after a name change (nothing reads it; the navbar uses the user record).
+- A graduation year outside the registration range (current year −2 … +2) must be re-selected before the Education tab can be saved (same rule as registration).
+- Recruiters viewing a student's profile/resume arrives in Phase 8.
 
 ## Next Task
 
-**P4-T03** — re-run all 9 browser suites and the static checks on the final code; then mark Phase 4 complete (Phase 5 only after explicit approval).
+**Phase 8 — Recruiter Portal** (start only when the user explicitly approves).
 
 ## Known Issues / Open Questions
 
@@ -219,4 +327,8 @@ Task split note: the user defined P2-T02 as the login UI only, so registration m
 | 2026-09-29 | 2 | P2-T04: `components/sidebar.js` (role nav, path-based active item, Soon items, mobile drawer), `renderAppNavbar` in navbar.js (☰ toggle, logo, user menu, logout), nav icons, `keepFocusInside` exported from modal.js (modal uses it), app-shell/user-menu CSS in layout.css. ARCHITECTURE §1 notes the navbar's logout exception. |
 | 2026-09-29 | 2 | P2-T05: role dashboard shells, `components/app-shell.js`, `requireRole` / `redirectIfLoggedIn` / `getPostLoginPath(role, returnTo)` in auth.js, Dashboard nav items available, login notice replaced by redirect, landing/register redirect logged-in users. P2-T06: Login/Register links on landing navbar, hero, recruiter CTA and login page; `?role=` pre-select on register. ARCHITECTURE §1/§2/§5/§6 and README updated. **Phase 2 complete.** |
 | 2026-09-29 | 3 | Phase 3: student dashboard (stats, profile completeness, recent applications, recent updates, recommended jobs, quick actions); read-only application / saved-job / notification services; `getRecommendedJobs` + record hardening in job-service; `getProfileCompleteness` in user-service; `student.css`; job-card `note`. Docs: PROJECT_SPEC §3.2, UI_SPEC §5, ARCHITECTURE §7, README. **Phase 3 complete.** |
-| 2026-09-29 | 4 | Phase 4 implementation: Browse Jobs page (search, filters, sort, pagination, Show expired, filter drawer, tab persistence), `searchJobs` / `getJobFilterOptions` in job-service, `paginate` in utils, `components/pagination.js`, sidebar "Browse Jobs" available. Docs: PROJECT_SPEC §3.2, UI_SPEC §5, ARCHITECTURE §7, README. Final regression re-run pending (tooling issue). |
+| 2026-09-29 | 4 | Phase 4 implementation: Browse Jobs page (search, filters, sort, pagination, Show expired, filter drawer, tab persistence), `searchJobs` / `getJobFilterOptions` in job-service, `paginate` in utils, `components/pagination.js`, sidebar "Browse Jobs" available. Docs: PROJECT_SPEC §3.2, UI_SPEC §5, ARCHITECTURE §7, README. |
+| 2026-09-30 | 4 | P4-T03 re-run on final code: 479/479, static + `git diff --check` clean. **Phase 4 complete.** Phase 5 started (user-approved). |
+| 2026-09-30 | 5 | Phase 5: Job Details page + apply modal; application-service apply/eligibility; job-service `getVisibleJob`; "View details" links on job cards; withdraw moved to Phase 6 (user decision). Docs: DEVELOPMENT_PHASES, PROJECT_SPEC §3.2, UI_SPEC §5, ARCHITECTURE §7, README. 541/541. **Phase 5 complete.** |
+| 2026-09-30 | 6 | Phase 6: Saved Jobs page, My Applications page (filter, timeline, withdraw), shared save toggle, saved-job-service save/unsave, application-service withdraw, job-service availability; sidebar items available. Docs: PROJECT_SPEC §3.2, UI_SPEC §5, ARCHITECTURE §1/§2/§7, README. 610/610. **Phase 6 complete.** |
+| 2026-09-30 | 7 | Phase 7: Profile & Resume page (tabs, per-tab save, completeness, skills, education, projects & links, resume upload/view/download/replace/remove, printable A4 resume); profile-service, user-service `updateStudentRecord`, tabs + resume-sheet components; sidebar/user-menu Profile available; Job Details resume link. Docs: PROJECT_SPEC §3.2, UI_SPEC §5, ARCHITECTURE §2/§7, README. 737/737. **Phase 7 complete.** |

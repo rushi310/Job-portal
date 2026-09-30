@@ -42,6 +42,11 @@ export const PAGE_PATHS = Object.freeze({
   HOME: 'index.html',
   LOGIN: 'pages/auth/login.html',
   REGISTER: 'pages/auth/register.html',
+  JOBS: 'pages/student/jobs.html',
+  JOB_DETAILS: 'pages/student/job-details.html', // ?id=<jobId>
+  SAVED_JOBS: 'pages/student/saved-jobs.html',
+  APPLICATIONS: 'pages/student/applications.html',
+  PROFILE: 'pages/student/profile.html', // #resume opens the Resume tab
 });
 
 export const ROLES = Object.freeze({
@@ -158,6 +163,36 @@ export const PAY_RANGES = Object.freeze([
   { value: 'salary-4l-6l', label: 'Salary ₹4 – 6 LPA', period: 'year', min: 400000, max: 600000 },
   { value: 'salary-6l-plus', label: 'Salary ₹6 LPA+', period: 'year', min: 600000, max: Infinity },
 ]);
+
+/** Optional cover note on an application (PROJECT_SPEC.md §5.3). */
+export const COVER_NOTE_MAX_LENGTH = 1000;
+
+/**
+ * Student profile limits (PROJECT_SPEC.md §3.2 "Profile rules"). They keep one profile small enough
+ * for localStorage and make each text field's maximum visible to the student.
+ */
+export const PROFILE_LIMITS = Object.freeze({
+  SHORT_TEXT: 100, // name, location, college, branch, institute, project title
+  ABOUT: 1000,
+  SKILL: 40,
+  MAX_SKILLS: 30,
+  LEVEL: 50, // education level, e.g. "HSC"
+  SCORE: 20, // e.g. "86%" or "8.1 CGPA"
+  PROJECT_DESCRIPTION: 500,
+  MAX_EDUCATION: 5,
+  MAX_PROJECTS: 5,
+  MIN_EDUCATION_YEAR: 1980,
+});
+
+/** Profile links (PROJECT_SPEC.md §5.1 `links`) in display order. */
+export const PROFILE_LINK_FIELDS = Object.freeze([
+  { name: 'linkedin', label: 'LinkedIn' },
+  { name: 'github', label: 'GitHub' },
+  { name: 'portfolio', label: 'Portfolio' },
+]);
+
+/** Only PDF resumes are accepted (CODING_RULES.md §5). */
+export const RESUME_MIME_TYPE = 'application/pdf';
 
 /** Delay before a typed search runs (UI_SPEC: debounced search). */
 export const SEARCH_DEBOUNCE_MS = 300;

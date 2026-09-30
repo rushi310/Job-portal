@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your FreshHire profile and resume.">
+  <title>Profile &amp; Resume · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/student.css">
+
+  <script type="module" src="../../assets/js/pages/student/profile.js"></script>
+</head>
+<body class="profile-page">
+  <!-- Hidden until the page guard confirms a logged-in student (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1>Profile &amp; Resume</h1>
+            <p class="page-header__subtitle">Keep your details up to date. Recruiters see this profile when you apply.</p>
+          </div>
+        </header>
+
+        <div class="profile-overview">
+          <section class="card profile-summary" aria-labelledby="summary-title">
+            <h2 class="visually-hidden" id="summary-title">Profile summary</h2>
+            <div data-profile-summary></div>
+          </section>
+          <section class="card" aria-labelledby="completeness-title">
+            <h2 class="card__title" id="completeness-title">Profile complete: <span data-completeness-value></span></h2>
+            <div data-completeness></div>
+          </section>
+        </div>
+
+        <div class="card profile-tabs">
+          <div class="tabs" role="tablist" aria-label="Profile sections" data-profile-tabs>
+            <button class="tabs__tab" type="button" role="tab" id="tab-personal" aria-controls="personal">Personal</button>
+            <button class="tabs__tab" type="button" role="tab" id="tab-education" aria-controls="education">Education</button>
+            <button class="tabs__tab" type="button" role="tab" id="tab-skills" aria-controls="skills">Skills</button>
+            <button class="tabs__tab" type="button" role="tab" id="tab-projects" aria-controls="projects">Projects &amp; Links</button>
+            <button class="tabs__tab" type="button" role="tab" id="tab-resume" aria-controls="resume">Resume</button>
+          </div>
+
+          <!-- Personal -->
+          <section class="profile-panel" id="personal" role="tabpanel" aria-labelledby="tab-personal" hidden>
+            <form class="form" data-profile-form="personal" novalidate>
+              <h2 class="card__title">Personal information</h2>
+              <p class="form-hint">Fields marked <span aria-hidden="true">*</span><span class="visually-hidden">with an asterisk</span> are required.</p>
+              <div class="alert alert--danger" data-form-alert role="alert" tabindex="-1" hidden></div>
+
+              <div class="form-row form-row--2">
+                <div class="form-group">
+                  <label class="form-label" for="pf-name">Full name <span class="form-label__required" aria-hidden="true">*</span></label>
+                  <input class="form-control" id="pf-name" name="name" type="text" autocomplete="name" maxlength="100"
+                    required aria-describedby="pf-name-error">
+                  <p class="form-error" id="pf-name-error" hidden></p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="pf-email">Email address</label>
+                  <input class="form-control" id="pf-email" name="email" type="email" readonly aria-describedby="pf-email-hint">
+                  <p class="form-hint" id="pf-email-hint">Your email is your login ID and cannot be changed here.</p>
+                </div>
+              </div>
+
+              <div class="form-row form-row--2">
+                <div class="form-group">
+                  <label class="form-label" for="pf-phone">Phone number <span class="form-label__required" aria-hidden="true">*</span></label>
+                  <input class="form-control" id="pf-phone" name="phone" type="tel" autocomplete="tel-national"
+                    inputmode="numeric" maxlength="10" required aria-describedby="pf-phone-error">
+                  <p class="form-error" id="pf-phone-error" hidden></p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="pf-location">Location</label>
+                  <input class="form-control" id="pf-location" name="location" type="text" autocomplete="address-level2"
+                    maxlength="100" placeholder="e.g. Pune" aria-describedby="pf-location-error">
+                  <p class="form-error" id="pf-location-error" hidden></p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="pf-about">About you</label>
+                <textarea class="form-control" id="pf-about" name="about" rows="4" maxlength="1000"
+                  aria-describedby="pf-about-hint pf-about-error"></textarea>
+                <p class="form-hint" id="pf-about-hint">A short introduction, up to 1,000 characters.</p>
+                <p class="form-error" id="pf-about-error" hidden></p>
+              </div>
+
+              <div class="profile-form__actions">
+                <button class="btn btn--primary" type="submit">Save changes</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Education -->
+          <section class="profile-panel" id="education" role="tabpanel" aria-labelledby="tab-education" hidden>
+            <form class="form" data-profile-form="education" novalidate>
+              <h2 class="card__title">Education</h2>
+              <p class="form-hint">Your degree details are used to check job eligibility.</p>
+              <div class="alert alert--danger" data-form-alert role="alert" tabindex="-1" hidden></div>
+
+              <div class="form-row form-row--2">
+                <div class="form-group">
+                  <label class="form-label" for="pf-college">College <span class="form-label__required" aria-hidden="true">*</span></label>
+                  <input class="form-control" id="pf-college" name="college" type="text" maxlength="100" required
+                    aria-describedby="pf-college-error">
+                  <p class="form-error" id="pf-college-error" hidden></p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="pf-degree">Degree <span class="form-label__required" aria-hidden="true">*</span></label>
+                  <select class="form-control" id="pf-degree" name="degree" required aria-describedby="pf-degree-error"></select>
+                  <p class="form-error" id="pf-degree-error" hidden></p>
+                </div>
+              </div>
+
+              <div class="form-row form-row--2">
+                <div class="form-group">
+                  <label class="form-label" for="pf-branch">Branch / specialisation <span class="form-label__required" aria-hidden="true">*</span></label>
+                  <input class="form-control" id="pf-branch" name="branch" type="text" maxlength="100" required
+                    aria-describedby="pf-branch-error">
+                  <p class="form-error" id="pf-branch-error" hidden></p>
+                </div>
+                <div class="form-row form-row--2 profile-form__pair">
+                  <div class="form-group">
+                    <label class="form-label" for="pf-graduation-year">Graduation year <span class="form-label__required" aria-hidden="true">*</span></label>
+                    <select class="form-control" id="pf-graduation-year" name="graduationYear" required
+                      aria-describedby="pf-graduation-year-error"></select>
+                    <p class="form-error" id="pf-graduation-year-error" hidden></p>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="pf-cgpa">CGPA <span class="form-label__required" aria-hidden="true">*</span></label>
+                    <input class="form-control" id="pf-cgpa" name="cgpa" type="number" inputmode="decimal" min="0" max="10"
+                      step="0.01" required aria-describedby="pf-cgpa-error">
+                    <p class="form-error" id="pf-cgpa-error" hidden></p>
+                  </div>
+                </div>
+              </div>
+
+              <fieldset class="profile-entries">
+                <legend class="profile-entries__legend">School &amp; other education</legend>
+                <p class="form-hint">For example HSC, SSC or a diploma. Up to 5 entries.</p>
+                <div class="profile-entries__list" data-entry-list="education"></div>
+                <button class="btn btn--outline btn--sm" type="button" data-add-entry="education">+ Add education</button>
+              </fieldset>
+
+              <div class="profile-form__actions">
+                <button class="btn btn--primary" type="submit">Save changes</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Skills -->
+          <section class="profile-panel" id="skills" role="tabpanel" aria-labelledby="tab-skills" hidden>
+            <form class="form" data-profile-form="skills" novalidate>
+              <h2 class="card__title">Skills</h2>
+              <p class="form-hint">Skills are matched against job requirements for your recommendations. Up to 30 skills.</p>
+              <div class="alert alert--danger" data-form-alert role="alert" tabindex="-1" hidden></div>
+
+              <div class="form-group">
+                <label class="form-label" for="pf-new-skill">Add a skill</label>
+                <div class="skill-input">
+                  <input class="form-control" id="pf-new-skill" name="newSkill" type="text" maxlength="40"
+                    placeholder="e.g. JavaScript" autocomplete="off" aria-describedby="pf-new-skill-hint pf-new-skill-error">
+                  <button class="btn btn--secondary" type="button" data-add-skill>Add</button>
+                </div>
+                <p class="form-hint" id="pf-new-skill-hint">Press Enter or select Add. Each skill can be up to 40 characters.</p>
+                <p class="form-error" id="pf-new-skill-error" hidden></p>
+              </div>
+
+              <h3 class="profile-subtitle" id="skills-list-title">Your skills</h3>
+              <ul class="chip-list skill-list" data-skill-list aria-labelledby="skills-list-title"></ul>
+              <p class="visually-hidden" data-skill-status role="status" aria-live="polite"></p>
+
+              <div class="profile-form__actions">
+                <button class="btn btn--primary" type="submit">Save changes</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Projects & Links -->
+          <section class="profile-panel" id="projects" role="tabpanel" aria-labelledby="tab-projects" hidden>
+            <form class="form" data-profile-form="projects" novalidate>
+              <h2 class="card__title">Projects &amp; links</h2>
+              <div class="alert alert--danger" data-form-alert role="alert" tabindex="-1" hidden></div>
+
+              <fieldset class="profile-entries">
+                <legend class="profile-entries__legend">Projects</legend>
+                <p class="form-hint">Academic or personal projects. Up to 5 entries.</p>
+                <div class="profile-entries__list" data-entry-list="projects"></div>
+                <button class="btn btn--outline btn--sm" type="button" data-add-entry="projects">+ Add project</button>
+              </fieldset>
+
+              <fieldset class="profile-entries">
+                <legend class="profile-entries__legend">Profile links</legend>
+                <p class="form-hint">Optional. Links must start with https:// (or http://).</p>
+                <div class="form-row form-row--2" data-link-fields></div>
+              </fieldset>
+
+              <div class="profile-form__actions">
+                <button class="btn btn--primary" type="submit">Save changes</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Resume -->
+          <section class="profile-panel" id="resume" role="tabpanel" aria-labelledby="tab-resume" hidden>
+            <h2 class="card__title">Resume</h2>
+
+            <section class="profile-resume" aria-labelledby="resume-upload-title">
+              <h3 class="profile-subtitle" id="resume-upload-title" tabindex="-1">Uploaded resume (PDF)</h3>
+              <div data-resume-current></div>
+
+              <form class="form profile-resume__form" data-resume-form novalidate>
+                <div class="form-group">
+                  <label class="form-label" for="pf-resume-file" data-resume-file-label>Choose a PDF file</label>
+                  <input class="form-control" id="pf-resume-file" name="resumeFile" type="file" accept="application/pdf,.pdf"
+                    aria-describedby="pf-resume-file-hint pf-resume-file-error">
+                  <p class="form-hint" id="pf-resume-file-hint">PDF only, up to 500 KB. It is stored in this browser only.</p>
+                  <p class="form-error" id="pf-resume-file-error" hidden></p>
+                </div>
+                <div class="profile-form__actions">
+                  <button class="btn btn--primary" type="submit" data-resume-submit>Upload resume</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="profile-resume" aria-labelledby="resume-print-title">
+              <div class="profile-resume__head">
+                <div>
+                  <h3 class="profile-subtitle" id="resume-print-title">Printable resume</h3>
+                  <p class="form-hint">Built from your saved profile. Print it on A4 or choose "Save as PDF" in the print dialog.</p>
+                </div>
+                <button class="btn btn--outline" type="button" data-print-resume>Print resume</button>
+              </div>
+              <div class="resume-preview" data-resume-preview></div>
+            </section>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <!-- Copy of the generated resume that is the only thing printed from this page (student.css @media print) -->
+  <div class="resume-print" data-resume-print></div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

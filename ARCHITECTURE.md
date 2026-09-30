@@ -38,6 +38,7 @@
 - Exception: core `auth` uses `user-service` to look up accounts (user-service never imports auth, so there is no cycle).
 - Exception: the app navbar's Log out action calls `auth.logout()` and `storage.setFlash()` (it still never reads storage itself).
 - Exception: `components/app-shell.js` runs page start-up for protected pages (`ensureSeeded`, `auth.requireRole`, `storage.consumeFlash`).
+- Exception: `components/save-button.js` calls `saved-job-service` (save/unsave), so every page shares one save toggle.
 
 ## 2. Folder Structure
 
@@ -101,6 +102,7 @@ Job portal/                     (project root)
 │   │   │   └── utils.js            ids, dates, escapeHtml, validation, debounce, query params, paths
 │   │   ├── services/
 │   │   │   ├── user-service.js
+│   │   │   ├── profile-service.js  The logged-in student's own profile sections and resume (Phase 7)
 │   │   │   ├── job-service.js
 │   │   │   ├── application-service.js
 │   │   │   ├── saved-job-service.js
@@ -110,6 +112,9 @@ Job portal/                     (project root)
 │   │   │   ├── icons.js            Inline SVG icon set shared by components
 │   │   │   ├── form-field.js       Inline field errors, password toggle, loading button
 │   │   │   ├── app-shell.js        Protected-page start-up: seed → guard → navbar/sidebar/footer → flash
+│   │   │   ├── save-button.js      "♡ Save / ♥ Saved" toggle shared by job cards and Job Details
+│   │   │   ├── tabs.js             Accessible tabs (arrow keys, URL hash) — Profile, later Applicants
+│   │   │   ├── resume-sheet.js     Printable resume generated from a student profile
 │   │   │   ├── navbar.js           Top bar (logo, role menu, bell, user menu)
 │   │   │   ├── sidebar.js          Role-based side navigation
 │   │   │   ├── footer.js
@@ -245,6 +250,7 @@ Each HTML page loads exactly one script: `<script type="module" src="..."></scri
 | Service | Responsibilities |
 |---|---|
 | `user-service.js` | find/create/update users, email uniqueness, status changes, profile completeness |
+| `profile-service.js` | the logged-in student's profile edits (per tab, whitelisted fields, validation) and resume upload/replace/remove/view; student always from the session. Sits above `auth` and `user-service` so neither imports the other in a cycle |
 | `job-service.js` | CRUD jobs, search/filter/sort/paginate, approval, close, expiry check |
 | `application-service.js` | apply (with eligibility + duplicate checks), withdraw, status transitions, history |
 | `saved-job-service.js` | toggle/list saved jobs |
@@ -253,7 +259,7 @@ Each HTML page loads exactly one script: `<script type="module" src="..."></scri
 
 Services return plain objects/arrays or `{ ok: true, data }` / `{ ok: false, error }` for operations that can fail.
 
-Services are created with the read-only queries the current phase needs and grow in later phases (e.g. `application-service`, `saved-job-service` and `notification-service` were added in Phase 3 with read-only queries for the student dashboard; their write operations arrive in Phases 5, 6 and 10). There is no separate dashboard service: dashboard pages compose these services. Phase 4 added `searchJobs(criteria)` and `getJobFilterOptions()` to `job-service` (pure functions over derived arrays; stored jobs are never modified), `paginate()` to `utils.js`, and `components/pagination.js`.
+Services are created with the read-only queries the current phase needs and grow in later phases (e.g. `application-service`, `saved-job-service` and `notification-service` were added in Phase 3 with read-only queries for the student dashboard; their write operations arrive in Phases 5, 6 and 10). There is no separate dashboard service: dashboard pages compose these services. Phase 7 added `profile-service.js` (`updateProfileSection`, `validateProfileField`, `validateNewSkill`, `uploadResume`, `removeResume`, `getResumeInfo`, `getOwnResumeFile`; file reading uses the browser `FileReader`/`Blob` APIs, never the DOM), `updateStudentRecord` in `user-service` (only `name`, `phone`, `profile` can change), and `components/tabs.js` + `components/resume-sheet.js`. Phase 6 added `saveJob`, `unsaveJob`, `isJobSaved`, `getSavedJobsWithDetails` to `saved-job-service`, `canWithdraw` / `withdrawApplication` to `application-service`, `getJobAvailability` to `job-service`, and `components/save-button.js`; all writes take the student from the session. Phase 5 added `getVisibleJob(id)` to `job-service` and `checkEligibility`, `getApplyStatus`, `validateApplicationForm` and `applyToJob` to `application-service`; `applyToJob` takes the student from `auth.getCurrentUser()` (core), never from a parameter, and re-checks every rule before writing. Phase 4 added `searchJobs(criteria)` and `getJobFilterOptions()` to `job-service` (pure functions over derived arrays; stored jobs are never modified), `paginate()` to `utils.js`, and `components/pagination.js`.
 
 ## 8. Running the Project
 

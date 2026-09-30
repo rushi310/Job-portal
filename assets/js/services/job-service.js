@@ -27,6 +27,37 @@ export function getJobById(jobId) {
   return getAllJobs().find((job) => job.id === jobId) ?? null;
 }
 
+/**
+ * A job a student may open (BR-08): approved, expired or not. Anything else — missing id,
+ * unknown id, malformed record, pending/rejected/closed job — returns null ("Job not found").
+ * @param {string|null} jobId
+ * @returns {object|null}
+ */
+export function getVisibleJob(jobId) {
+  if (typeof jobId !== 'string' || jobId.trim() === '') return null;
+  const job = getJobById(jobId);
+  return job && job.status === JOB_STATUS.APPROVED ? job : null;
+}
+
+/** Availability of a job referenced by a saved job or an application. */
+export const JOB_AVAILABILITY = Object.freeze({
+  OPEN: 'open', // approved, deadline not passed
+  EXPIRED: 'expired', // approved, deadline passed
+  CLOSED: 'closed', // closed by the recruiter (BR-10)
+  UNAVAILABLE: 'unavailable', // deleted, or not approved (pending / rejected)
+});
+
+/**
+ * @param {object|null} job
+ * @returns {string} a JOB_AVAILABILITY value
+ */
+export function getJobAvailability(job) {
+  if (!job) return JOB_AVAILABILITY.UNAVAILABLE;
+  if (job.status === JOB_STATUS.CLOSED) return JOB_AVAILABILITY.CLOSED;
+  if (job.status !== JOB_STATUS.APPROVED) return JOB_AVAILABILITY.UNAVAILABLE;
+  return isJobExpired(job) ? JOB_AVAILABILITY.EXPIRED : JOB_AVAILABILITY.OPEN;
+}
+
 /** Expiry is computed from the deadline, never stored (BR-12). A missing/invalid deadline counts as expired. */
 export function isJobExpired(job) {
   if (Number.isNaN(parseDate(job.deadline).getTime())) return true;
