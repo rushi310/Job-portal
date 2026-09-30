@@ -1,8 +1,8 @@
 /**
  * navbar.js — Site headers.
  * - renderPublicNavbar: landing page (Phase 1).
- * - renderAppNavbar: logged-in pages — ☰ drawer toggle, logo, user menu with logout (P2-T04).
- *   The notification bell is added in Phase 10 (UI_SPEC.md §3.2).
+ * - renderAppNavbar: logged-in pages — ☰ drawer toggle, logo, notification bell with unread count
+ *   (Phase 10), user menu with logout (P2-T04).
  */
 
 import { PAGE_PATHS, ROLES, USER_STATUS } from '../core/config.js';
@@ -126,7 +126,7 @@ export function renderPublicNavbar(mountEl) {
 /** Profile page per role in the user menu (none for admin). Shown as "Soon" until built. */
 const PROFILE_MENU_ITEMS = {
   [ROLES.STUDENT]: { label: 'Profile & Resume', path: 'pages/student/profile.html', isAvailable: true },
-  [ROLES.RECRUITER]: { label: 'Company Profile', path: 'pages/recruiter/company-profile.html', isAvailable: false },
+  [ROLES.RECRUITER]: { label: 'Company Profile', path: 'pages/recruiter/company-profile.html', isAvailable: true },
 };
 
 function createElement(tag, className, text) {
@@ -242,10 +242,11 @@ function bindUserMenu(menuEl, buttonEl, panelEl) {
  * Replace a mount element with the logged-in app header.
  * @param {HTMLElement} mountEl
  * @param {object} user current user from auth.getCurrentUser()
- * @param {{ sidebar?: { bindToggle: Function } }} [options] sidebar controller from renderSidebar()
+ * @param {{ sidebar?: { bindToggle: Function }, unreadCount?: number }} [options] sidebar controller from
+ *   renderSidebar(); unread notifications of the user (app-shell reads it from notification-service)
  * @returns {HTMLElement}
  */
-export function renderAppNavbar(mountEl, user, { sidebar } = {}) {
+export function renderAppNavbar(mountEl, user, { sidebar, unreadCount = 0 } = {}) {
   const headerEl = createElement('header', 'app-header');
 
   const startEl = createElement('div', 'app-header__start');
@@ -262,11 +263,48 @@ export function renderAppNavbar(mountEl, user, { sidebar } = {}) {
   startEl.append(logoLinkEl);
 
   const endEl = createElement('div', 'app-header__end');
-  endEl.append(createUserMenu(user));
+  endEl.append(createBell(unreadCount), createUserMenu(user));
 
   headerEl.append(startEl, endEl);
   mountEl.replaceWith(headerEl);
   return headerEl;
+}
+
+/* ---------- Notification bell (Phase 10, UI_SPEC §3.2) ---------- */
+
+const bellLabel = (count) => (count > 0
+  ? `Notifications, ${count} unread` : 'Notifications, no unread notifications');
+
+function createBell(unreadCount) {
+  const linkEl = createElement('a', 'icon-btn notification-bell');
+  linkEl.href = toRoot(PAGE_PATHS.NOTIFICATIONS);
+  linkEl.dataset.notificationBell = '';
+  linkEl.append(createIcon('bell'));
+  const badgeEl = createElement('span', 'notification-bell__badge');
+  badgeEl.setAttribute('aria-hidden', 'true'); // the count is in the link's accessible name
+  linkEl.append(badgeEl);
+  setBadge(linkEl, unreadCount);
+  return linkEl;
+}
+
+function setBadge(linkEl, count) {
+  const safeCount = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+  const badgeEl = linkEl.querySelector('.notification-bell__badge');
+  badgeEl.textContent = safeCount > 99 ? '99+' : String(safeCount);
+  badgeEl.hidden = safeCount === 0;
+  linkEl.setAttribute('aria-label', bellLabel(safeCount));
+  if (linkEl.getAttribute('href') && window.location.pathname === new URL(linkEl.href).pathname) {
+    linkEl.setAttribute('aria-current', 'page');
+  }
+}
+
+/**
+ * Update the bell after notifications change on this page (e.g. "Mark all as read").
+ * @param {number} count unread notifications of the logged-in user
+ */
+export function setNotificationBadge(count) {
+  const linkEl = document.querySelector('[data-notification-bell]');
+  if (linkEl) setBadge(linkEl, count);
 }
 
 /**

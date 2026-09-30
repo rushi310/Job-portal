@@ -47,6 +47,15 @@ export const PAGE_PATHS = Object.freeze({
   SAVED_JOBS: 'pages/student/saved-jobs.html',
   APPLICATIONS: 'pages/student/applications.html',
   PROFILE: 'pages/student/profile.html', // #resume opens the Resume tab
+  POST_JOB: 'pages/recruiter/post-job.html', // ?id=<jobId> → edit mode
+  MY_JOBS: 'pages/recruiter/my-jobs.html',
+  APPLICANTS: 'pages/recruiter/applicants.html', // ?jobId=<jobId>
+  COMPANY_PROFILE: 'pages/recruiter/company-profile.html',
+  ADMIN_USERS: 'pages/admin/users.html', // ?role=&status= preselect the filters
+  ADMIN_JOBS: 'pages/admin/jobs.html', // ?status= preselects the filter
+  ANNOUNCEMENTS: 'pages/admin/announcements.html',
+  ADMIN_REPORTS: 'pages/admin/reports.html',
+  NOTIFICATIONS: 'pages/shared/notifications.html',
 });
 
 export const ROLES = Object.freeze({
@@ -193,6 +202,73 @@ export const PROFILE_LINK_FIELDS = Object.freeze([
 
 /** Only PDF resumes are accepted (CODING_RULES.md §5). */
 export const RESUME_MIME_TYPE = 'application/pdf';
+
+/** Company size choices on the company profile (the values used in the seed data). */
+export const COMPANY_SIZE_OPTIONS = Object.freeze(['1-10', '11-50', '51-200', '201-500', '500+']);
+
+/** Job posting limits (PROJECT_SPEC.md §3.3 "Job posting rules"). */
+export const JOB_LIMITS = Object.freeze({
+  TITLE: 100,
+  LOCATION: 100,
+  EXPERIENCE: 50,
+  DESCRIPTION: 2000,
+  RESPONSIBILITY: 200,
+  MAX_RESPONSIBILITIES: 10,
+  SKILL: 40,
+  MAX_SKILLS: 15,
+  MAX_OPENINGS: 1000,
+  MAX_SALARY: 100000000,
+});
+
+/** Notification types (PROJECT_SPEC.md §5.5). */
+export const NOTIFICATION_TYPES = Object.freeze({
+  APPLICATION: 'application', // new applicant → recruiter
+  STATUS: 'status', // application status change → student
+  JOB: 'job', // job approved / rejected → recruiter
+  ACCOUNT: 'account', // recruiter account approved → recruiter
+  ANNOUNCEMENT: 'announcement', // admin announcement → audience
+});
+
+/** Announcement audiences (PROJECT_SPEC.md §3.4) and the roles each one reaches. */
+export const ANNOUNCEMENT_AUDIENCES = Object.freeze([
+  { value: 'all', label: 'All users (students and recruiters)', roles: ['student', 'recruiter'] },
+  { value: 'students', label: 'All students', roles: ['student'] },
+  { value: 'recruiters', label: 'All recruiters', roles: ['recruiter'] },
+]);
+
+export const ANNOUNCEMENT_LIMITS = Object.freeze({ TITLE: 100, MESSAGE: 500 });
+
+/** Admin job rejection reason (BR-09: required). */
+export const REJECTION_REASON_MAX_LENGTH = 300;
+
+/**
+ * Recruiter status changes allowed from each application status (BR-15): one step forward
+ * or rejected. selected, rejected and withdrawn are final; withdrawing is the student's action.
+ */
+export const RECRUITER_STATUS_FLOW = Object.freeze({
+  applied: Object.freeze(['under_review', 'rejected']),
+  under_review: Object.freeze(['shortlisted', 'rejected']),
+  shortlisted: Object.freeze(['interview', 'rejected']),
+  interview: Object.freeze(['selected', 'rejected']),
+  selected: Object.freeze([]),
+  rejected: Object.freeze([]),
+  withdrawn: Object.freeze([]),
+});
+
+/** The forward stages of an application (BR-15), in order; used by the recruiter status funnel. */
+export const APPLICATION_PIPELINE = Object.freeze([
+  APPLICATION_STATUS.APPLIED,
+  APPLICATION_STATUS.UNDER_REVIEW,
+  APPLICATION_STATUS.SHORTLISTED,
+  APPLICATION_STATUS.INTERVIEW,
+  APPLICATION_STATUS.SELECTED,
+]);
+
+/**
+ * "Applications over time" (Phase 11): weekly points while the data spans at most this many weeks,
+ * monthly points beyond that, so the line never has hundreds of points.
+ */
+export const REPORT_MAX_WEEKLY_POINTS = 16;
 
 /** Delay before a typed search runs (UI_SPEC: debounced search). */
 export const SEARCH_DEBOUNCE_MS = 300;

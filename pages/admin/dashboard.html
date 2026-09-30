@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../../assets/css/layout.css">
   <link rel="stylesheet" href="../../assets/css/components.css">
   <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/admin.css">
 
   <script type="module" src="../../assets/js/pages/admin/dashboard.js"></script>
 </head>
@@ -32,9 +33,46 @@
           </div>
         </header>
 
-        <section class="card" aria-labelledby="overview-title">
-          <h2 class="card__title" id="overview-title">Your overview is coming soon</h2>
-          <p class="text-muted mt-2">Soon you will see platform totals and the accounts and jobs waiting for your approval here.</p>
+        <!-- Platform totals (PROJECT_SPEC §3.4): students, recruiters, jobs, applications -->
+        <section class="dashboard-section" aria-labelledby="stats-title">
+          <h2 class="visually-hidden" id="stats-title">Platform totals</h2>
+          <ul class="grid grid--4 dashboard-stats" role="list" data-stats></ul>
+        </section>
+
+        <section class="card dashboard-section" aria-labelledby="jobs-status-title">
+          <div class="card__header">
+            <h2 class="card__title" id="jobs-status-title">Jobs by status</h2>
+            <a class="text-sm" data-manage-jobs href="jobs.html">Manage jobs</a>
+          </div>
+          <ul class="status-totals" role="list" data-jobs-by-status></ul>
+        </section>
+
+        <div class="dashboard-grid">
+          <div class="dashboard-grid__main">
+            <section class="card dashboard-section" aria-labelledby="pending-recruiters-title">
+              <div class="card__header">
+                <h2 class="card__title" id="pending-recruiters-title">Recruiters awaiting approval</h2>
+                <a class="text-sm" href="users.html?role=recruiter&amp;status=pending">Review all</a>
+              </div>
+              <div data-pending-recruiters></div>
+            </section>
+          </div>
+          <div class="dashboard-grid__side">
+            <section class="card dashboard-section" aria-labelledby="pending-jobs-title">
+              <div class="card__header">
+                <h2 class="card__title" id="pending-jobs-title">Jobs awaiting approval</h2>
+                <a class="text-sm" href="jobs.html?status=pending">Review all</a>
+              </div>
+              <div data-pending-jobs></div>
+            </section>
+          </div>
+        </div>
+
+        <section class="card danger-zone" aria-labelledby="danger-title">
+          <h2 class="card__title" id="danger-title">Danger zone</h2>
+          <p class="danger-zone__text">Reset demo data replaces every account, job, application, saved job and notification
+            with the original demo data. Changes made in this browser are lost. You stay logged in.</p>
+          <button class="btn btn--danger" type="button" data-reset-demo>Reset demo data</button>
         </section>
       </main>
     </div>

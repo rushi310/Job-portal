@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your company profile on FreshHire.">
+  <title>Company Profile · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/recruiter.css">
+
+  <script type="module" src="../../assets/js/pages/recruiter/company-profile.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in recruiter (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1>Company Profile</h1>
+            <p class="page-header__subtitle">Students see your company name on every job you post.</p>
+          </div>
+        </header>
+
+        <div data-approval-banner></div>
+
+        <div class="recruiter-layout">
+          <section class="card company-summary" aria-labelledby="summary-title">
+            <h2 class="card__title" id="summary-title">Company summary</h2>
+            <div class="company-summary__body" data-company-summary></div>
+          </section>
+
+          <section class="card" aria-labelledby="form-title">
+            <form class="form" data-company-form novalidate>
+              <h2 class="card__title" id="form-title">Edit details</h2>
+              <p class="form-hint">Fields marked <span aria-hidden="true">*</span><span class="visually-hidden">with an asterisk</span> are required.</p>
+              <div class="alert alert--danger" data-form-alert role="alert" tabindex="-1" hidden></div>
+
+              <fieldset class="form-section">
+                <legend class="form-section__legend">Your contact details</legend>
+                <div class="form-row form-row--2">
+                  <div class="form-group">
+                    <label class="form-label" for="cp-name">Full name <span class="form-label__required" aria-hidden="true">*</span></label>
+                    <input class="form-control" id="cp-name" name="name" type="text" autocomplete="name" maxlength="100" required
+                      aria-describedby="cp-name-error">
+                    <p class="form-error" id="cp-name-error" hidden></p>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="cp-designation">Designation <span class="form-label__required" aria-hidden="true">*</span></label>
+                    <input class="form-control" id="cp-designation" name="designation" type="text" maxlength="100" required
+                      aria-describedby="cp-designation-error">
+                    <p class="form-error" id="cp-designation-error" hidden></p>
+                  </div>
+                </div>
+                <div class="form-row form-row--2">
+                  <div class="form-group">
+                    <label class="form-label" for="cp-email">Email address</label>
+                    <input class="form-control" id="cp-email" name="email" type="email" readonly aria-describedby="cp-email-hint">
+                    <p class="form-hint" id="cp-email-hint">Your email is your login ID and cannot be changed here.</p>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="cp-phone">Phone number <span class="form-label__required" aria-hidden="true">*</span></label>
+                    <input class="form-control" id="cp-phone" name="phone" type="tel" autocomplete="tel-national" inputmode="numeric"
+                      maxlength="10" required aria-describedby="cp-phone-error">
+                    <p class="form-error" id="cp-phone-error" hidden></p>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="form-section">
+                <legend class="form-section__legend">Company</legend>
+                <div class="form-row form-row--2">
+                  <div class="form-group">
+                    <label class="form-label" for="cp-company-name">Company name <span class="form-label__required" aria-hidden="true">*</span></label>
+                    <input class="form-control" id="cp-company-name" name="companyName" type="text" autocomplete="organization"
+                      maxlength="100" required aria-describedby="cp-company-name-hint cp-company-name-error">
+                    <p class="form-hint" id="cp-company-name-hint">Used on jobs you post from now on; existing jobs keep their name.</p>
+                    <p class="form-error" id="cp-company-name-error" hidden></p>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="cp-company-location">Company location <span class="form-label__required" aria-hidden="true">*</span></label>
+                    <input class="form-control" id="cp-company-location" name="companyLocation" type="text" maxlength="100" required
+                      aria-describedby="cp-company-location-error">
+                    <p class="form-error" id="cp-company-location-error" hidden></p>
+                  </div>
+                </div>
+                <div class="form-row form-row--2">
+                  <div class="form-group">
+                    <label class="form-label" for="cp-company-website">Website</label>
+                    <input class="form-control" id="cp-company-website" name="companyWebsite" type="url" inputmode="url"
+                      maxlength="200" placeholder="https://" aria-describedby="cp-company-website-error">
+                    <p class="form-error" id="cp-company-website-error" hidden></p>
+                  </div>
+                  <div class="form-row form-row--2 form-row--pair">
+                    <div class="form-group">
+                      <label class="form-label" for="cp-company-size">Company size</label>
+                      <select class="form-control" id="cp-company-size" name="companySize" aria-describedby="cp-company-size-error"></select>
+                      <p class="form-error" id="cp-company-size-error" hidden></p>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="cp-industry">Industry</label>
+                      <input class="form-control" id="cp-industry" name="industry" type="text" maxlength="100"
+                        aria-describedby="cp-industry-error">
+                      <p class="form-error" id="cp-industry-error" hidden></p>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="cp-about">About the company</label>
+                  <textarea class="form-control" id="cp-about" name="about" rows="4" maxlength="1000"
+                    aria-describedby="cp-about-hint cp-about-error"></textarea>
+                  <p class="form-hint" id="cp-about-hint">Up to 1,000 characters.</p>
+                  <p class="form-error" id="cp-about-error" hidden></p>
+                </div>
+              </fieldset>
+
+              <div class="form-actions">
+                <button class="btn btn--primary" type="submit">Save changes</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

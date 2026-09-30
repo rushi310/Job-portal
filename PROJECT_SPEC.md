@@ -72,6 +72,8 @@ Any user with status `blocked` cannot log in.
 | Notifications | 10 |
 | Job-level analytics (applicants per job, status funnel) | 11 |
 
+*Recruiter rules (Phase 8):* the recruiter is always the logged-in user (session); URL ids and form fields never decide ownership. A job belongs to `job.recruiterId`; an application belongs to the recruiter of its job (`application.jobId` → `job.recruiterId` — the copied `application.recruiterId` is not trusted). **Pending recruiters** can log in, see the approval banner and edit their company profile, but cannot post, edit or close jobs or open applicants (BR-07); blocked recruiters cannot log in. **Dashboard stats:** Active jobs = own `approved`, non-expired jobs; Total applicants = all applications to own jobs (any status); Shortlisted = those currently `shortlisted`; Pending approval = own `pending` jobs; recent applicants = 5 newest by application date. **Job posting rules:** title (required, ≤ 100), location (required, ≤ 100), job type, work mode, experience (required, ≤ 50, e.g. "Fresher"), openings (1–1,000), deadline (today or later), pay period (internships must be per month), pay min/max in whole rupees (both empty = "Not disclosed"; max ≥ min; only min = fixed amount), description (required, ≤ 2,000), up to 10 responsibilities (≤ 200 each), 1–15 skills (≤ 40, no duplicates ignoring case), eligibility degrees from the degree list, graduation years, minimum CGPA 0–10 (all optional = open to all). The company name is copied from the recruiter's profile when the job is created and is not changed by later edits. New jobs are `pending` (BR-08) and a preview is shown before submitting. **Editing:** only own `pending` or `approved` jobs; `rejected` and `closed` jobs are final for the recruiter; id, owner, company, status, posting date and rejection reason are kept; editing a core field (title, description, eligibility, salaryMin/salaryMax/salaryPeriod) of an `approved` job returns it to `pending` (BR-11). A recruiter can never set `approved`. **Closing:** own `approved` jobs only, with confirmation; applications are kept (BR-10). There is no recruiter delete (deleting jobs is an admin action, Phase 9). **Application status:** from each status the recruiter may choose only the next step or `rejected` (`applied → under_review → shortlisted → interview → selected`); `selected` and `rejected` need a confirmation and are final; `withdrawn` applications cannot be changed. Every change appends `{ status, at, note: "" }` to `statusHistory` (BR-16). **Candidate data:** name, email, phone and profile (education, skills, projects, links, about) of applicants to own jobs only — never the password, account status or dates; the resume file is opened only through the application (own job), as a temporary `blob:` URL. **Company profile:** name, phone, company name, designation, website (http/https only, shown as a link that opens in a new tab), company location, company size (1-10, 11-50, 51-200, 201-500, 500+), industry (≤ 100) and about (≤ 1,000); email, role, status, password, id and createdAt cannot change.
+
 ### 3.4 Admin
 | Feature | Phase |
 |---|---|
@@ -79,6 +81,8 @@ Any user with status `blocked` cannot log in.
 | Manage users: search, filter by role/status, approve recruiters, block/unblock, delete | 9 |
 | Moderate jobs: approve / reject (with reason) / delete | 9 |
 | Reset demo data to seed state (with confirmation) | 9 |
+
+*Admin rules (Phase 9):* every admin action takes the admin from the session and is refused for any other role. **Dashboard totals:** students, recruiters, jobs (and jobs per status), applications, all counted from stored data; quick lists of pending recruiters and pending jobs link to Users / Jobs. **Users:** search (name, email, company) and role/status filters. Actions per account — pending recruiter: Approve (→ `active`) or Delete; `active`: Block (→ `blocked`) or Delete; `blocked`: Unblock (→ `active`) or Delete. Admin accounts (including the admin's own) have no actions (BR-06: admins are seed-only). Delete removes the account and its related data: a student's applications, saved jobs and notifications; a recruiter's jobs, every application and saved link for those jobs, and their notifications. Passwords are never shown. **Jobs:** status filter; View shows the full job; Approve / Reject only for `pending` jobs (BR-09); Reject needs a reason (1–300 characters) that the recruiter sees on My Jobs; Delete removes only the job — its applications and saved links stay as history ("Job no longer available", as in §3.2). Approving keeps the owner, company and every recruiter-entered field. **Confirmation** is required for Block, Delete (users and jobs), Reject (reason dialog) and Reset demo data. **Reset demo data** reloads the seed files first, then replaces all `fh_` data (BR-20); the admin stays logged in.
 | Send announcements (to all users, all students, or all recruiters) | 10 |
 | Reports page: charts and tables; export a report as CSV (client-side download) | 11 |
 
@@ -145,8 +149,8 @@ All IDs are strings: a prefix + base-36 timestamp + random suffix (e.g. `job_lx2
 {
   "id": "usr_...",
   "role": "student | recruiter | admin",
-  "name": "Asha Patil",
-  "email": "asha@example.com",
+  "name": "Rishita Kadam",
+  "email": "rishu@example.com",
   "password": "Student@123",
   "phone": "9876543210",
   "status": "active | pending | blocked",
@@ -256,7 +260,7 @@ Internships use `salaryPeriod: "month"` (stipend). Amounts are in INR.
 
 ### 5.6 Session (`fh_session` in `sessionStorage`)
 ```json
-{ "userId": "usr_...", "role": "student", "name": "Asha Patil", "loginAt": "" }
+{ "userId": "usr_...", "role": "student", "name": "Rishita Kadam", "loginAt": "" }
 ```
 
 ## 6. Demo Credentials (seeded)

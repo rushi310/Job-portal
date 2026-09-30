@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Manage FreshHire users.">
+  <title>Users · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/admin.css">
+
+  <script type="module" src="../../assets/js/pages/admin/users.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in admin (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1>Users</h1>
+            <p class="page-header__subtitle">Approve recruiters, block or unblock accounts, and delete users.</p>
+          </div>
+        </header>
+
+        <form class="card admin-filters" data-user-filters role="search" aria-label="Filter users" novalidate>
+          <div class="form-group admin-filters__search">
+            <label class="form-label" for="au-query">Search</label>
+            <input class="form-control" id="au-query" name="query" type="search" placeholder="Name, email or company"
+              autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="au-role">Role</label>
+            <select class="form-control" id="au-role" name="role"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="au-status">Status</label>
+            <select class="form-control" id="au-status" name="status"></select>
+          </div>
+        </form>
+
+        <section aria-labelledby="users-list-title">
+          <h2 class="visually-hidden" id="users-list-title">User list</h2>
+          <p class="list-count" data-users-count role="status" aria-live="polite" tabindex="-1"></p>
+          <div data-users-list></div>
+        </section>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

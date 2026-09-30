@@ -1,15 +1,18 @@
 /**
- * profile-service.js — The logged-in student's own profile and resume (Phase 7).
- * The student is always taken from the session (getCurrentUser); pages never pass a user id.
+ * profile-service.js — The logged-in user's own profile: student profile and resume (Phase 7),
+ * recruiter company profile (Phase 8).
+ * The user is always taken from the session (getCurrentUser); pages never pass a user id.
  * Each Profile tab saves one section, and only that section's fields change (user-service.js
  * keeps id, role, email, password, status and createdAt untouched).
  */
 
 import {
-  ROLES, PROFILE_LIMITS, PROFILE_LINK_FIELDS, MAX_RESUME_SIZE, RESUME_MIME_TYPE,
+  ROLES, PROFILE_LIMITS, PROFILE_LINK_FIELDS, MAX_RESUME_SIZE, RESUME_MIME_TYPE, COMPANY_SIZE_OPTIONS,
 } from '../core/config.js';
 import { getCurrentUser } from '../core/auth.js';
-import { validateRegistrationField, updateStudentRecord, isValidUrl } from './user-service.js';
+import {
+  validateRegistrationField, updateStudentRecord, updateRecruiterRecord, isValidUrl,
+} from './user-service.js';
 
 /** The editable sections, one per Profile tab (the Resume tab uses uploadResume/removeResume). */
 export const PROFILE_SECTIONS = Object.freeze({
@@ -375,8 +378,18 @@ export function getOwnResumeFile() {
   const resume = student.profile?.resume;
   if (!resume) return failure(PROFILE_ERRORS.NO_RESUME, 'You have not uploaded a resume yet.');
 
-  const corrupted = failure(PROFILE_ERRORS.CORRUPTED_RESUME,
-    'Your saved resume file is damaged and cannot be opened. Please upload it again.');
+  return decodeResumeFile(resume, 'Your saved resume file is damaged and cannot be opened. Please upload it again.');
+}
+
+/**
+ * Turn a stored `profile.resume` into a PDF Blob. Callers must have checked who may open it
+ * (the student themself, or — in application-service — the recruiter of a job they applied to).
+ * @param {object} resume
+ * @param {string} [damagedMessage]
+ * @returns {{ ok: true, data: { blob: Blob, fileName: string } } | { ok: false, code: string, error: string }}
+ */
+export function decodeResumeFile(resume, damagedMessage = 'This resume file is damaged and cannot be opened.') {
+  const corrupted = failure(PROFILE_ERRORS.CORRUPTED_RESUME, damagedMessage);
   if (!isStoredResumeValid(resume)) return corrupted;
   try {
     const binary = atob(resume.dataUrl.slice(PDF_DATA_URL_PREFIX.length));
@@ -385,4 +398,65 @@ export function getOwnResumeFile() {
   } catch {
     return corrupted;
   }
+}
+
+/* ==========================================================================
+   Recruiter company profile (Phase 8) — PROJECT_SPEC.md §5.1 "Recruiter profile"
+   ========================================================================== */
+
+/** Editable fields on Company Profile: contact (user) fields + the recruiter `profile` fields. */
+export const COMPANY_PROFILE_FIELDS = Object.freeze([
+  'name', 'phone', 'companyName', 'designation', 'companyWebsite', 'companyLocation',
+  'companySize', 'industry', 'about',
+]);
+
+const COMPANY_FIELD_RULES = {
+  name: FIELD_RULES.name,
+  phone: FIELD_RULES.phone,
+  companyName: (value) => firstError(registrationRule('companyName')(value), tooLong('Company name', PROFILE_LIMITS.SHORT_TEXT)(value)),
+  designation: (value) => firstError(registrationRule('designation')(value), tooLong('Designation', PROFILE_LIMITS.SHORT_TEXT)(value)),
+  companyWebsite: (value) => firstError(registrationRule('companyWebsite')(value), tooLong('Website', PROFILE_LIMITS.SHORT_TEXT * 2)(value)),
+  companyLocation: (value) => firstError(registrationRule('companyLocation')(value), tooLong('Company location', PROFILE_LIMITS.SHORT_TEXT)(value)),
+  companySize: (value) => (!text(value) || COMPANY_SIZE_OPTIONS.includes(value) ? '' : 'Please choose a company size from the list.'),
+  industry: tooLong('Industry', PROFILE_LIMITS.SHORT_TEXT),
+  about: tooLong('About the company', PROFILE_LIMITS.ABOUT),
+};
+
+/** @returns {string} error message, or '' when valid */
+export function validateCompanyField(field, value) {
+  const rule = COMPANY_FIELD_RULES[field];
+  return rule ? rule(value) : '';
+}
+
+/**
+ * Save the logged-in recruiter's contact and company details. Pending recruiters may do this too
+ * (it does not post anything); id, role, email, password, status and createdAt never change.
+ * @param {object} values form values
+ * @returns {{ ok: true, data: object }
+ *   | { ok: false, code: string, error: string, fieldErrors?: Object<string, string> }} data = updated user
+ */
+export function updateCompanyProfile(values = {}) {
+  const recruiter = getCurrentUser();
+  if (recruiter?.role !== ROLES.RECRUITER) {
+    return failure(PROFILE_ERRORS.NOT_ALLOWED, 'Please log in as a recruiter to edit the company profile.');
+  }
+
+  const fieldErrors = COMPANY_PROFILE_FIELDS.reduce((errors, field) => {
+    const message = validateCompanyField(field, values[field]);
+    return message ? { ...errors, [field]: message } : errors;
+  }, {});
+  if (Object.keys(fieldErrors).length > 0) {
+    return failure(PROFILE_ERRORS.VALIDATION_FAILED, 'Please correct the highlighted fields.', { fieldErrors });
+  }
+
+  const profileFields = COMPANY_PROFILE_FIELDS.filter((field) => field !== 'name' && field !== 'phone');
+  const saved = updateRecruiterRecord(recruiter.id, {
+    name: text(values.name),
+    phone: text(values.phone),
+    profile: {
+      ...(recruiter.profile ?? {}),
+      ...Object.fromEntries(profileFields.map((field) => [field, text(values[field])])),
+    },
+  });
+  return saved.ok ? { ok: true, data: saved.data } : failure(PROFILE_ERRORS.STORAGE_ERROR, saved.error);
 }

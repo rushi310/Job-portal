@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Send FreshHire announcements.">
+  <title>Announcements · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/admin.css">
+
+  <script type="module" src="../../assets/js/pages/admin/announcements.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in admin (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1>Announcements</h1>
+            <p class="page-header__subtitle">Send a message to every student, every recruiter, or both. It arrives in their notifications.</p>
+          </div>
+        </header>
+
+        <div class="announcements-layout">
+          <section class="card" aria-labelledby="compose-title">
+            <form class="form" data-announcement-form novalidate>
+              <h2 class="card__title" id="compose-title">New announcement</h2>
+              <p class="form-hint">All fields are required.</p>
+              <div class="alert alert--danger" data-form-alert role="alert" tabindex="-1" hidden></div>
+
+              <div class="form-group">
+                <label class="form-label" for="an-audience">Send to <span class="form-label__required" aria-hidden="true">*</span></label>
+                <select class="form-control" id="an-audience" name="audience" required aria-describedby="an-audience-hint an-audience-error"></select>
+                <p class="form-hint" id="an-audience-hint">Blocked accounts do not receive announcements.</p>
+                <p class="form-error" id="an-audience-error" hidden></p>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="an-title">Title <span class="form-label__required" aria-hidden="true">*</span></label>
+                <input class="form-control" id="an-title" name="title" type="text" maxlength="100" required
+                  aria-describedby="an-title-error">
+                <p class="form-error" id="an-title-error" hidden></p>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="an-message">Message <span class="form-label__required" aria-hidden="true">*</span></label>
+                <textarea class="form-control" id="an-message" name="message" rows="5" maxlength="500" required
+                  aria-describedby="an-message-hint an-message-error"></textarea>
+                <p class="form-hint" id="an-message-hint">Up to 500 characters.</p>
+                <p class="form-error" id="an-message-error" hidden></p>
+              </div>
+              <div>
+                <button class="btn btn--primary" type="submit">Send announcement</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="card" aria-labelledby="sent-title">
+            <h2 class="card__title" id="sent-title">Sent announcements</h2>
+            <p class="list-count" data-sent-count role="status" aria-live="polite" tabindex="-1"></p>
+            <div data-sent-list></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Applicants for your job on FreshHire.">
+  <title>Applicants · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/recruiter.css">
+
+  <script type="module" src="../../assets/js/pages/recruiter/applicants.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in recruiter (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <a class="btn btn--ghost btn--sm mb-4" href="my-jobs.html" data-icon-before="arrowLeft">Back to My Jobs</a>
+        <header class="page-header">
+          <div>
+            <h1>Applicants</h1>
+            <p class="page-header__subtitle" data-job-subtitle>Review applications and move candidates forward.</p>
+          </div>
+        </header>
+
+        <div data-approval-banner></div>
+        <div data-page-message></div>
+
+        <div data-applicants-content hidden>
+          <section class="card job-summary" aria-labelledby="job-summary-title">
+            <h2 class="card__title" id="job-summary-title" data-job-title></h2>
+            <div data-job-summary></div>
+          </section>
+
+          <section class="applicants-section" aria-labelledby="applicants-list-title">
+            <h2 class="section-title" id="applicants-list-title">Applicants</h2>
+            <p class="list-count" data-applicants-count role="status" aria-live="polite" tabindex="-1"></p>
+            <div data-applicants-list></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

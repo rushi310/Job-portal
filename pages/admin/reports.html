@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FreshHire platform reports.">
+  <title>Reports · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/admin.css">
+
+  <script type="module" src="../../assets/js/pages/admin/reports.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in admin (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1>Reports</h1>
+            <p class="page-header__subtitle">Platform figures calculated from the data stored in this browser.
+              Each chart has a table with the same numbers, and every report can be exported as a CSV file.</p>
+          </div>
+        </header>
+
+        <!-- UI_SPEC §5 "Reports": users by role, jobs by status, applications by status, applications over time -->
+        <div class="reports-grid">
+          <section class="card report-card" aria-labelledby="report-users-by-role-title" data-report="users-by-role">
+            <div class="card__header">
+              <h2 class="card__title" id="report-users-by-role-title">Users by role</h2>
+              <button class="btn btn--outline btn--sm" type="button" data-export="users-by-role">
+                Export CSV<span class="visually-hidden"> of users by role</span></button>
+            </div>
+            <p class="chart-summary" data-summary></p>
+            <div data-chart></div>
+            <div data-table></div>
+          </section>
+
+          <section class="card report-card" aria-labelledby="report-jobs-by-status-title" data-report="jobs-by-status">
+            <div class="card__header">
+              <h2 class="card__title" id="report-jobs-by-status-title">Jobs by status</h2>
+              <button class="btn btn--outline btn--sm" type="button" data-export="jobs-by-status">
+                Export CSV<span class="visually-hidden"> of jobs by status</span></button>
+            </div>
+            <p class="chart-summary" data-summary></p>
+            <div data-chart></div>
+            <div data-table></div>
+          </section>
+
+          <section class="card report-card" aria-labelledby="report-applications-by-status-title"
+            data-report="applications-by-status">
+            <div class="card__header">
+              <h2 class="card__title" id="report-applications-by-status-title">Applications by status</h2>
+              <button class="btn btn--outline btn--sm" type="button" data-export="applications-by-status">
+                Export CSV<span class="visually-hidden"> of applications by status</span></button>
+            </div>
+            <p class="chart-summary" data-summary></p>
+            <div data-chart></div>
+            <div data-table></div>
+          </section>
+
+          <section class="card report-card report-card--wide" aria-labelledby="report-applications-over-time-title"
+            data-report="applications-over-time">
+            <div class="card__header">
+              <h2 class="card__title" id="report-applications-over-time-title">Applications over time</h2>
+              <button class="btn btn--outline btn--sm" type="button" data-export="applications-over-time">
+                Export CSV<span class="visually-hidden"> of applications over time</span></button>
+            </div>
+            <p class="chart-summary" data-summary></p>
+            <div data-chart></div>
+            <div data-table></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

@@ -1,13 +1,14 @@
 /**
  * dashboard.js — Student dashboard (Phase 3; UI_SPEC.md §5 "Student Dashboard").
  * Read-only overview built from the logged-in student's own data: stat cards, profile completeness,
- * recent applications, recent updates, recommended jobs, and quick actions.
+ * recent applications, application status breakdown (Phase 11), recent updates, recommended jobs,
+ * and quick actions.
  * All data comes from services; all text is inserted with textContent (no HTML from data).
  */
 
 import { ROLES, APPLICATION_STATUS } from '../../core/config.js';
 import {
-  toRoot, getLabel, formatDate, formatRelativeTime,
+  toRoot, getLabel, formatDate, formatRelativeTime, pluralize,
 } from '../../core/utils.js';
 import { initProtectedPage } from '../../components/app-shell.js';
 import { NAV_ITEMS } from '../../components/sidebar.js';
@@ -19,6 +20,8 @@ import { getApplicationsByStudent, countApplicationsByStatus } from '../../servi
 import { getSavedJobsByStudent } from '../../services/saved-job-service.js';
 import { getNotificationsForUser, countUnread } from '../../services/notification-service.js';
 import { getJobById, getRecommendedJobs, isJobExpired } from '../../services/job-service.js';
+import { getStudentStatusBreakdown } from '../../services/analytics-service.js';
+import { renderBarChart } from '../../components/charts.js';
 
 const RECENT_APPLICATIONS_LIMIT = 5;
 const RECENT_UPDATES_LIMIT = 3;
@@ -223,6 +226,19 @@ function renderRecommended(containerEl, user, applications) {
   })));
 }
 
+/** Phase 11: how many of the student's applications are in each status (bars + text values). */
+function renderStatusBreakdown(containerEl) {
+  const breakdown = getStudentStatusBreakdown() ?? { total: 0, items: [] };
+  const summaryEl = $('[data-status-summary]');
+  summaryEl.textContent = breakdown.total === 0 ? ''
+    : `Where your ${pluralize(breakdown.total, 'application')} stand now. Percentages are of all your applications.`;
+  summaryEl.hidden = breakdown.total === 0;
+  renderBarChart(containerEl, {
+    items: breakdown.items,
+    empty: { title: 'Nothing to show yet', message: 'Apply to a job to see how your applications progress.' },
+  });
+}
+
 function renderQuickActions(listEl) {
   listEl.replaceChildren(...QUICK_ACTION_PATHS.map((path) => {
     const itemEl = createElement('li');
@@ -255,6 +271,7 @@ async function init() {
   renderSection($('[data-stats]'), (el) => renderStats(el, { applications, savedCount, completeness }));
   renderSection($('[data-profile]'), (el) => renderProfile(el, completeness));
   renderSection($('[data-applications]'), (el) => renderApplications(el, applications));
+  renderSection($('[data-status-chart]'), renderStatusBreakdown);
   renderSection($('[data-notifications]'), (el) => renderNotifications(el, notifications));
   renderSection($('[data-recommended]'), (el) => renderRecommended(el, user, applications));
   renderSection($('[data-quick-actions]'), renderQuickActions);

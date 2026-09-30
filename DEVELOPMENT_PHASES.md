@@ -169,6 +169,7 @@ File paths below refer to the structure in `ARCHITECTURE.md`.
 - `user-service.js`: approve recruiter, block/unblock, delete (with cleanup of related jobs/applications/saved jobs).
 - `job-service.js`: approve, reject with reason, delete.
 - "Reset demo data" in the dashboard danger zone (BR-20).
+- *Implementation note (Phase 9):* the user and job admin operations above live in `services/admin-service.js`, because they must read the admin from the session (`auth` already imports `user-service`, so `user-service` cannot import `auth`) and a user delete writes several collections. `user-service` / `job-service` keep their existing roles.
 
 **Acceptance criteria**
 - Admin cannot block or delete their own account.
@@ -185,6 +186,7 @@ File paths below refer to the structure in `ARCHITECTURE.md`.
 - `notification-service.js`; bell with unread count in the navbar; `pages/shared/notifications.html` + script.
 - `pages/admin/announcements.html` + script.
 - Notification creation added to existing actions (events in `PROJECT_SPEC.md` §4.5).
+- *Implementation note (Phase 10):* notifications are created inside the service operations that change state (`applyToJob`, `updateApplicationStatus`, `approveRecruiter`, `approveJob`, `rejectJob`, `sendAnnouncement`), only after that change is saved — never while a page renders, so reloads cannot create duplicates. A student's own withdrawal creates no notification (§4.5 lists recruiter-driven status changes only). Announcements reach every non-blocked account of the chosen audience (all users = students + recruiters) and have no link; the "sent announcements" list is rebuilt from the announcement notifications (no new storage key). The bell's unread count is read by `components/app-shell.js` and passed to the navbar.
 
 **Acceptance criteria**
 - Each event in §4.5 creates a notification for the correct recipient(s).
@@ -201,6 +203,7 @@ File paths below refer to the structure in `ARCHITECTURE.md`.
 - `analytics-service.js`.
 - Student dashboard: application status breakdown. Recruiter dashboard: applicants per job, status funnel.
 - `pages/admin/reports.html` + script: users by role, jobs by status, applications by status, applications over time; tables; CSV export (Blob download).
+- *Implementation note (Phase 11):* all counts are calculated on demand in `analytics-service.js` from the stored records (no stored analytics), and each role's scope comes from the session: a student's own applications; a recruiter's own jobs and the applications to them (ownership `application.jobId` → `job.recruiterId`; pending recruiters get none, as on the Applicants page); every record for the admin. The status funnel counts the applications that *reached* each forward stage (current status + status history), so a rejected or withdrawn application still counts for the stages it passed. Charts are SVG with HTML labels (`components/charts.js`): a donut for users by role (3 roles), labelled bars for the status breakdowns, applicants per job and the funnel (every bar shows its value as text), and a line for applications over time (weekly up to 16 weeks, then monthly; missing / pre-2000 / future dates are listed separately, not plotted). Percentages are whole numbers of the report's total (0 when the total is 0). No filters are specified, so none were added. Each report has its own "Export CSV" (UTF-8 with BOM, CRLF, formula-like text prefixed with `'`).
 
 **Acceptance criteria**
 - Chart values match the underlying data.

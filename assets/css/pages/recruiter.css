@@ -1,0 +1,311 @@
+/* recruiter.css — Recruiter pages (Phase 8): dashboard, post / edit job, my jobs, applicants, company profile. */
+
+/* ---------- Shared bits ---------- */
+.approval-banner {
+  display: block;
+  margin-bottom: var(--space-5);
+}
+
+.section-title {
+  margin-bottom: var(--space-2);
+  font-size: var(--fs-lg);
+}
+
+/* ---------- Forms ---------- */
+.form-section {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+/* Spacing only: a border on a fieldset would be drawn beside its legend. */
+.form-section + .form-section {
+  margin-top: var(--space-3);
+}
+
+.form-section__legend {
+  padding: 0;
+  margin-bottom: var(--space-1);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+}
+
+@media (min-width: 576px) {
+  .form-row--pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .form-row--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.form-control--sm {
+  width: auto;
+  min-height: 34px;
+  padding-block: var(--space-1);
+  font-size: var(--fs-sm);
+}
+
+/* Company profile */
+.recruiter-layout {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (min-width: 1280px) {
+  .recruiter-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+}
+
+.company-summary__body {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.company-summary__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.company-summary__name {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  overflow-wrap: anywhere;
+}
+
+.company-summary__meta,
+.company-summary__about {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Post / edit job */
+.job-form {
+  max-width: 960px;
+}
+
+.job-form__cgpa {
+  max-width: 220px;
+}
+
+.chip-input {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.chip-input .form-control {
+  flex: 1;
+  min-width: 0;
+}
+
+.chip--removable {
+  padding-block: var(--space-1);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: var(--fs-base);
+  line-height: 1;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-full);
+}
+
+.chip__remove:hover {
+  color: var(--color-danger-text);
+  background-color: var(--color-danger-light);
+}
+
+.chip-list__empty {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.choice-group {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.choice-group__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.choice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.choice input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+.job-preview {
+  display: grid;
+  gap: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.job-preview__title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.job-preview__meta,
+.job-preview__text,
+.job-preview__list {
+  font-size: var(--fs-sm);
+}
+
+.job-preview__meta {
+  color: var(--color-text-muted);
+}
+
+.job-preview__list {
+  padding-left: var(--space-5);
+  list-style: disc;
+}
+
+/* ---------- Tables (My Jobs, Applicants) ---------- */
+.status-control {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.status-control__final {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.job-summary {
+  margin-bottom: var(--space-6);
+}
+
+.job-summary .card__title {
+  margin-bottom: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Candidate dialog ---------- */
+.candidate {
+  display: grid;
+  gap: var(--space-5);
+  overflow-wrap: anywhere;
+}
+
+.candidate__section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.candidate__section + .candidate__section {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.candidate__heading {
+  font-size: var(--fs-base);
+}
+
+.candidate__subheading {
+  font-size: var(--fs-sm);
+}
+
+.candidate__note {
+  font-size: var(--fs-sm);
+  white-space: pre-line;
+}
+
+.candidate__resume {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+}
+
+.candidate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* The student's profile inside the dialog uses the resume layout (components/resume-sheet.js). */
+.candidate .resume-sheet {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+}
+
+.candidate .resume-sheet__name {
+  font-size: var(--fs-base);
+}
+
+.candidate .resume-sheet__contact,
+.candidate .resume-sheet__muted,
+.candidate .resume-sheet__text,
+.candidate .resume-sheet__list {
+  font-size: var(--fs-sm);
+  color: var(--color-neutral-dark);
+}
+
+.candidate .resume-sheet__heading {
+  margin-bottom: var(--space-1);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.candidate .resume-sheet__list {
+  display: grid;
+  gap: var(--space-1);
+  padding-left: var(--space-5);
+}
+
+/* ---------- Dashboard analytics (Phase 11) ---------- */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 var(--space-5);
+}
+
+@media (min-width: 1280px) {
+  .analytics-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}

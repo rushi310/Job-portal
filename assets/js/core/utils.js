@@ -64,6 +64,28 @@ export function formatDate(value) {
   return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
 
+/** Format as "29 Sep" (chart axis labels). */
+export function formatShortDate(value) {
+  const date = parseDate(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
+}
+
+/** Format as "Sep 2026". */
+export function formatMonth(value) {
+  const date = parseDate(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+/** Local calendar date as "YYYY-MM-DD" (not UTC, so it matches what the user sees). */
+export function toDateKey(value) {
+  const date = parseDate(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (number) => String(number).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 /** Format as relative time: "just now", "5 min ago", "2 days ago", or a date if older. */
 export function formatRelativeTime(value) {
   const date = parseDate(value);

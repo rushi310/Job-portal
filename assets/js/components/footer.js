@@ -64,7 +64,7 @@ function createInfoColumn() {
   textEl.textContent = 'Built with HTML5, CSS3 and Vanilla JavaScript. No backend.';
   const aboutBtnEl = document.createElement('button');
   aboutBtnEl.type = 'button';
-  aboutBtnEl.className = 'btn btn--ghost btn--sm mt-2';
+  aboutBtnEl.className = 'btn btn--outline btn--sm mt-2';
   aboutBtnEl.textContent = 'About this demo';
   aboutBtnEl.addEventListener('click', openAboutDemoModal);
   columnEl.append(headingEl, textEl, aboutBtnEl);

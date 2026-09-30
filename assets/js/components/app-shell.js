@@ -12,6 +12,7 @@ import { renderAppNavbar } from './navbar.js';
 import { renderSidebar } from './sidebar.js';
 import { renderFooter } from './footer.js';
 import { showToast } from './toast.js';
+import { getUnreadCount } from '../services/notification-service.js';
 
 /** Shown instead of the page when demo data can't load (nothing protected is revealed). */
 function showStartupError(message) {
@@ -40,7 +41,7 @@ export async function initProtectedPage(...roles) {
   if (!user) return null; // redirect in progress; the shell stays hidden
 
   const sidebar = renderSidebar(document.querySelector('[data-mount="sidebar"]'), user);
-  renderAppNavbar(document.querySelector('[data-mount="navbar"]'), user, { sidebar });
+  renderAppNavbar(document.querySelector('[data-mount="navbar"]'), user, { sidebar, unreadCount: getUnreadCount() });
   renderFooter(document.querySelector('[data-mount="footer"]'));
   document.querySelector('[data-app-shell]').hidden = false;
 

@@ -1,0 +1,139 @@
+/* admin.css — Admin pages (Phase 9): dashboard, users, moderate jobs. Tables and lists come from components.css. */
+
+/* ---------- Dashboard ---------- */
+.status-totals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .status-totals {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.status-totals__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.status-totals__item:hover {
+  border-color: var(--color-primary);
+}
+
+.status-totals__value {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+}
+
+.danger-zone {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  margin-top: var(--space-6);
+  border-color: var(--color-danger);
+}
+
+.danger-zone__text {
+  max-width: 640px;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* ---------- Users: search and filters ---------- */
+.admin-filters {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .admin-filters {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+  }
+}
+
+/* ---------- Job details dialog ---------- */
+.job-review {
+  display: grid;
+  gap: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.job-review__text {
+  font-size: var(--fs-sm);
+  white-space: pre-line;
+}
+
+.job-review__list {
+  padding-left: var(--space-5);
+  font-size: var(--fs-sm);
+  list-style: disc;
+}
+
+/* ---------- Announcements (Phase 10) ---------- */
+.announcements-layout {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (min-width: 1280px) {
+  .announcements-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* ---------- Reports (Phase 11) ---------- */
+.reports-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (min-width: 1280px) {
+  .reports-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .report-card--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.report-card {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* Grid items default to min-width: auto; without this a wide table would stretch the card. */
+.report-card > * {
+  min-width: 0;
+}
+
+.report-card .card__header {
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: 0;
+}
+
+.report-card .chart-summary {
+  margin-bottom: 0;
+}
+
+.report-table .table td {
+  font-variant-numeric: tabular-nums;
+}

@@ -299,20 +299,18 @@ export function createUser(values) {
 }
 
 /* ==========================================================================
-   Profile updates (Phase 7)
+   Profile updates (Phase 7 students, Phase 8 recruiters)
    ========================================================================== */
 
 /**
- * Save a student's own profile edits. Only `name`, `phone` and `profile` can change here;
+ * Save a user's own profile edits. Only `name`, `phone` and `profile` can change here;
  * id, role, email, password, status and createdAt are always kept from the stored record.
  * Callers (profile-service.js) validate first and take `userId` from the session.
- * @param {string} userId
- * @param {{ name?: string, phone?: string, profile?: object }} changes
  * @returns {{ ok: true, data: object } | { ok: false, error: string }} data = updated public user
  */
-export function updateStudentRecord(userId, changes) {
+function updateOwnRecord(userId, role, changes) {
   const users = getAllUsers();
-  const index = users.findIndex((user) => user.id === userId && user.role === ROLES.STUDENT);
+  const index = users.findIndex((user) => user.id === userId && user.role === role);
   if (index === -1) return { ok: false, error: 'Your account could not be found. Please log in again.' };
 
   const current = users[index];
@@ -325,4 +323,22 @@ export function updateStudentRecord(userId, changes) {
   const nextUsers = users.map((user, position) => (position === index ? updated : user));
   const saved = setLocal(STORAGE_KEYS.USERS, nextUsers);
   return saved.ok ? { ok: true, data: toPublicUser(updated) } : { ok: false, error: saved.error };
+}
+
+/**
+ * A student's own profile edits (Phase 7).
+ * @param {string} userId
+ * @param {{ name?: string, phone?: string, profile?: object }} changes
+ */
+export function updateStudentRecord(userId, changes) {
+  return updateOwnRecord(userId, ROLES.STUDENT, changes);
+}
+
+/**
+ * A recruiter's own contact and company details (Phase 8).
+ * @param {string} userId
+ * @param {{ name?: string, phone?: string, profile?: object }} changes
+ */
+export function updateRecruiterRecord(userId, changes) {
+  return updateOwnRecord(userId, ROLES.RECRUITER, changes);
 }

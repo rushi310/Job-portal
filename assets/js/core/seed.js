@@ -43,11 +43,13 @@ async function fetchSeedFile(path) {
 
 /**
  * Make sure demo data exists in localStorage. Call (and await) this first in every page script.
+ * @param {{ force?: boolean }} [options] force = reload the seed files even if data is valid
+ *   (admin "Reset demo data", BR-20); the files are fetched before anything is cleared
  * @returns {Promise<{ seeded: boolean }>} seeded = true when data was (re)loaded now
  * @throws {Error} with a user-friendly message if the seed files can't be loaded
  */
-export async function ensureSeeded() {
-  if (isStoredDataValid()) return { seeded: false };
+export async function ensureSeeded({ force = false } = {}) {
+  if (!force && isStoredDataValid()) return { seeded: false };
 
   // Load every file first so a failure never leaves storage half-written.
   const collections = await Promise.all(SEED_SOURCES.map((source) => fetchSeedFile(source.path)));

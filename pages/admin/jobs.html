@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Moderate FreshHire job posts.">
+  <title>Moderate Jobs · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/admin.css">
+
+  <script type="module" src="../../assets/js/pages/admin/jobs.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in admin (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1>Moderate Jobs</h1>
+            <p class="page-header__subtitle">Approve or reject new job posts, and delete jobs that break the rules.</p>
+          </div>
+        </header>
+
+        <section aria-labelledby="jobs-list-title">
+          <h2 class="visually-hidden" id="jobs-list-title">Job list</h2>
+          <div class="tabs status-filter" role="group" aria-label="Filter jobs by status" data-status-filter></div>
+          <p class="list-count" data-jobs-count role="status" aria-live="polite" tabindex="-1"></p>
+          <div data-jobs-list></div>
+        </section>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

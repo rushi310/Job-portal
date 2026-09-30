@@ -215,10 +215,10 @@ function renderApplyPanel(panelEl, job, student) {
   } else if (status.code === APPLY_ERRORS.ALREADY_APPLIED) {
     const { application } = status;
     const statusLabel = getLabel(application.status) || 'Unknown';
-    const messageEl = createElement('div', 'alert alert--success');
+    const messageEl = createElement('div', 'alert alert--success alert--stacked');
     messageEl.setAttribute('role', 'status');
     messageEl.append(createElement('p', '', `Application submitted on ${formatDate(application.appliedAt)}.`));
-    const statusEl = createElement('p', 'mt-2', 'Current status: ');
+    const statusEl = createElement('p', '', 'Current status: ');
     statusEl.append(createElement('span', `badge badge--status-${application.status}`, statusLabel));
     messageEl.append(statusEl);
     children.push(messageEl, createTrackLink());

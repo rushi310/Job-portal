@@ -11,8 +11,8 @@
 
 ## Project Status
 
-**Phase 7 — Student Profile & Resume (complete). Next: Phase 8 — Recruiter Portal.**
-Working now: landing page, registration (student / recruiter), login, logout, role-based page protection, the student dashboard, **Browse Jobs** (search, filters, sort, pagination, "Show expired"), **Job Details** with eligibility check and applying, **Saved Jobs** (save / unsave from cards and details), **My Applications** (status filter, timeline, withdraw) and **Profile & Resume** (personal details, education, skills, projects & links, PDF resume upload up to 500 KB, printable resume), plus dashboard shells for recruiters and admins. Menu items for features of later phases are marked "Soon".
+**Phase 10 — Notifications (complete). Next: Phase 11 — Analytics & Reports.** Notifications: bell with unread count, notification centre for every role, admin announcements.
+Working now: landing page, registration (student / recruiter), login, logout, role-based page protection, the student dashboard, **Browse Jobs** (search, filters, sort, pagination, "Show expired"), **Job Details** with eligibility check and applying, **Saved Jobs** (save / unsave from cards and details), **My Applications** (status filter, timeline, withdraw) and **Profile & Resume** (personal details, education, skills, projects & links, PDF resume upload up to 500 KB, printable resume), and the **Recruiter Portal** (dashboard, post / edit / close jobs that go to the admin as pending, My Jobs, applicants with profile/resume view and status changes, company profile), and the **Admin Portal** (platform totals, approve recruiters, block / unblock / delete users, approve / reject / delete jobs, reset demo data). Menu items for features of later phases are marked "Soon".
 See [PROJECT_STATUS.md](PROJECT_STATUS.md) for live progress.
 
 ## About

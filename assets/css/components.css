@@ -114,6 +114,7 @@
 
 .icon-btn {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 40px;
@@ -254,6 +255,7 @@ select.form-control {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-height: 24px;
   font-size: var(--fs-sm);
   cursor: pointer;
 }
@@ -304,6 +306,16 @@ select.form-control {
   font-size: var(--fs-lg);
 }
 
+.card__header > a,
+.card__header > .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.card__header > a:not(.btn) {
+  padding-block: var(--space-1);
+}
+
 .card__footer {
   display: flex;
   flex-wrap: wrap;
@@ -327,6 +339,12 @@ select.form-control {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+}
+
+@media (max-width: 575px) {
+  .stat-card {
+    padding: var(--space-4);
+  }
 }
 
 .stat-card__icon {
@@ -560,6 +578,24 @@ select.form-control {
   border-radius: var(--radius-lg);
 }
 
+/* Set by components/scroll-region.js when the table is wider than its box. */
+.table-wrapper.has-more-right {
+  mask-image: linear-gradient(to right, var(--color-text) calc(100% - 40px), transparent);
+}
+
+.table-wrapper.has-more-left {
+  mask-image: linear-gradient(to left, var(--color-text) calc(100% - 40px), transparent);
+}
+
+.table-wrapper.has-more-left.has-more-right {
+  mask-image: linear-gradient(to right, transparent, var(--color-text) 40px,
+    var(--color-text) calc(100% - 40px), transparent);
+}
+
+.table-wrapper:focus-visible {
+  outline-offset: -2px;
+}
+
 .table {
   width: 100%;
   font-size: var(--fs-sm);
@@ -579,6 +615,14 @@ select.form-control {
   vertical-align: middle;
   white-space: nowrap;
   border-bottom: 1px solid var(--color-border);
+}
+
+/* Phones: narrower cells so small tables (e.g. report tables) fit without sideways scrolling. */
+@media (max-width: 575px) {
+  .table th,
+  .table td {
+    padding: var(--space-2) var(--space-3);
+  }
 }
 
 .table thead th {
@@ -634,6 +678,12 @@ select.form-control {
   border-bottom-color: var(--color-primary);
 }
 
+/* Status filter: toggle buttons styled as tabs */
+.status-filter .tabs__tab[aria-pressed="true"] {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
 /* ==========================================================================
    Alerts
    ========================================================================== */
@@ -644,6 +694,11 @@ select.form-control {
   font-size: var(--fs-sm);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
+}
+
+.alert--stacked {
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .alert--info {
@@ -946,6 +1001,12 @@ body.has-modal {
   border-radius: var(--radius-full);
 }
 
+.avatar--lg {
+  width: 56px;
+  height: 56px;
+  font-size: var(--fs-lg);
+}
+
 .skeleton {
   min-height: 1rem;
   background: linear-gradient(90deg, var(--color-neutral-light) 25%, var(--color-border) 50%,
@@ -985,4 +1046,616 @@ body.has-modal {
 
 @keyframes shimmer {
   to { background-position: -200% 0; }
+}
+
+/* ==========================================================================
+   Dashboard building blocks (shared by the role dashboards; moved from student.css in Phase 8)
+   ========================================================================== */
+/* ---------- Dashboard layout ---------- */
+.dashboard-section {
+  margin-bottom: var(--space-5);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 var(--space-5);
+}
+
+@media (min-width: 1280px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: start;
+  }
+}
+
+.section-heading {
+  margin-bottom: var(--space-4);
+}
+
+.section-heading h2 {
+  margin-bottom: var(--space-1);
+}
+
+/* ---------- Stat cards ---------- */
+.dashboard-stats {
+  padding: 0;
+  list-style: none;
+}
+
+/* 1024–1279px: the sidebar takes 240px, so 4 stats / 3 job cards would be too narrow */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .dashboard-stats,
+  .dashboard-recommended {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.stat-card__icon--success {
+  color: var(--color-success-text);
+  background-color: var(--color-success-light);
+}
+
+.stat-card__icon--warning {
+  color: var(--color-warning-text);
+  background-color: var(--color-warning-light);
+}
+
+.stat-card__icon--info {
+  color: var(--color-secondary-text);
+  background-color: var(--color-secondary-light);
+}
+
+/* ---------- Lists (applications, notifications) ---------- */
+.dashboard-list {
+  display: grid;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-list__item:first-child {
+  padding-top: 0;
+}
+
+.dashboard-list__item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.dashboard-list__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-list__title {
+  font-weight: var(--fw-semibold);
+  overflow-wrap: anywhere;
+}
+
+.dashboard-list__text {
+  font-size: var(--fs-sm);
+  color: var(--color-neutral-dark);
+  overflow-wrap: anywhere;
+}
+
+.dashboard-list__meta {
+  margin-top: var(--space-1);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.dashboard-list__item.is-unread .dashboard-list__title::before {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--space-2);
+  vertical-align: middle;
+  content: "";
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+/* Compact empty state inside cards */
+.card .empty-state {
+  padding: var(--space-5) var(--space-3);
+  border: 0;
+}
+
+/* ---------- Quick actions ---------- */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.quick-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-weight: var(--fw-medium);
+  color: var(--color-neutral-dark);
+  text-decoration: none;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition), background-color var(--transition);
+}
+
+.quick-action svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+a.quick-action:hover {
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.quick-action.is-disabled {
+  color: var(--color-text-muted);
+}
+
+.quick-action.is-disabled svg {
+  color: var(--color-text-muted);
+}
+
+.quick-action .tag-soon {
+  margin-left: auto;
+}
+
+/* ==========================================================================
+   Management lists & tables (recruiter and admin pages; moved from recruiter.css in Phase 9)
+   ========================================================================== */
+/* Wrap the status filter instead of scrolling so every status stays visible on phones. */
+.status-filter {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+.list-count {
+  margin-block: var(--space-4) var(--space-3);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.detail-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+@media (min-width: 576px) {
+  .detail-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .detail-list--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.detail-list__item dt {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.detail-list__item dd {
+  font-weight: var(--fw-medium);
+  overflow-wrap: anywhere;
+}
+
+.quick-actions--stacked {
+  grid-template-columns: 1fr;
+}
+
+.jobs-table__title {
+  display: block;
+  font-weight: var(--fw-semibold);
+  white-space: normal;
+}
+
+.jobs-table__meta,
+.jobs-table__note {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  color: var(--color-text-muted);
+  white-space: normal;
+}
+
+.jobs-table__note {
+  max-width: 260px;
+  margin-top: var(--space-1);
+}
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .table-actions {
+    flex-wrap: nowrap;
+  }
+}
+
+.table-actions__danger {
+  color: var(--color-danger-text);
+}
+
+/* Below 768px each table row becomes a card with labelled cells (no sideways scrolling). */
+@media (max-width: 767px) {
+  .table-wrapper--stack {
+    overflow: visible;
+    background: none;
+    border: 0;
+  }
+
+  .table-wrapper--stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .table-wrapper--stack table,
+  .table-wrapper--stack tbody,
+  .table-wrapper--stack tr,
+  .table-wrapper--stack th,
+  .table-wrapper--stack td {
+    display: block;
+    width: 100%;
+  }
+
+  .table-wrapper--stack tr {
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-3);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .table-wrapper--stack tbody tr:nth-child(even),
+  .table-wrapper--stack tbody tr:hover {
+    background-color: var(--color-surface);
+  }
+
+  .table-wrapper--stack th,
+  .table-wrapper--stack td {
+    padding: var(--space-2) 0;
+    white-space: normal;
+    border-bottom: 0;
+  }
+
+  .table-wrapper--stack td {
+    display: grid;
+    grid-template-columns: minmax(6rem, 35%) minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: center;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .table-wrapper--stack td::before {
+    font-size: var(--fs-xs);
+    color: var(--color-text-muted);
+    content: attr(data-label);
+  }
+}
+
+/* ==========================================================================
+   Notifications (Phase 10): navbar bell + notification centre list
+   ========================================================================== */
+.notification-bell {
+  position: relative;
+  color: var(--color-neutral-dark);
+}
+
+.notification-bell[aria-current="page"] {
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.notification-bell__badge {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--space-1);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  line-height: 18px;
+  color: var(--color-on-primary);
+  text-align: center;
+  background-color: var(--color-danger);
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-full);
+  box-sizing: content-box;
+}
+
+.notification-bell__badge[hidden] {
+  display: none;
+}
+
+.notification-groups {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.notification-group__title {
+  margin-bottom: var(--space-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.notification-list {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.notification-item {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  overflow-wrap: anywhere;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.notification-item.is-unread {
+  background-color: var(--color-primary-light);
+  border-left: 4px solid var(--color-primary);
+}
+
+.notification-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.notification-item__title {
+  font-size: var(--fs-base);
+}
+
+.notification-item.is-unread .notification-item__title {
+  font-weight: var(--fw-bold);
+}
+
+.notification-item__message {
+  font-size: var(--fs-sm);
+  color: var(--color-neutral-dark);
+}
+
+.notification-item__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notification-item__time {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+/* Muted grey is below 4.5:1 on the unread tint, so use the darker neutral there. */
+.notification-item.is-unread .notification-item__time {
+  color: var(--color-neutral-dark);
+}
+
+/* ---------- Charts (Phase 11; assets/js/components/charts.js) ---------- */
+/* Each tone sets --chart-color; the colours match the status badges (UI_SPEC §2.2). */
+.chart-tone--primary,
+.chart-tone--applied,
+.chart-tone--student { --chart-color: var(--color-primary); }
+.chart-tone--under_review,
+.chart-tone--recruiter { --chart-color: var(--color-secondary-hover); }
+.chart-tone--shortlisted { --chart-color: var(--color-secondary-text); }
+.chart-tone--interview,
+.chart-tone--pending,
+.chart-tone--admin { --chart-color: var(--color-warning); }
+.chart-tone--selected,
+.chart-tone--approved { --chart-color: var(--color-success); }
+.chart-tone--rejected { --chart-color: var(--color-danger); }
+.chart-tone--withdrawn,
+.chart-tone--closed { --chart-color: var(--color-text-muted); }
+.chart-tone--other { --chart-color: var(--color-neutral-dark); }
+
+.chart-summary {
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* Bar chart: label on its own line on phones; label | bar | value from 576px. */
+.bar-chart {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.bar-chart__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+}
+
+.bar-chart__label {
+  grid-column: 1 / -1;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.bar-chart__meta {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.bar-chart__track {
+  display: block;
+  width: 100%;
+  background-color: var(--color-neutral-light);
+  border-radius: var(--radius-sm);
+}
+
+.bar-chart__bar {
+  fill: var(--chart-color);
+}
+
+.bar-chart__value {
+  min-width: 5.5em;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 576px) {
+  .bar-chart__row {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) auto;
+  }
+
+  .bar-chart__label {
+    grid-column: auto;
+  }
+}
+
+/* Donut chart + legend: stacked on phones, side by side from 576px. */
+.donut-chart {
+  display: grid;
+  gap: var(--space-5);
+  align-items: center;
+  justify-items: center;
+}
+
+@media (min-width: 576px) {
+  .donut-chart {
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: stretch;
+  }
+}
+
+.donut-chart__svg {
+  display: block;
+  width: 160px;
+  height: 160px;
+}
+
+.donut-chart__base {
+  stroke: var(--color-neutral-light);
+}
+
+.donut-chart__segment {
+  stroke: var(--chart-color);
+}
+
+.donut-chart__total {
+  font-size: 1.5rem;
+  font-weight: var(--fw-bold);
+  fill: var(--color-text);
+}
+
+.donut-chart__label {
+  font-size: 0.625rem;
+  fill: var(--color-text-muted);
+}
+
+.chart-legend {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0;
+  list-style: none;
+}
+
+.chart-legend__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--fs-sm);
+}
+
+.chart-legend__swatch {
+  width: 12px;
+  height: 12px;
+  background-color: var(--chart-color);
+  border-radius: var(--radius-sm);
+}
+
+.chart-legend__value {
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Line chart: drawn at the container width; scales down until it is redrawn after a resize. */
+.line-chart {
+  width: 100%;
+  min-width: 0;
+}
+
+.line-chart__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.line-chart__grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.line-chart__baseline {
+  stroke: var(--color-text-muted);
+  stroke-width: 1;
+}
+
+.line-chart__tick {
+  font-size: var(--fs-xs);
+  fill: var(--color-text-muted);
+}
+
+.line-chart__line {
+  stroke: var(--color-primary);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.line-chart__dot {
+  fill: var(--color-primary);
+  stroke: var(--color-surface);
+  stroke-width: 2;
 }

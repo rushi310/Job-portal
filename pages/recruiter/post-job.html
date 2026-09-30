@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Post or edit a job on FreshHire.">
+  <title>Post a Job · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/recruiter.css">
+
+  <script type="module" src="../../assets/js/pages/recruiter/post-job.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in recruiter (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1 data-page-title>Post a Job</h1>
+            <p class="page-header__subtitle" data-page-subtitle>New jobs are reviewed by an admin before students can see them.</p>
+          </div>
+        </header>
+
+        <div data-approval-banner></div>
+        <div data-page-message></div>
+
+        <form class="form card job-form" data-job-form novalidate hidden>
+          <p class="form-hint">Fields marked <span aria-hidden="true">*</span><span class="visually-hidden">with an asterisk</span> are required.</p>
+          <div class="alert alert--info" data-edit-note hidden></div>
+          <div class="alert alert--danger" data-form-alert role="alert" tabindex="-1" hidden></div>
+
+          <fieldset class="form-section">
+            <legend class="form-section__legend">Job basics</legend>
+            <div class="form-row form-row--2">
+              <div class="form-group">
+                <label class="form-label" for="pj-title">Job title <span class="form-label__required" aria-hidden="true">*</span></label>
+                <input class="form-control" id="pj-title" name="title" type="text" maxlength="100" required
+                  placeholder="e.g. Junior Frontend Developer" aria-describedby="pj-title-error">
+                <p class="form-error" id="pj-title-error" hidden></p>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pj-company">Company</label>
+                <input class="form-control" id="pj-company" name="company" type="text" readonly aria-describedby="pj-company-hint">
+                <p class="form-hint" id="pj-company-hint">From your company profile.</p>
+              </div>
+            </div>
+            <div class="form-row form-row--2">
+              <div class="form-group">
+                <label class="form-label" for="pj-location">Location <span class="form-label__required" aria-hidden="true">*</span></label>
+                <input class="form-control" id="pj-location" name="location" type="text" maxlength="100" required
+                  placeholder="e.g. Pune" aria-describedby="pj-location-error">
+                <p class="form-error" id="pj-location-error" hidden></p>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pj-experience">Experience <span class="form-label__required" aria-hidden="true">*</span></label>
+                <input class="form-control" id="pj-experience" name="experience" type="text" maxlength="50" required
+                  placeholder="e.g. Fresher or 0-1 years" aria-describedby="pj-experience-error">
+                <p class="form-error" id="pj-experience-error" hidden></p>
+              </div>
+            </div>
+            <div class="form-row form-row--2">
+              <div class="form-row form-row--2 form-row--pair">
+                <div class="form-group">
+                  <label class="form-label" for="pj-job-type">Job type <span class="form-label__required" aria-hidden="true">*</span></label>
+                  <select class="form-control" id="pj-job-type" name="jobType" required aria-describedby="pj-job-type-error"></select>
+                  <p class="form-error" id="pj-job-type-error" hidden></p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="pj-work-mode">Work mode <span class="form-label__required" aria-hidden="true">*</span></label>
+                  <select class="form-control" id="pj-work-mode" name="workMode" required aria-describedby="pj-work-mode-error"></select>
+                  <p class="form-error" id="pj-work-mode-error" hidden></p>
+                </div>
+              </div>
+              <div class="form-row form-row--2 form-row--pair">
+                <div class="form-group">
+                  <label class="form-label" for="pj-openings">Openings <span class="form-label__required" aria-hidden="true">*</span></label>
+                  <input class="form-control" id="pj-openings" name="openings" type="number" inputmode="numeric" min="1" max="1000"
+                    step="1" required aria-describedby="pj-openings-error">
+                  <p class="form-error" id="pj-openings-error" hidden></p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="pj-deadline">Apply by <span class="form-label__required" aria-hidden="true">*</span></label>
+                  <input class="form-control" id="pj-deadline" name="deadline" type="date" required aria-describedby="pj-deadline-error">
+                  <p class="form-error" id="pj-deadline-error" hidden></p>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend class="form-section__legend">Pay</legend>
+            <p class="form-hint" id="pj-pay-hint">Amounts in rupees. Leave both amounts empty to show "Not disclosed". Internships pay a monthly stipend.</p>
+            <div class="form-row form-row--3">
+              <div class="form-group">
+                <label class="form-label" for="pj-salary-period">Paid <span class="form-label__required" aria-hidden="true">*</span></label>
+                <select class="form-control" id="pj-salary-period" name="salaryPeriod" required
+                  aria-describedby="pj-pay-hint pj-salary-period-error"></select>
+                <p class="form-error" id="pj-salary-period-error" hidden></p>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pj-salary-min">Minimum (₹)</label>
+                <input class="form-control" id="pj-salary-min" name="salaryMin" type="number" inputmode="numeric" min="1" step="1"
+                  aria-describedby="pj-salary-min-error">
+                <p class="form-error" id="pj-salary-min-error" hidden></p>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pj-salary-max">Maximum (₹)</label>
+                <input class="form-control" id="pj-salary-max" name="salaryMax" type="number" inputmode="numeric" min="1" step="1"
+                  aria-describedby="pj-salary-max-error">
+                <p class="form-error" id="pj-salary-max-error" hidden></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend class="form-section__legend">About the job</legend>
+            <div class="form-group">
+              <label class="form-label" for="pj-description">Description <span class="form-label__required" aria-hidden="true">*</span></label>
+              <textarea class="form-control" id="pj-description" name="description" rows="5" maxlength="2000" required
+                aria-describedby="pj-description-hint pj-description-error"></textarea>
+              <p class="form-hint" id="pj-description-hint">Up to 2,000 characters.</p>
+              <p class="form-error" id="pj-description-error" hidden></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="pj-responsibilities">Responsibilities</label>
+              <textarea class="form-control" id="pj-responsibilities" name="responsibilities" rows="4"
+                aria-describedby="pj-responsibilities-hint pj-responsibilities-error"></textarea>
+              <p class="form-hint" id="pj-responsibilities-hint">One per line, up to 10 lines of 200 characters.</p>
+              <p class="form-error" id="pj-responsibilities-error" hidden></p>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend class="form-section__legend">Skills <span class="form-label__required" aria-hidden="true">*</span></legend>
+            <div class="form-group">
+              <label class="form-label" for="pj-new-skill">Add a skill</label>
+              <div class="chip-input">
+                <input class="form-control" id="pj-new-skill" name="newSkill" type="text" maxlength="40" autocomplete="off"
+                  placeholder="e.g. JavaScript" aria-describedby="pj-new-skill-hint pj-new-skill-error">
+                <button class="btn btn--secondary" type="button" data-add-skill>Add</button>
+              </div>
+              <p class="form-hint" id="pj-new-skill-hint">Press Enter or select Add. At least one, up to 15 skills.</p>
+              <p class="form-error" id="pj-new-skill-error" hidden></p>
+            </div>
+            <ul class="chip-list" data-skill-list aria-label="Required skills"></ul>
+            <p class="visually-hidden" data-skill-status role="status" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend class="form-section__legend">Eligibility</legend>
+            <p class="form-hint">Leave a list empty to accept every option. Students who do not match cannot apply.</p>
+            <div class="form-row form-row--2">
+              <fieldset class="form-group choice-group">
+                <legend class="form-label">Degrees</legend>
+                <div class="choice-group__options" data-degree-options></div>
+                <p class="form-error" id="pj-degrees-error" hidden></p>
+              </fieldset>
+              <fieldset class="form-group choice-group">
+                <legend class="form-label">Graduation years</legend>
+                <div class="choice-group__options" data-year-options></div>
+                <p class="form-error" id="pj-graduation-years-error" hidden></p>
+              </fieldset>
+            </div>
+            <div class="form-group job-form__cgpa">
+              <label class="form-label" for="pj-min-cgpa">Minimum CGPA</label>
+              <input class="form-control" id="pj-min-cgpa" name="minCgpa" type="number" inputmode="decimal" min="0" max="10"
+                step="0.1" aria-describedby="pj-min-cgpa-hint pj-min-cgpa-error">
+              <p class="form-hint" id="pj-min-cgpa-hint">Optional, out of 10.</p>
+              <p class="form-error" id="pj-min-cgpa-error" hidden></p>
+            </div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit" data-submit>Preview job</button>
+            <a class="btn btn--ghost" data-cancel-link href="my-jobs.html">Cancel</a>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>
