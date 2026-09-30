@@ -256,6 +256,156 @@
   padding: var(--space-5) var(--space-4);
 }
 
+/* Closed drawer is also hidden from keyboard and screen readers (visibility waits for the slide-out) */
+.app-sidebar:not(.is-open) {
+  visibility: hidden;
+  transition: transform var(--transition), visibility 0s linear var(--transition);
+}
+
+.app-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.app-sidebar__role {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sidebar-nav__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.sidebar-nav__label svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+body.has-drawer {
+  overflow: hidden;
+}
+
+/* ---------- User menu (app header) ---------- */
+.user-menu {
+  position: relative;
+}
+
+.user-menu__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  font-weight: var(--fw-medium);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  transition: background-color var(--transition), border-color var(--transition);
+}
+
+.user-menu__button:hover,
+.user-menu.is-open .user-menu__button {
+  background-color: var(--color-neutral-light);
+}
+
+.user-menu__button > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+}
+
+.user-menu__name {
+  display: none;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu__panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: var(--z-header);
+  width: min(280px, calc(100vw - var(--space-6)));
+  padding: var(--space-2);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.user-menu__header {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.user-menu__full-name {
+  font-weight: var(--fw-semibold);
+  overflow-wrap: anywhere;
+}
+
+.user-menu__email {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.user-menu__list {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.user-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-neutral-dark);
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+}
+
+.user-menu__item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.user-menu__item:hover {
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.user-menu__item.is-disabled {
+  color: var(--color-text-muted);
+  background: transparent;
+}
+
+@media (min-width: 768px) {
+  .user-menu__name {
+    display: inline;
+  }
+}
+
 .sidebar-nav__list {
   display: flex;
   flex-direction: column;
@@ -304,11 +454,20 @@
     box-shadow: none;
   }
 
+  .app-sidebar:not(.is-open) {
+    visibility: visible;
+  }
+
+  /* Scoped selectors so these win over `.icon-btn` in components.css (loaded later) */
+  .app-sidebar .app-sidebar__close {
+    display: none;
+  }
+
   .app-backdrop {
     display: none;
   }
 
-  .app-menu-toggle {
+  .app-header .app-menu-toggle {
     display: none;
   }
 

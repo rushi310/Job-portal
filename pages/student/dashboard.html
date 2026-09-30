@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FreshHire Student dashboard.">
+  <title>Student Dashboard · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/student.css">
+
+  <script type="module" src="../../assets/js/pages/student/dashboard.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in student (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1>Student Dashboard</h1>
+            <p class="page-header__subtitle" data-greeting>Welcome back!</p>
+          </div>
+        </header>
+
+        <!-- Stat cards (UI_SPEC §5): applications, shortlisted, saved jobs, profile completeness -->
+        <section class="dashboard-section" aria-labelledby="stats-title">
+          <h2 class="visually-hidden" id="stats-title">Your summary</h2>
+          <ul class="grid grid--4 dashboard-stats" role="list" data-stats></ul>
+        </section>
+
+        <div class="dashboard-grid">
+          <div class="dashboard-grid__main">
+            <section class="card dashboard-section" aria-labelledby="applications-title">
+              <div class="card__header">
+                <h2 class="card__title" id="applications-title">Recent applications</h2>
+                <span data-view-all="pages/student/applications.html">View all</span>
+              </div>
+              <div data-applications></div>
+            </section>
+          </div>
+
+          <div class="dashboard-grid__side">
+            <section class="card dashboard-section" aria-labelledby="profile-title">
+              <div class="card__header">
+                <h2 class="card__title" id="profile-title">Profile completeness</h2>
+                <span class="profile-meter__value" data-profile-value></span>
+              </div>
+              <div data-profile></div>
+            </section>
+
+            <section class="card dashboard-section" aria-labelledby="updates-title">
+              <div class="card__header">
+                <h2 class="card__title" id="updates-title">Recent updates</h2>
+                <span data-view-all="pages/shared/notifications.html">View all</span>
+              </div>
+              <div data-notifications></div>
+            </section>
+          </div>
+        </div>
+
+        <section class="dashboard-section" aria-labelledby="recommended-title">
+          <div class="section-heading">
+            <h2 id="recommended-title">Recommended for you</h2>
+            <p class="text-muted text-sm" data-recommended-subtitle></p>
+          </div>
+          <div class="grid grid--3 dashboard-recommended" data-recommended></div>
+        </section>
+
+        <section class="card dashboard-section" aria-labelledby="actions-title">
+          <h2 class="card__title mb-4" id="actions-title">Quick actions</h2>
+          <ul class="quick-actions" role="list" data-quick-actions></ul>
+        </section>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

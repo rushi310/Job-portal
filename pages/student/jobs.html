@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Browse and search jobs and internships for freshers on FreshHire.">
+  <title>Browse Jobs · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/student.css">
+
+  <script type="module" src="../../assets/js/pages/student/jobs.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in student (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1>Browse Jobs</h1>
+            <p class="page-header__subtitle">Find jobs and internships that match your skills and goals.</p>
+          </div>
+        </header>
+
+        <!-- Search + sort toolbar -->
+        <form class="card jobs-toolbar" data-search-form role="search" novalidate>
+          <div class="form-group jobs-toolbar__search">
+            <label class="form-label" for="job-search">Search jobs</label>
+            <input class="form-control" id="job-search" name="query" type="search" autocomplete="off"
+              placeholder="Job title, company or skill" aria-describedby="job-search-hint">
+            <p class="form-hint" id="job-search-hint">Results update as you type.</p>
+          </div>
+          <div class="form-group jobs-toolbar__sort">
+            <label class="form-label" for="job-sort">Sort by</label>
+            <select class="form-control" id="job-sort" name="sort" data-sort></select>
+          </div>
+          <button class="btn btn--outline jobs-toolbar__filters-btn" type="button" data-action="open-filters"
+            aria-controls="job-filters" aria-expanded="false">
+            Filters <span class="badge badge--primary" data-active-count hidden></span>
+          </button>
+        </form>
+
+        <div class="jobs-layout">
+          <!-- Filter panel: inline from 1024px, drawer below (UI_SPEC §4) -->
+          <aside class="filter-panel" id="job-filters" aria-labelledby="filters-title" data-filter-panel>
+            <div class="filter-panel__header">
+              <h2 class="filter-panel__title" id="filters-title">Filters</h2>
+              <button class="icon-btn filter-panel__close" type="button" data-action="close-filters"
+                aria-label="Close filters"></button>
+            </div>
+
+            <form class="form filter-panel__body" data-filter-form novalidate>
+              <div class="form-group">
+                <label class="form-label" for="filter-location">Location</label>
+                <select class="form-control" id="filter-location" name="location" data-options="locations">
+                  <option value="">All locations</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="filter-job-type">Job type</label>
+                <select class="form-control" id="filter-job-type" name="jobType" data-options="jobTypes">
+                  <option value="">All job types</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="filter-work-mode">Work mode</label>
+                <select class="form-control" id="filter-work-mode" name="workMode" data-options="workModes">
+                  <option value="">All work modes</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="filter-pay">Salary / stipend</label>
+                <select class="form-control" id="filter-pay" name="payRange" data-options="payRanges">
+                  <option value="">Any pay</option>
+                </select>
+              </div>
+              <fieldset class="filter-panel__skills">
+                <legend class="form-label">Skills <span class="text-muted text-xs">(jobs must list all selected)</span></legend>
+                <div class="filter-panel__skill-list" data-skill-list></div>
+              </fieldset>
+              <label class="form-check">
+                <input type="checkbox" name="includeExpired" data-include-expired>
+                Show expired jobs
+              </label>
+            </form>
+
+            <div class="filter-panel__footer">
+              <button class="btn btn--ghost btn--block" type="button" data-action="clear-filters">Clear filters</button>
+              <button class="btn btn--primary btn--block filter-panel__done" type="button" data-action="close-filters">
+                Show results
+              </button>
+            </div>
+          </aside>
+          <div class="app-backdrop" data-filter-backdrop hidden></div>
+
+          <!-- Results -->
+          <section class="jobs-results" aria-labelledby="results-title">
+            <h2 class="visually-hidden" id="results-title">Job results</h2>
+            <p class="jobs-results__count" data-result-count role="status" aria-live="polite" aria-atomic="true"></p>
+            <div class="jobs-results__grid" data-results></div>
+            <div class="mt-5" data-pagination></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>

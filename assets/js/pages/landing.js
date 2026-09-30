@@ -5,6 +5,8 @@
 
 import { FEATURED_JOBS_COUNT } from '../core/config.js';
 import { ensureSeeded } from '../core/seed.js';
+import { consumeFlash } from '../core/storage.js';
+import { redirectIfLoggedIn } from '../core/auth.js';
 import { getFeaturedJobs, getPublicJobStats, isJobExpired } from '../services/job-service.js';
 import { renderPublicNavbar } from '../components/navbar.js';
 import { renderFooter } from '../components/footer.js';
@@ -65,11 +67,14 @@ async function init() {
 
   try {
     const { seeded } = await ensureSeeded();
+    if (redirectIfLoggedIn()) return; // already logged in → own dashboard (ARCHITECTURE.md §5)
     renderStats();
     renderFeaturedJobs();
     if (seeded) {
       showToast('Demo data loaded into your browser.', { type: 'success' });
     }
+    const flash = consumeFlash(); // e.g. "Welcome back…" after logging in
+    if (flash) showToast(flash.message, { type: flash.type });
   } catch (error) {
     console.error('landing: could not load demo data', error);
     renderLoadError(error.message);

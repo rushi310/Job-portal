@@ -155,6 +155,30 @@ export function isStrongPassword(password) {
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(String(password));
 }
 
+/**
+ * Split a list into pages. The page number is clamped into range.
+ * @param {Array} items
+ * @param {number} page 1-based
+ * @param {number} perPage
+ * @returns {{ items: Array, page: number, totalPages: number, total: number, from: number, to: number }}
+ *   from/to are 1-based positions of the first/last item shown (0 when empty)
+ */
+export function paginate(items, page, perPage) {
+  const total = items.length;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const currentPage = Math.min(Math.max(1, Math.trunc(Number(page)) || 1), totalPages);
+  const start = (currentPage - 1) * perPage;
+  const pageItems = items.slice(start, start + perPage);
+  return {
+    items: pageItems,
+    page: currentPage,
+    totalPages,
+    total,
+    from: total === 0 ? 0 : start + 1,
+    to: start + pageItems.length,
+  };
+}
+
 /** Pluralise a simple English noun: pluralize(1, 'job') → "1 job". */
 export function pluralize(count, noun) {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;

@@ -35,6 +35,9 @@
 - Components → may use core `utils`/`config`; they never read storage.
 - Services → may use core `storage`/`utils`/`config`; they never touch the DOM.
 - Core `storage` is the **only** module that calls `localStorage` / `sessionStorage` APIs.
+- Exception: core `auth` uses `user-service` to look up accounts (user-service never imports auth, so there is no cycle).
+- Exception: the app navbar's Log out action calls `auth.logout()` and `storage.setFlash()` (it still never reads storage itself).
+- Exception: `components/app-shell.js` runs page start-up for protected pages (`ensureSeeded`, `auth.requireRole`, `storage.consumeFlash`).
 
 ## 2. Folder Structure
 
@@ -105,6 +108,8 @@ Job portal/                     (project root)
 │   │   │   └── analytics-service.js
 │   │   ├── components/
 │   │   │   ├── icons.js            Inline SVG icon set shared by components
+│   │   │   ├── form-field.js       Inline field errors, password toggle, loading button
+│   │   │   ├── app-shell.js        Protected-page start-up: seed → guard → navbar/sidebar/footer → flash
 │   │   │   ├── navbar.js           Top bar (logo, role menu, bell, user menu)
 │   │   │   ├── sidebar.js          Role-based side navigation
 │   │   │   ├── footer.js
@@ -204,12 +209,15 @@ Every page script awaits `ensureSeeded()` before doing anything else. Admin "Res
 
 - **No router library.** Each page is a separate HTML file; navigation is normal links.
 - `auth.login(email, password)` → validates against `fh_users` → writes `fh_session` → redirects to the role's dashboard.
-- `auth.requireRole(...roles)` is the first call in every protected page script:
-  - no session → redirect to `pages/auth/login.html`
-  - session role not allowed → redirect to the user's own dashboard
+- `auth.requireRole(...roles)` is the first call in every protected page script (via `components/app-shell.js`):
+  - no session → redirect to `pages/auth/login.html?returnTo=<this page>` with a "Please log in" flash
+  - session role not allowed → redirect to the user's own dashboard with a warning flash
   - user no longer exists or is `blocked` → clear session → login
-- `auth.logout()` → removes `fh_session` → redirect to `index.html`.
-- Public pages (landing, login, register) redirect an already-logged-in user to their dashboard.
+  - redirects use `location.replace`, and a role's own dashboard always accepts that role, so redirects cannot loop
+- After login, `auth.getPostLoginPath(role, returnTo)` returns `returnTo` only if it is a project page in the user's own role folder or `pages/shared/`; otherwise the role dashboard.
+- `auth.logout()` → removes `fh_session`; the navbar then redirects to `index.html`.
+- Public pages (landing, login, register) call `auth.redirectIfLoggedIn()` to send an already-logged-in user to their dashboard.
+- Protected pages start with their `[data-app-shell]` wrapper `hidden`; it is shown only after the guard passes.
 
 ### Paths
 All links and redirects use **relative paths** — never root-absolute paths (`/pages/...`) — so the site works from any base URL (Live Server, a sub-folder, or GitHub Pages). `utils.js` exposes a `toRoot(path)` helper that resolves a root-relative project path using `import.meta.url`.
@@ -217,16 +225,14 @@ All links and redirects use **relative paths** — never root-absolute paths (`/
 ## 6. Page Script Lifecycle
 
 ```js
-// assets/js/pages/student/jobs.js (pattern)
-import { ensureSeeded } from '../../core/seed.js';
-import { requireRole } from '../../core/auth.js';
-import { renderNavbar } from '../../components/navbar.js';
+// assets/js/pages/student/jobs.js (pattern for protected pages)
+import { ROLES } from '../../core/config.js';
+import { initProtectedPage } from '../../components/app-shell.js';
 
 async function init() {
-  await ensureSeeded();
-  const session = requireRole('student');
-  if (!session) return;            // redirect already happening
-  renderNavbar(session);
+  // seeds data, runs requireRole, renders navbar + sidebar + footer, shows flash message
+  const user = await initProtectedPage(ROLES.STUDENT);
+  if (!user) return;               // redirect already happening
   // read data via services, render, bind events
 }
 
@@ -246,6 +252,8 @@ Each HTML page loads exactly one script: `<script type="module" src="..."></scri
 | `analytics-service.js` | aggregate counts for dashboards and reports; CSV export data |
 
 Services return plain objects/arrays or `{ ok: true, data }` / `{ ok: false, error }` for operations that can fail.
+
+Services are created with the read-only queries the current phase needs and grow in later phases (e.g. `application-service`, `saved-job-service` and `notification-service` were added in Phase 3 with read-only queries for the student dashboard; their write operations arrive in Phases 5, 6 and 10). There is no separate dashboard service: dashboard pages compose these services. Phase 4 added `searchJobs(criteria)` and `getJobFilterOptions()` to `job-service` (pure functions over derived arrays; stored jobs are never modified), `paginate()` to `utils.js`, and `components/pagination.js`.
 
 ## 8. Running the Project
 

@@ -10,6 +10,27 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 let modalCount = 0;
 
 /**
+ * Keep Tab / Shift+Tab focus inside a container (modal dialogs, mobile drawer).
+ * Call from a keydown handler; does nothing for other keys.
+ * @param {HTMLElement} containerEl
+ * @param {KeyboardEvent} event
+ */
+export function keepFocusInside(containerEl, event) {
+  if (event.key !== 'Tab') return;
+  const focusable = [...containerEl.querySelectorAll(FOCUSABLE)];
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+/**
  * Open a modal dialog.
  * @param {object} options
  * @param {string} options.title
@@ -92,18 +113,7 @@ export function openModal({ title, content, actions = [{ label: 'Close', variant
       close();
       return;
     }
-    if (event.key !== 'Tab') return;
-    const focusable = [...dialogEl.querySelectorAll(FOCUSABLE)];
-    if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
+    keepFocusInside(dialogEl, event);
   }
 
   closeBtnEl.addEventListener('click', close);

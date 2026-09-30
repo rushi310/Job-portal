@@ -41,7 +41,11 @@ Any user with status `blocked` cannot log in.
 | Feature | Phase |
 |---|---|
 | Dashboard: welcome, quick stats (applied, shortlisted, saved, profile completeness), recent applications, recommended jobs | 3 |
+
+*Dashboard definitions (Phase 3):* **Applications** = all of the student's applications (any status); **Shortlisted** = applications currently in status `shortlisted`; **Saved jobs** = the student's `fh_saved_jobs` records; **Profile completeness** = share of 15 equally weighted items (name, email, phone, college, degree, branch, graduation year, CGPA, location, about, ≥1 skill, ≥1 education entry, ≥1 project, any profile link, resume). **Recommended jobs** = approved, non-expired jobs not yet applied to, ranked by number of matching skills then newest. All figures use only the logged-in student's own records.
 | Browse approved jobs; keyword search; filters (location, job type, work mode, salary/stipend range, skills); sort (newest, deadline, salary); pagination | 4 |
+
+*Job search rules (Phase 4):* **Search** covers title, company and skills; case-insensitive; extra spaces ignored; every typed word must appear. **Filters** combine with AND. **Location** is an exact (case-insensitive) match from the list of locations in the data. **Salary / stipend** ranges (`PAY_RANGES` in config.js) each belong to one pay period (monthly stipend or yearly salary); a job matches when its pay range overlaps the chosen range; undisclosed pay never matches a range. **Skills**: a job must list every selected skill. **Sort**: newest (default), deadline (soonest first), salary (highest first; monthly amounts ×12 for comparison; undisclosed last). 9 jobs per page; any search/filter/sort change returns to page 1. Expired jobs hidden unless "Show expired" is ticked (BR-12). The last used search/filters/sort/page are kept for the tab in `fh_job_filters` (sessionStorage).
 | Job details page with eligibility check | 5 |
 | Apply with an optional cover note; withdraw an application | 5 |
 | Save / unsave jobs; Saved Jobs page | 6 |
@@ -82,6 +86,8 @@ Any user with status `blocked` cannot log in.
 - **BR-04** On successful login, a session object is written to `sessionStorage` (`fh_session`). Closing the tab ends the session.
 - **BR-05** Every protected page runs a role guard: no session → redirect to login; wrong role → redirect to that user's own dashboard.
 - **BR-06** Admin accounts cannot be created through registration.
+
+*Registration field formats (input validation, not business rules):* all fields in UI_SPEC §5 "Register" are required except the recruiter's company website (optional, must be an http/https URL if given); phone = 10 digits; degree is chosen from `DEGREE_OPTIONS` (the degree values used in job eligibility); graduation year from the current year −2 to +2; CGPA 0–10. Registration does not log the user in: they are sent to the login page with their email pre-filled and a one-time success message (`fh_flash`).
 
 ### 4.2 Jobs
 - **BR-07** Only recruiters with status `active` can post jobs.

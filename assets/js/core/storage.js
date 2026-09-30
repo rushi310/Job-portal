@@ -3,7 +3,7 @@
  * Values are stored as JSON. Every other module goes through these helpers.
  */
 
-import { STORAGE_PREFIX } from './config.js';
+import { STORAGE_PREFIX, STORAGE_KEYS } from './config.js';
 
 /**
  * Read and parse a JSON value.
@@ -77,4 +77,22 @@ export function setSession(key, value) {
 
 export function removeSession(key) {
   window.sessionStorage.removeItem(key);
+}
+
+/* ---------- One-time "flash" message for the next page (fh_flash) ---------- */
+
+/**
+ * Queue a message to show once on the next page load (e.g. after a redirect).
+ * @param {string} message
+ * @param {'success'|'error'|'warning'|'info'} [type='info']
+ */
+export function setFlash(message, type = 'info') {
+  return setSession(STORAGE_KEYS.FLASH, { message, type });
+}
+
+/** Read and remove the queued flash message. @returns {{ message: string, type: string }|null} */
+export function consumeFlash() {
+  const flash = getSession(STORAGE_KEYS.FLASH);
+  removeSession(STORAGE_KEYS.FLASH);
+  return flash && typeof flash.message === 'string' ? flash : null;
 }

@@ -94,7 +94,7 @@ Minimum supported width: **360px**. No horizontal page scroll at any width (wide
 │ Footer: © FreshHire · demo notice           │
 └─────────────────────────────────────────────┘
 ```
-Login/Register use a centred card (max-width 480px) on a light background.
+Login/Register use a slim header (logo + "Back to home") instead of the full public header, and a centred card (max-width 480px) on a light background.
 
 ### 3.2 App Shell (all logged-in pages)
 ```
@@ -154,8 +154,8 @@ Applicants (recruiter) and Job Details (student) are reached from lists, not the
 | Landing | Hero ("Your first job starts here") + CTAs, 3-step "How it works", featured jobs (6 latest approved), stats strip, footer |
 | Login | Email, password (show/hide), submit, link to register, demo credentials hint box |
 | Register | Role toggle (Student / Recruiter); common fields (name, email, phone, password, confirm); student fields (college, degree, branch, graduation year, CGPA); recruiter fields (company name, designation, website, location) |
-| Student Dashboard | Greeting, 4 stat cards, profile completeness bar, recent applications list, recommended jobs (skill match) |
-| Browse Jobs | Search bar, filter panel, sort select, result count, job card grid, pagination, empty state |
+| Student Dashboard | Greeting, 4 stat cards (Applications, Shortlisted, Saved jobs, Profile complete), profile completeness bar with missing items, recent applications list (5 newest by activity), recent updates (3 newest notifications + unread count; read-only until Phase 10), recommended jobs (3, skill match; latest open jobs when nothing matches), quick actions ("Soon" until their pages exist). Stats: 1 / 2 / 4 columns; 2 columns between 1024–1279px because of the sidebar |
+| Browse Jobs | Search bar (debounced 300 ms; Enter searches at once), filter panel, sort select, result count ("N jobs found · showing a–b", polite live region), job card grid, pagination, empty state with "Clear filters". Filter panel is inline (240px column) from 1024px and a right-hand drawer below 1024px, opened by a "Filters" button that shows the active-filter count |
 | Job Details | Header (title, company, badges), key facts grid, description, responsibilities, skills, eligibility box with ✓/✗ per rule, Apply / Save buttons, apply modal with cover note |
 | My Applications | Status filter tabs, list/table of applications, expandable timeline, Withdraw button where allowed |
 | Saved Jobs | Job card grid with Unsave; empty state linking to Browse Jobs |

@@ -1,0 +1,188 @@
+/* auth.css — Login (and later Register) pages: slim header + centred card (UI_SPEC.md §3.1). */
+
+.auth-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------- Slim header ---------- */
+.auth-header {
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.auth-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: var(--header-height);
+}
+
+/* ---------- Page & card ---------- */
+.auth-page {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-bg) 60%);
+}
+
+.auth-card {
+  display: grid;
+  gap: var(--space-5);
+  width: 100%;
+  max-width: 480px;
+}
+
+.auth-card--wide {
+  max-width: 640px;
+}
+
+.auth-card__title {
+  margin-bottom: var(--space-1);
+}
+
+.auth-card__subtitle {
+  color: var(--color-text-muted);
+}
+
+.auth-card__switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 576px) {
+  .auth-page {
+    align-items: center;
+    padding-block: var(--space-7);
+  }
+
+  .auth-card {
+    padding: var(--space-6);
+  }
+}
+
+/* ---------- Registration: role toggle & form sections ---------- */
+.role-toggle,
+.form-section {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.role-toggle .form-label {
+  margin-bottom: var(--space-2);
+}
+
+.role-toggle__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background-color: var(--color-neutral-light);
+  border-radius: var(--radius-md);
+}
+
+.role-toggle__option {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Visually hidden radio; the label text acts as the segmented button */
+.role-toggle__option input {
+  position: absolute;
+  opacity: 0;
+}
+
+.role-toggle__label {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-align: center;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.role-toggle__option input:checked + .role-toggle__label {
+  color: var(--color-primary);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.role-toggle__option input:focus-visible + .role-toggle__label {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.form-section {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.form-section__title {
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  border-bottom: 1px solid var(--color-border);
+  width: 100%;
+}
+
+/* ---------- Demo accounts hint box ---------- */
+.demo-accounts {
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.demo-accounts__title {
+  font-size: var(--fs-sm);
+}
+
+.demo-accounts__hint {
+  margin-block: var(--space-1) var(--space-3);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.demo-accounts__list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.demo-accounts__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--fs-sm);
+}
+
+.demo-accounts__label {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.demo-accounts__item .btn {
+  flex-shrink: 0;
+}
+
+.demo-accounts__email {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}

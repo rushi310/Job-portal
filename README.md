@@ -11,7 +11,8 @@
 
 ## Project Status
 
-**Current phase: Phase 1 — Project Setup & Base UI (complete).** The landing page, design system, core modules, and seed data are in place. Login and all role portals come in later phases.
+**Phase 4 — Job Listing & Search (implemented; final verification pending). Next: Phase 5 — Job Details & Applications.**
+Working now: landing page, registration (student / recruiter), login, logout, role-based page protection, the student dashboard, and **Browse Jobs** (search, filters, sort, pagination, "Show expired"), plus dashboard shells for recruiters and admins. Menu items for features of later phases are marked "Soon".
 See [PROJECT_STATUS.md](PROJECT_STATUS.md) for live progress.
 
 ## About
@@ -46,13 +47,15 @@ No installation, build step, or internet connection is required.
 
 On the first visit, demo data from `/data/*.json` is copied into `localStorage` (a "Demo data loaded" toast appears). To start fresh, clear this site's data in the browser's DevTools (Application → Storage → Clear site data).
 
-## Demo Credentials (available from Phase 2)
+## Demo Credentials
 
 | Role | Email | Password |
 |---|---|---|
 | Admin | admin@freshhire.com | Admin@123 |
 | Student | student@freshhire.com | Student@123 |
 | Recruiter | recruiter@freshhire.com | Recruiter@123 |
+
+The login page also has "Use" buttons that fill these in. Other seed accounts (password `Password@123`): `meera.joshi@example.com` (recruiter awaiting approval) and `sameer.khan@example.com` (blocked recruiter — login is refused).
 
 ## Project Structure
 

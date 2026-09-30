@@ -22,7 +22,8 @@ function createMetaItem(iconName, text, extraClass = '') {
   return itemEl;
 }
 
-function createSkillChips(skills = []) {
+function createSkillChips(skillsValue) {
+  const skills = Array.isArray(skillsValue) ? skillsValue : [];
   const listEl = createElement('ul', 'chip-list');
   listEl.setAttribute('aria-label', 'Skills');
   skills.slice(0, MAX_CARD_SKILLS).forEach((skill) => {
@@ -47,9 +48,10 @@ function describeDeadline(job, isExpired) {
  * @param {object} [options]
  * @param {boolean} [options.isExpired=false] computed by job-service
  * @param {HTMLElement[]} [options.actions=[]] buttons/links for the card footer
+ * @param {string} [options.note] short extra line, e.g. "Matches your skills: HTML, CSS"
  * @returns {HTMLElement}
  */
-export function createJobCard(job, { isExpired = false, actions = [] } = {}) {
+export function createJobCard(job, { isExpired = false, actions = [], note = '' } = {}) {
   const cardEl = createElement('article', 'card card--hover job-card');
   cardEl.dataset.jobId = job.id;
 
@@ -70,8 +72,8 @@ export function createJobCard(job, { isExpired = false, actions = [] } = {}) {
 
   const metaEl = createElement('ul', 'job-card__meta');
   metaEl.append(
-    createMetaItem('mapPin', job.location),
-    createMetaItem('briefcase', job.experience),
+    createMetaItem('mapPin', job.location ?? 'Location not specified'),
+    createMetaItem('briefcase', job.experience ?? 'Fresher'),
     createMetaItem('wallet', formatSalary(job), 'job-card__salary'),
   );
 
@@ -87,6 +89,8 @@ export function createJobCard(job, { isExpired = false, actions = [] } = {}) {
     footerEl.append(actionsEl);
   }
 
-  cardEl.append(headerEl, badgesEl, metaEl, createSkillChips(job.skills), footerEl);
+  cardEl.append(headerEl, badgesEl, metaEl, createSkillChips(job.skills));
+  if (note) cardEl.append(createElement('p', 'job-card__note', note));
+  cardEl.append(footerEl);
   return cardEl;
 }

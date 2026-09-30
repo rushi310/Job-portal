@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Create a FreshHire account as a student or a recruiter.">
+  <title>Create account · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+  <link rel="stylesheet" href="../../assets/css/pages/auth.css">
+
+  <script type="module" src="../../assets/js/pages/auth/register.js"></script>
+</head>
+<body class="auth-body">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="auth-header">
+    <div class="container auth-header__inner">
+      <a class="brand" href="../../index.html">
+        <img class="brand__logo" src="../../assets/images/logo.svg" alt="FreshHire home" width="150" height="32">
+      </a>
+      <a class="btn btn--ghost btn--sm" href="../../index.html" data-icon-before="arrowLeft">Back to home</a>
+    </div>
+  </header>
+
+  <main id="main-content" class="auth-page" tabindex="-1">
+    <section class="card auth-card auth-card--wide" aria-labelledby="register-title">
+      <header class="auth-card__header">
+        <h1 class="auth-card__title" id="register-title">Create your account</h1>
+        <p class="auth-card__subtitle">Join FreshHire as a student or a recruiter. Fields marked * are required.</p>
+      </header>
+
+      <!-- Form-level errors (storage problems, data load problems) -->
+      <div class="alert alert--danger" role="alert" tabindex="-1" data-form-alert hidden></div>
+
+      <form class="form" data-register-form novalidate>
+        <fieldset class="role-toggle">
+          <legend class="form-label">I am registering as</legend>
+          <div class="role-toggle__options">
+            <label class="role-toggle__option">
+              <input type="radio" name="role" value="student" checked>
+              <span class="role-toggle__label">Student</span>
+            </label>
+            <label class="role-toggle__option">
+              <input type="radio" name="role" value="recruiter">
+              <span class="role-toggle__label">Recruiter</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Common fields -->
+        <fieldset class="form-section">
+          <legend class="form-section__title">Account details</legend>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-name">Full name <span class="form-label__required" aria-hidden="true">*</span></label>
+            <input class="form-control" id="reg-name" name="name" type="text" autocomplete="name" required
+              aria-describedby="reg-name-error">
+            <p class="form-error" id="reg-name-error" hidden></p>
+          </div>
+
+          <div class="form-row form-row--2">
+            <div class="form-group">
+              <label class="form-label" for="reg-email">Email address <span class="form-label__required" aria-hidden="true">*</span></label>
+              <input class="form-control" id="reg-email" name="email" type="email" autocomplete="email"
+                inputmode="email" placeholder="you@example.com" required aria-describedby="reg-email-error">
+              <p class="form-error" id="reg-email-error" hidden></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-phone">Phone number <span class="form-label__required" aria-hidden="true">*</span></label>
+              <input class="form-control" id="reg-phone" name="phone" type="tel" autocomplete="tel-national"
+                inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" required
+                aria-describedby="reg-phone-error">
+              <p class="form-error" id="reg-phone-error" hidden></p>
+            </div>
+          </div>
+
+          <div class="form-row form-row--2">
+            <div class="form-group">
+              <label class="form-label" for="reg-password">Password <span class="form-label__required" aria-hidden="true">*</span></label>
+              <div class="input-group">
+                <input class="form-control" id="reg-password" name="password" type="password"
+                  autocomplete="new-password" required aria-describedby="reg-password-hint reg-password-error">
+                <button class="icon-btn input-group__action" type="button" data-toggle-password="reg-password"
+                  aria-controls="reg-password"></button>
+              </div>
+              <p class="form-hint" id="reg-password-hint">At least 8 characters, with an uppercase letter, a lowercase letter, and a number.</p>
+              <p class="form-error" id="reg-password-error" hidden></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-confirm-password">Confirm password <span class="form-label__required" aria-hidden="true">*</span></label>
+              <div class="input-group">
+                <input class="form-control" id="reg-confirm-password" name="confirmPassword" type="password"
+                  autocomplete="new-password" required aria-describedby="reg-confirm-password-error">
+                <button class="icon-btn input-group__action" type="button" data-toggle-password="reg-confirm-password"
+                  aria-controls="reg-confirm-password"></button>
+              </div>
+              <p class="form-error" id="reg-confirm-password-error" hidden></p>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Student fields -->
+        <fieldset class="form-section" data-role-section="student">
+          <legend class="form-section__title">Education</legend>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-college">College <span class="form-label__required" aria-hidden="true">*</span></label>
+            <input class="form-control" id="reg-college" name="college" type="text" autocomplete="organization"
+              required aria-describedby="reg-college-error">
+            <p class="form-error" id="reg-college-error" hidden></p>
+          </div>
+
+          <div class="form-row form-row--2">
+            <div class="form-group">
+              <label class="form-label" for="reg-degree">Degree <span class="form-label__required" aria-hidden="true">*</span></label>
+              <select class="form-control" id="reg-degree" name="degree" required aria-describedby="reg-degree-error"
+                data-options="degrees">
+                <option value="">Select degree</option>
+              </select>
+              <p class="form-error" id="reg-degree-error" hidden></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-branch">Branch / specialisation <span class="form-label__required" aria-hidden="true">*</span></label>
+              <input class="form-control" id="reg-branch" name="branch" type="text" placeholder="e.g. Computer Engineering"
+                required aria-describedby="reg-branch-error">
+              <p class="form-error" id="reg-branch-error" hidden></p>
+            </div>
+          </div>
+
+          <div class="form-row form-row--2">
+            <div class="form-group">
+              <label class="form-label" for="reg-graduation-year">Graduation year <span class="form-label__required" aria-hidden="true">*</span></label>
+              <select class="form-control" id="reg-graduation-year" name="graduationYear" required
+                aria-describedby="reg-graduation-year-error" data-options="graduationYears">
+                <option value="">Select year</option>
+              </select>
+              <p class="form-error" id="reg-graduation-year-error" hidden></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-cgpa">CGPA (out of 10) <span class="form-label__required" aria-hidden="true">*</span></label>
+              <input class="form-control" id="reg-cgpa" name="cgpa" type="number" inputmode="decimal" min="0" max="10"
+                step="0.01" placeholder="e.g. 8.2" required aria-describedby="reg-cgpa-error">
+              <p class="form-error" id="reg-cgpa-error" hidden></p>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Recruiter fields -->
+        <fieldset class="form-section" data-role-section="recruiter" hidden disabled>
+          <legend class="form-section__title">Company details</legend>
+
+          <div class="alert alert--info" data-recruiter-note>
+            <p>
+              Recruiter accounts are reviewed by the FreshHire admin. You can log in straight away,
+              but you can post jobs only after your account is approved.
+            </p>
+          </div>
+
+          <div class="form-row form-row--2">
+            <div class="form-group">
+              <label class="form-label" for="reg-company-name">Company name <span class="form-label__required" aria-hidden="true">*</span></label>
+              <input class="form-control" id="reg-company-name" name="companyName" type="text" autocomplete="organization"
+                required aria-describedby="reg-company-name-error">
+              <p class="form-error" id="reg-company-name-error" hidden></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-designation">Designation <span class="form-label__required" aria-hidden="true">*</span></label>
+              <input class="form-control" id="reg-designation" name="designation" type="text"
+                autocomplete="organization-title" placeholder="e.g. HR Manager" required
+                aria-describedby="reg-designation-error">
+              <p class="form-error" id="reg-designation-error" hidden></p>
+            </div>
+          </div>
+
+          <div class="form-row form-row--2">
+            <div class="form-group">
+              <label class="form-label" for="reg-company-website">Company website <span class="text-muted text-xs">(optional)</span></label>
+              <input class="form-control" id="reg-company-website" name="companyWebsite" type="url" autocomplete="url"
+                placeholder="https://example.com" aria-describedby="reg-company-website-error">
+              <p class="form-error" id="reg-company-website-error" hidden></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-company-location">Company location <span class="form-label__required" aria-hidden="true">*</span></label>
+              <input class="form-control" id="reg-company-location" name="companyLocation" type="text"
+                placeholder="e.g. Pune" required aria-describedby="reg-company-location-error">
+              <p class="form-error" id="reg-company-location-error" hidden></p>
+            </div>
+          </div>
+        </fieldset>
+
+        <button class="btn btn--primary btn--lg btn--block" type="submit" data-submit>Create account</button>
+      </form>
+
+      <p class="auth-card__switch">
+        Already have an account?
+        <a class="btn btn--ghost btn--sm" href="login.html">Log in</a>
+      </p>
+    </section>
+  </main>
+
+  <div data-mount="footer"></div>
+</body>
+</html>

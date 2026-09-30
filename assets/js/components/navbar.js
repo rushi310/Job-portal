@@ -1,9 +1,14 @@
 /**
- * navbar.js — Site header.
- * Phase 1: public variant only (landing page). The logged-in app variant is added in Phase 2.
+ * navbar.js — Site headers.
+ * - renderPublicNavbar: landing page (Phase 1).
+ * - renderAppNavbar: logged-in pages — ☰ drawer toggle, logo, user menu with logout (P2-T04).
+ *   The notification bell is added in Phase 10 (UI_SPEC.md §3.2).
  */
 
-import { toRoot } from '../core/utils.js';
+import { PAGE_PATHS, ROLES, USER_STATUS } from '../core/config.js';
+import { toRoot, getLabel, getInitials } from '../core/utils.js';
+import { setFlash } from '../core/storage.js';
+import { logout, getPostLoginPath } from '../core/auth.js';
 import { createIcon } from './icons.js';
 
 const PUBLIC_LINKS = [
@@ -12,18 +17,13 @@ const PUBLIC_LINKS = [
   { label: 'Featured jobs', path: 'index.html#featured-jobs' },
 ];
 
-/** A disabled button with a "Soon" tag, for features of later phases. */
-export function createSoonButton(label, variant = 'outline', size = 'sm') {
-  const buttonEl = document.createElement('button');
-  buttonEl.type = 'button';
-  buttonEl.className = `btn btn--${variant}${size ? ` btn--${size}` : ''}`;
-  buttonEl.disabled = true;
-  buttonEl.title = 'Coming soon';
-  const tagEl = document.createElement('span');
-  tagEl.className = 'tag-soon';
-  tagEl.textContent = 'Soon';
-  buttonEl.append(label, ' ', tagEl);
-  return buttonEl;
+/** A small button-styled link to a project page (e.g. Login / Register). */
+function createButtonLink(label, path, variant) {
+  const linkEl = document.createElement('a');
+  linkEl.className = `btn btn--${variant} btn--sm`;
+  linkEl.href = toRoot(path);
+  linkEl.textContent = label;
+  return linkEl;
 }
 
 function createLogoLink() {
@@ -59,10 +59,12 @@ function createNav() {
     listEl.append(itemEl);
   });
 
-  // Login & Register become real links in Phase 2.
   const actionsEl = document.createElement('div');
   actionsEl.className = 'site-nav__actions';
-  actionsEl.append(createSoonButton('Login', 'outline'), createSoonButton('Register', 'primary'));
+  actionsEl.append(
+    createButtonLink('Log in', PAGE_PATHS.LOGIN, 'outline'),
+    createButtonLink('Register', PAGE_PATHS.REGISTER, 'primary'),
+  );
 
   navEl.append(listEl, actionsEl);
   return navEl;
@@ -114,5 +116,155 @@ export function renderPublicNavbar(mountEl) {
   mountEl.replaceWith(headerEl);
 
   bindMenuToggle(toggleEl, navEl);
+  return headerEl;
+}
+
+/* ==========================================================================
+   App navbar (logged-in pages)
+   ========================================================================== */
+
+/** Profile page per role in the user menu (none for admin). Shown as "Soon" until built. */
+const PROFILE_MENU_ITEMS = {
+  [ROLES.STUDENT]: { label: 'Profile & Resume', path: 'pages/student/profile.html', isAvailable: false },
+  [ROLES.RECRUITER]: { label: 'Company Profile', path: 'pages/recruiter/company-profile.html', isAvailable: false },
+};
+
+function createElement(tag, className, text) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (text !== undefined) el.textContent = text;
+  return el;
+}
+
+/** Logout through auth.js, then go to the documented destination (ARCHITECTURE.md §5). */
+function handleLogout() {
+  logout();
+  setFlash('You have been logged out.', 'info');
+  window.location.assign(toRoot(PAGE_PATHS.HOME));
+}
+
+function createUserMenuHeader(user) {
+  const headerEl = createElement('div', 'user-menu__header');
+  const nameEl = createElement('p', 'user-menu__full-name', user.name);
+  const emailEl = createElement('p', 'user-menu__email', user.email);
+  const badgesEl = createElement('div', 'flex flex-wrap gap-2');
+  badgesEl.append(createElement('span', 'badge badge--primary', getLabel(user.role)));
+  if (user.status === USER_STATUS.PENDING) {
+    badgesEl.append(createElement('span', 'badge badge--status-pending', 'Awaiting approval'));
+  }
+  headerEl.append(nameEl, emailEl, badgesEl);
+  return headerEl;
+}
+
+function createProfileMenuItem(role) {
+  const item = PROFILE_MENU_ITEMS[role];
+  if (!item) return null;
+  const itemEl = createElement('li');
+  if (item.isAvailable) {
+    const linkEl = createElement('a', 'user-menu__item');
+    linkEl.href = toRoot(item.path);
+    linkEl.append(createIcon('user'), item.label);
+    itemEl.append(linkEl);
+  } else {
+    const disabledEl = createElement('span', 'user-menu__item is-disabled');
+    disabledEl.setAttribute('aria-disabled', 'true');
+    const tagEl = createElement('span', 'tag-soon', 'Soon');
+    disabledEl.append(createIcon('user'), item.label, ' ', tagEl);
+    itemEl.append(disabledEl);
+  }
+  return itemEl;
+}
+
+function createUserMenu(user) {
+  const menuEl = createElement('div', 'user-menu');
+
+  const buttonEl = createElement('button', 'user-menu__button');
+  buttonEl.type = 'button';
+  buttonEl.setAttribute('aria-expanded', 'false');
+  buttonEl.setAttribute('aria-controls', 'user-menu-panel');
+  buttonEl.setAttribute('aria-label', `Account menu for ${user.name}`);
+  const avatarEl = createElement('span', 'avatar', getInitials(user.name));
+  avatarEl.setAttribute('aria-hidden', 'true');
+  const nameEl = createElement('span', 'user-menu__name', user.name);
+  nameEl.setAttribute('aria-hidden', 'true');
+  buttonEl.append(avatarEl, nameEl, createIcon('chevronDown'));
+
+  const panelEl = createElement('div', 'user-menu__panel');
+  panelEl.id = 'user-menu-panel';
+  panelEl.hidden = true;
+
+  const listEl = createElement('ul', 'user-menu__list');
+  listEl.setAttribute('role', 'list');
+  const profileItemEl = createProfileMenuItem(user.role);
+  if (profileItemEl) listEl.append(profileItemEl);
+
+  const logoutItemEl = createElement('li');
+  const logoutEl = createElement('button', 'user-menu__item');
+  logoutEl.type = 'button';
+  logoutEl.dataset.action = 'logout';
+  logoutEl.append(createIcon('logOut'), 'Log out');
+  logoutEl.addEventListener('click', handleLogout);
+  logoutItemEl.append(logoutEl);
+  listEl.append(logoutItemEl);
+
+  panelEl.append(createUserMenuHeader(user), listEl);
+  menuEl.append(buttonEl, panelEl);
+  bindUserMenu(menuEl, buttonEl, panelEl);
+  return menuEl;
+}
+
+/** Disclosure behaviour: toggle on click; close on Esc, outside click, or focus leaving the menu. */
+function bindUserMenu(menuEl, buttonEl, panelEl) {
+  const setOpen = (isOpen) => {
+    panelEl.hidden = !isOpen;
+    buttonEl.setAttribute('aria-expanded', String(isOpen));
+    menuEl.classList.toggle('is-open', isOpen);
+  };
+  const isOpen = () => !panelEl.hidden;
+
+  buttonEl.addEventListener('click', () => setOpen(!isOpen()));
+  menuEl.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && isOpen()) {
+      event.stopPropagation();
+      setOpen(false);
+      buttonEl.focus();
+    }
+  });
+  menuEl.addEventListener('focusout', (event) => {
+    if (isOpen() && !menuEl.contains(event.relatedTarget)) setOpen(false);
+  });
+  document.addEventListener('click', (event) => {
+    if (isOpen() && !menuEl.contains(event.target)) setOpen(false);
+  });
+}
+
+/**
+ * Replace a mount element with the logged-in app header.
+ * @param {HTMLElement} mountEl
+ * @param {object} user current user from auth.getCurrentUser()
+ * @param {{ sidebar?: { bindToggle: Function } }} [options] sidebar controller from renderSidebar()
+ * @returns {HTMLElement}
+ */
+export function renderAppNavbar(mountEl, user, { sidebar } = {}) {
+  const headerEl = createElement('header', 'app-header');
+
+  const startEl = createElement('div', 'app-header__start');
+  if (sidebar) {
+    const toggleEl = createElement('button', 'icon-btn app-menu-toggle');
+    toggleEl.type = 'button';
+    toggleEl.setAttribute('aria-label', 'Open navigation menu');
+    toggleEl.append(createIcon('menu'));
+    sidebar.bindToggle(toggleEl);
+    startEl.append(toggleEl);
+  }
+  const logoLinkEl = createLogoLink();
+  logoLinkEl.href = toRoot(getPostLoginPath(user.role));
+  startEl.append(logoLinkEl);
+
+  const endEl = createElement('div', 'app-header__end');
+  endEl.append(createUserMenu(user));
+
+  headerEl.append(startEl, endEl);
+  mountEl.replaceWith(headerEl);
   return headerEl;
 }

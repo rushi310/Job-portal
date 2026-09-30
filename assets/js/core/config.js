@@ -37,10 +37,24 @@ export const SEED_SOURCES = Object.freeze([
 /** Keys that start empty (no seed file). */
 export const EMPTY_COLLECTION_KEYS = Object.freeze([STORAGE_KEYS.SAVED_JOBS]);
 
+/** Public page paths, relative to the project root (ARCHITECTURE.md §3). */
+export const PAGE_PATHS = Object.freeze({
+  HOME: 'index.html',
+  LOGIN: 'pages/auth/login.html',
+  REGISTER: 'pages/auth/register.html',
+});
+
 export const ROLES = Object.freeze({
   STUDENT: 'student',
   RECRUITER: 'recruiter',
   ADMIN: 'admin',
+});
+
+/** Each role's dashboard (ARCHITECTURE.md §3). The pages themselves are created in P2-T04. */
+export const ROLE_HOME_PATHS = Object.freeze({
+  [ROLES.STUDENT]: 'pages/student/dashboard.html',
+  [ROLES.RECRUITER]: 'pages/recruiter/dashboard.html',
+  [ROLES.ADMIN]: 'pages/admin/dashboard.html',
 });
 
 export const USER_STATUS = Object.freeze({
@@ -112,9 +126,47 @@ export const LABELS = Object.freeze({
   expired: 'Expired',
 });
 
+/** Roles that may self-register (BR-06: admins are seed-only). */
+export const PUBLIC_REGISTRATION_ROLES = Object.freeze([ROLES.STUDENT, ROLES.RECRUITER]);
+
+/** Degree options; the same values are used in job eligibility (PROJECT_SPEC.md §5.2). */
+export const DEGREE_OPTIONS = Object.freeze(['B.E.', 'B.Tech', 'BCA', 'B.Sc', 'MCA']);
+
+/** Graduation years offered at registration: two years back to two years ahead. */
+const CURRENT_YEAR = new Date().getFullYear();
+export const GRADUATION_YEAR_OPTIONS = Object.freeze(
+  Array.from({ length: 5 }, (_, index) => CURRENT_YEAR - 2 + index),
+);
+
+export const CGPA_MAX = 10;
+
+/** Job list sort options (PROJECT_SPEC.md §3.2). The first is the default. */
+export const JOB_SORT_OPTIONS = Object.freeze([
+  { value: 'newest', label: 'Newest first' },
+  { value: 'deadline', label: 'Deadline (soonest first)' },
+  { value: 'salary', label: 'Salary / stipend (highest first)' },
+]);
+
+/**
+ * Salary / stipend range filter (PROJECT_SPEC.md §3.2). Each range applies to one pay period;
+ * a job matches when its pay range overlaps the chosen range. Amounts in INR.
+ */
+export const PAY_RANGES = Object.freeze([
+  { value: 'stipend-upto-15k', label: 'Stipend up to ₹15,000 /month', period: 'month', min: 0, max: 15000 },
+  { value: 'stipend-15k-plus', label: 'Stipend ₹15,000+ /month', period: 'month', min: 15000, max: Infinity },
+  { value: 'salary-upto-4l', label: 'Salary up to ₹4 LPA', period: 'year', min: 0, max: 400000 },
+  { value: 'salary-4l-6l', label: 'Salary ₹4 – 6 LPA', period: 'year', min: 400000, max: 600000 },
+  { value: 'salary-6l-plus', label: 'Salary ₹6 LPA+', period: 'year', min: 600000, max: Infinity },
+]);
+
+/** Delay before a typed search runs (UI_SPEC: debounced search). */
+export const SEARCH_DEBOUNCE_MS = 300;
+
 /** Limits & UI settings */
 export const MAX_RESUME_SIZE = 500 * 1024; // 500 KB (PROJECT_SPEC.md §3.2)
 export const JOBS_PER_PAGE = 9;
 export const FEATURED_JOBS_COUNT = 6;
 export const TOAST_DURATION = 4000;
+/** Short pause on form submits so the loading state is visible (simulated network round-trip). */
+export const SIMULATED_DELAY_MS = 600;
 export const MAX_CARD_SKILLS = 4;

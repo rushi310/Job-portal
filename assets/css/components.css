@@ -426,6 +426,12 @@ select.form-control {
   color: var(--color-success-text);
 }
 
+.job-card__note {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-success-text);
+}
+
 .job-card__footer {
   display: flex;
   flex-wrap: wrap;

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FreshHire Recruiter dashboard.">
+  <title>Recruiter Dashboard · FreshHire</title>
+  <link rel="icon" href="../../assets/images/logo.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../../assets/css/variables.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/utilities.css">
+
+  <script type="module" src="../../assets/js/pages/recruiter/dashboard.js"></script>
+</head>
+<body>
+  <!-- Hidden until the page guard confirms a logged-in recruiter (assets/js/components/app-shell.js) -->
+  <div class="app-shell" data-app-shell hidden>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-mount="navbar"></div>
+
+    <div class="app-body">
+      <div data-mount="sidebar"></div>
+
+      <main class="app-main" id="main-content" tabindex="-1">
+        <header class="page-header">
+          <div>
+            <h1>Recruiter Dashboard</h1>
+            <p class="page-header__subtitle">Welcome back, <span data-user-name></span>!</p>
+          </div>
+        </header>
+
+        <section class="card" aria-labelledby="overview-title">
+          <h2 class="card__title" id="overview-title">Your overview is coming soon</h2>
+          <p class="text-muted mt-2">Soon you will see your job posts and recent applicants here.</p>
+        </section>
+      </main>
+    </div>
+
+    <div data-mount="footer"></div>
+  </div>
+
+  <noscript>
+    <p class="alert alert--warning">FreshHire needs JavaScript enabled to work.</p>
+  </noscript>
+</body>
+</html>
