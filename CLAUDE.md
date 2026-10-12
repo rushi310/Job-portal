@@ -14,7 +14,8 @@
   JavaScript frontend, an Express REST API in `server/`, and MongoDB.
   Phases 0–14 built a frontend-only simulation; that history is kept in `PROJECT_STATUS.md`.
 - **Roles:** Student, Recruiter, Admin.
-- **Hosting target:** Netlify (frontend), Render (API), MongoDB Atlas (database) — free tiers.
+- **Hosting target:** one Vercel project (static pages + the API as a Vercel Function at `/api`) and
+  MongoDB Atlas — free tiers. Split hosting on Netlify + Render stays supported as an alternative.
 
 ## 2. Absolute Technology Rules (Non-Negotiable)
 
@@ -39,7 +40,7 @@ the project's own API; any secret (database string, token secret, password).
 
 | Purpose | Technology |
 |---|---|
-| Runtime | Node.js (16.20.1 or newer; Render runs 20) |
+| Runtime | Node.js (16.20.1 or newer locally; Vercel runs 22 / 24) |
 | Web framework | Express 4 |
 | Database | MongoDB through Mongoose |
 | Auth | `bcryptjs` (password hashes), `jsonwebtoken` (bearer tokens) |
@@ -51,7 +52,10 @@ the project's own API; any secret (database string, token secret, password).
 Docker as a requirement; new npm packages without the user's approval; secrets in source control;
 anything that seeds or deletes data automatically at start-up.
 
-Do not migrate the frontend to a framework. Do not move backend code outside `server/`.
+Do not migrate the frontend to a framework. Do not move backend code outside `server/`. The only
+backend-related files outside it are deployment glue: `api/index.js` (Vercel entry point, no business
+logic), `vercel.json`, and the root `package.json` / lockfile, whose dependency list must stay equal to
+`server/package.json`'s (a test checks this).
 
 ## 3. Phase Gating (Mandatory)
 
@@ -79,7 +83,7 @@ Development follows the phases in `DEVELOPMENT_PHASES.md` (Phase 0 → Phase 15)
 | `UI_SPEC.md` | Design system, layouts, page inventory, components | UI decisions change |
 | `CODING_RULES.md` | Code style and conventions | Conventions change |
 | `README.md` | Public overview, run guide, credentials | Features/run steps change |
-| `DEPLOYMENT.md` | Atlas, Render and Netlify set-up | Deployment steps or settings change |
+| `DEPLOYMENT.md` | Atlas and Vercel set-up (`DEPLOYMENT_NETLIFY_RENDER.md`: the alternative) | Deployment steps or settings change |
 | `docs/API.md` | Every API endpoint | An endpoint is added or changed |
 | `docs/SECURITY.md` | Protections and remaining risks | Anything security-relevant changes |
 

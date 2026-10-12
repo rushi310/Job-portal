@@ -288,7 +288,7 @@ Seed data also includes additional students, recruiters (one `pending`, one `blo
 | Area | Requirement |
 |---|---|
 | Platform | Latest Chrome, Edge, Firefox (desktop and mobile) |
-| Serving | Frontend: any static host (ES modules do not work on `file://`). API: Node.js. Database: MongoDB. Target: Netlify + Render + MongoDB Atlas free tiers |
+| Serving | Frontend: any static host (ES modules do not work on `file://`). API: Node.js. Database: MongoDB. Target: one Vercel project (pages + API) + MongoDB Atlas, free tiers |
 | Responsiveness | Usable from 360px width upward |
 | Accessibility | Semantic HTML, labelled form fields, keyboard navigation, visible focus, WCAG AA contrast |
 | Performance | Each page interactive quickly on a normal laptop; lists are paged on the server; no third-party downloads. On free hosting the first request after an idle period can take up to about a minute |

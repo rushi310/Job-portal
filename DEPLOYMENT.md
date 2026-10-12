@@ -1,251 +1,202 @@
-# Deploying FreshHire for free
+# Deploying FreshHire on Vercel
 
-Frontend → **Netlify** · API → **Render** · Database → **MongoDB Atlas**
+One Vercel project serves **both** parts on one domain:
 
-> **Nothing has been deployed yet.** The repository contains the code and the settings files; the
-> accounts, the cluster and the two sites have to be created by you. Every step below says whether it
-> is *already prepared* in the repository or *you do it*.
+```
+https://your-project.vercel.app/            → the pages   (static files: index.html, pages/, assets/)
+https://your-project.vercel.app/api/...     → the API     (the Express app as one Vercel Function)
+                                               └→ MongoDB Atlas
+```
+
+> **Nothing has been deployed.** The repository is prepared and was checked on this computer against a
+> stand-in for Vercel's routing, but it has never been built or run on Vercel itself, and the app has not
+> yet connected to your Atlas cluster (Atlas refused the connection from the development computer — see
+> §1.3). Treat §5 as the real test.
 >
-> Free plans change. The limits in §6 were written in October 2026 from general knowledge of these
-> services — check each provider's pricing page before relying on them, and never add a payment
-> card or choose a paid plan unless you mean to.
+> Free plans change. Check Vercel's and Atlas's pricing pages; do not add a payment card or pick a paid
+> plan unless you mean to. Vercel's free "Hobby" plan is for personal, non-commercial use.
 
-**Secrets.** Your database password, the connection string and the admin password are typed only
-into the Atlas, Render and terminal windows described here. Do not paste them into chat tools,
-screenshots, commits or any file other than `server/.env` (which Git ignores).
+**Secrets.** The database connection string, `JWT_SECRET` and the admin password are typed only into
+the Vercel dashboard, the Atlas dashboard, your own terminal and `server/.env` (ignored by Git). Never
+put them in chat tools, screenshots, commits or frontend files.
 
-| Already prepared in the repository | You do |
+*(The earlier split-hosting set-up — pages on Netlify, API on Render — is still supported and is
+described in [DEPLOYMENT_NETLIFY_RENDER.md](DEPLOYMENT_NETLIFY_RENDER.md). Use one or the other.)*
+
+## What is already in the repository
+
+| File | What it does on Vercel |
 |---|---|
-| `server/` — the API, with `npm start`, a health check at `/api/health`, and a start-up that refuses unsafe production settings | Create the Atlas cluster, database user and network rule |
-| `render.yaml` — build and start commands, health check, the list of environment variables (no values for secrets) | Create the Render service and type in `MONGODB_URI` and `FRONTEND_URL` |
-| `netlify.toml` — what to publish, security headers | Create the Netlify site |
-| `server/.env.example` — every variable explained | Create `server/.env` on your computer for seeding |
-| `assets/js/core/app-config.js` — the place for the API address (currently a placeholder) | Put your Render address in it, commit and push |
-| `npm run seed` — the demo-data import | Run it once against Atlas with your own admin password |
+| [`api/index.js`](api/index.js) | The Vercel Function: wraps the existing Express app from `server/src/app.js`, connects to MongoDB on the first request and reuses the connection. No `listen()`. |
+| [`vercel.json`](vercel.json) | "Other" preset (no framework); build = copy `index.html`, `assets/`, `pages/` into `public/`; output `public`; `/api/*` → the function; security headers for the pages; 30 s function limit; bundles `data/` for the demo reset. |
+| [`package.json`](package.json), `package-lock.json` (root) | Lets Vercel install the API's dependencies from the project root. Same dependency list as `server/package.json` (a test keeps them equal). |
+| [`assets/js/core/app-config.js`](assets/js/core/app-config.js) | The pages call the relative address `/api` — the same domain, no setting to edit. |
+| [`server/.env.example`](server/.env.example), [`.gitignore`](.gitignore) | Variable list with placeholders; `.env`, `node_modules`, `.vercel`, `public/` ignored. |
 
-Order matters because each side needs the other's address:
-**1** Atlas → **2** seed → **3** Netlify (to learn the site address) → **4** Render →
-**5** put the API address in the frontend → **6** verify.
+There is no rewrite to `index.html`: every page is a real `.html` file and keeps its address. Only
+`/api/*` goes to the function. `server/`, `data/`, the documents and `package.json` are not published.
 
 ---
 
-## 1. MongoDB Atlas (database) — you do
+## 1. MongoDB Atlas — you do
 
-1. **Account.** Sign up at <https://www.mongodb.com/cloud/atlas/register>. No card is needed for the
-   free cluster.
-2. **Free cluster.** Create a deployment → choose the **free** tier (shown as *M0* / *Free*) → pick a
-   region near the Render region you will use (Render's free services are usually in Oregon,
-   Frankfurt, Ohio, Virginia or Singapore) → create. If the page offers paid tiers by default, switch
-   to the free one before confirming.
-3. **Database user.** *Security → Database Access → Add New Database User* → authentication
-   *Password* → a username such as `freshhire-app` → **Autogenerate Secure Password** and copy it
-   somewhere safe (a password manager) → built-in role **Read and write to any database** →
-   *Add User*. Do not use your Atlas login as the database user.
-4. **Network access.** *Security → Network Access → Add IP Address*. The API connects from Render,
-   and you connect from your computer to seed:
-   - **Your computer:** *Add Current IP Address* (needed for step 2; you can delete it afterwards).
-   - **Render (preferred):** after step 4 you can read your service's outbound IP addresses in the
-     Render dashboard (service → *Connect* → *Outbound*). Add each of those ranges here. They are
-     shared by other Render customers in that region, so this narrows access but is not private.
-   - **Render (fallback):** *Allow Access From Anywhere* (`0.0.0.0/0`). This lets any computer on the
-     internet *attempt* to connect, so the database is protected only by the username and password.
-     If you use it: keep the long generated password, never reuse it, and replace this rule with the
-     Render addresses as soon as you can. Do not treat it as good security.
-5. **Connection string.** *Database → Connect → Drivers* → copy the string that looks like
-   `mongodb+srv://freshhire-app:<db_password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority`.
-   Then:
-   - replace `<db_password>` with the user's password (if it contains characters such as `@ : / ? #`,
-     use the autogenerated one instead, or URL-encode them);
+1. **Cluster and user.** You already have a cluster (`cluster0…`) and a database user. If not: create
+   a **free (M0)** cluster, then *Security → Database Access → Add New Database User* with role
+   *Read and write to any database*.
+2. **Change the database password now.** The current one was pasted into a chat, so treat it as
+   exposed: *Database Access → Edit → Edit Password → Autogenerate Secure Password → Update User*. Copy
+   the new password into a password manager.
+3. **Network access.** *Security → Network Access → Add IP Address*:
+   - **Allow Access From Anywhere (`0.0.0.0/0`)** — required for Vercel on the free plan, because
+     Vercel Functions connect from changing addresses (fixed addresses are a paid Vercel feature). The
+     consequence: any computer on the internet may *attempt* to connect, so the database is protected
+     only by its username and password. Keep the long generated password, never reuse it, and give
+     this database user access to nothing else.
+   - This rule also lets your own computer connect (needed for step 2), which it currently cannot.
+4. **Connection string.** *Database → Connect → Drivers*, copy the string and
+   - put the new password in place of `<db_password>`,
    - add the database name `freshhire` before the `?`:
-     `…mongodb.net/freshhire?retryWrites=true&w=majority`.
 
-   This full string is your `MONGODB_URI`. Treat it like a password.
+   ```
+   mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/freshhire?retryWrites=true&w=majority&appName=Cluster0
+   ```
+
+   This is `MONGODB_URI`.
 
 ## 2. Load the demo data — you do (once, from your computer)
 
-The free Render plan has no shell, so the seed is run from your computer against Atlas.
+1. Open `server/.env` (it already exists on this computer and is ignored by Git) and update the
+   `MONGODB_URI` line with the new password. Do not commit this file.
+2. In a terminal:
 
-1. In the project: `cd server`, then `npm install` (if you have not yet).
-2. Create `server/.env` (copy `server/.env.example`) and set **only** this line to your Atlas string:
-
-   ```
-   MONGODB_URI=mongodb+srv://freshhire-app:…@cluster0.xxxxx.mongodb.net/freshhire?retryWrites=true&w=majority
-   ```
-
-   `server/.env` is ignored by Git. Check with `git status` that it is not listed.
-3. Run the seed with a private admin password of your own (12+ characters, with upper-case,
-   lower-case and a digit). The script **refuses** to seed a remote database without it, because the
-   demo admin password is public.
-
-   PowerShell:
+   PowerShell
    ```powershell
+   cd server
    $env:SEED_ADMIN_PASSWORD = "type-your-own-admin-password"
    npm run seed
    Remove-Item Env:SEED_ADMIN_PASSWORD
    ```
-   Git Bash / macOS / Linux:
+   Git Bash / macOS / Linux
    ```bash
+   cd server
    SEED_ADMIN_PASSWORD='type-your-own-admin-password' npm run seed
    ```
-4. Expected output: `users 11 / 0 / 0`, `jobs 20 / 0 / 0`, `applications 15 / 0 / 0`,
-   `notifications 9 / 0 / 0` (created / already there / skipped). Running it again creates nothing
-   and changes nothing.
 
-Result: the admin `admin@freshhire.com` has **your** password. The demo student and recruiter keep
-their public passwords from the README — that is intended for a demo, but it means anyone can use
-those two accounts on your site.
+   The admin password must have 12+ characters with upper-case, lower-case and a digit. The script
+   refuses to seed a remote database without it, because the demo admin password is public.
+3. Expected: `users 11 / 0 / 0`, `jobs 20 / 0 / 0`, `applications 15 / 0 / 0`,
+   `notifications 9 / 0 / 0`. Running it again adds nothing and changes nothing.
+4. Check locally: `npm run dev`, then <http://localhost:5000/api/health> must show
+   `"database":"connected"`, and <http://localhost:5000/> must let you log in.
 
-To verify the connection at any time: `npm run dev` with this `.env` prints
-`FreshHire API listening…`, and <http://localhost:5000/api/health> answers `"database":"connected"`.
+If the seed says *Could not connect to MongoDB*, the network rule (1.3) is not active yet or the
+password in `MONGODB_URI` is wrong.
 
-## 3. Netlify (frontend), first pass — you do
+## 3. Push the code — you do
 
-The goal of this pass is to learn your site's address. The pages will say they are "not connected"
-until step 5.
+```bash
+git status            # server/.env, node_modules, public/ must NOT be listed
+git add -A
+git commit -m "Prepare single-project Vercel deployment"
+git push
+```
 
-1. Push your work to GitHub first (the repository's remote is `origin`):
-   `git add -A`, `git commit -m "Full-stack migration"`, `git push`. Check that `server/.env` and
-   `node_modules` are **not** in the commit.
-2. Sign up at <https://app.netlify.com/> (free; no card) → *Add new site → Import an existing
-   project* → GitHub → choose this repository.
-3. Settings — these are read from `netlify.toml`, so just confirm them:
-   - Base directory: *(empty)*
-   - Build command: `rm -rf dist && mkdir dist && cp -r index.html assets pages dist/`
-   - Publish directory: `dist`
+## 4. Vercel — you do
 
-   There is no build tool; the command only copies the pages so that `server/`, `data/` and the
-   documents are not published.
-4. *Deploy*. Note the address, e.g. `https://your-site-name.netlify.app` (you can rename the site
-   under *Site configuration → Change site name*). This is your **frontend origin**.
-
-*Alternative without Git:* run that copy command on your computer and drag the `dist` folder onto
-<https://app.netlify.com/drop>. You then repeat the drag for every change.
-
-## 4. Render (API) — you do
-
-1. Sign up at <https://dashboard.render.com/> (free; a card is not required for a free web service —
-   if Render asks for one, you have selected a paid option).
-2. **With the Blueprint (recommended):** *New → Blueprint* → connect GitHub → choose this repository.
-   Render reads `render.yaml` and proposes one web service, `freshhire-api`, on the **Free** plan.
-   It asks for the two values that are not in the file:
-   - `MONGODB_URI` — the Atlas string from step 1.5
-   - `FRONTEND_URL` — the Netlify address from step 3, **without** a trailing slash, e.g.
-     `https://your-site-name.netlify.app`
-
-   `JWT_SECRET` is generated by Render. *Apply*.
-
-   **Without the Blueprint:** *New → Web Service* → the repository → and enter by hand:
+1. Sign in at <https://vercel.com/> with GitHub → **Add New… → Project** → import
+   `rushi310/Job-portal`.
+2. **Project settings** on the import screen (all but the environment variables come from
+   `vercel.json`; just confirm them):
 
    | Setting | Value |
    |---|---|
-   | Language / runtime | Node |
-   | Root Directory | *(leave empty)* |
-   | Build Command | `cd server && npm ci --omit=dev` |
-   | Start Command | `cd server && npm start` |
-   | Instance Type | **Free** |
-   | Health Check Path | `/api/health` |
+   | Framework Preset | **Other** |
+   | Root Directory | `./` (the repository root — not `server`) |
+   | Build Command | `rm -rf public && mkdir public && cp -r index.html assets pages public/` |
+   | Output Directory | `public` |
+   | Install Command | default (`npm install`) |
+   | Node.js Version (Settings → Build and Deployment) | 22.x or 24.x |
 
-   Environment variables:
+3. **Environment Variables** (add for *Production* and *Preview*):
 
-   | Key | Value |
-   |---|---|
-   | `NODE_ENV` | `production` |
-   | `NODE_VERSION` | `20` |
-   | `MONGODB_URI` | your Atlas string |
-   | `JWT_SECRET` | a long random value — e.g. the output of `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
-   | `FRONTEND_URL` | your Netlify address, no trailing slash |
-   | `JWT_EXPIRES_IN` | `2h` |
-   | `APP_TIMEZONE_OFFSET_MINUTES` | `330` |
-   | `ALLOW_DEMO_RESET` | `false` |
+   | Key | Value | Required |
+   |---|---|---|
+   | `MONGODB_URI` | the Atlas string from step 1.4 | yes |
+   | `JWT_SECRET` | a long random value — run `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` and paste the output | yes (32+ characters) |
+   | `NODEJS_HELPERS` | `0` | recommended — hands Express the untouched request, exactly as on your computer |
+   | `JWT_EXPIRES_IN` | `2h` | optional (default `2h`) |
+   | `APP_TIMEZONE_OFFSET_MINUTES` | `330` | optional (default India time) |
+   | `ALLOW_DEMO_RESET` | `false` | optional — `true` lets an admin erase the database |
 
-   Do not set `PORT`: Render provides it and the server listens on it.
-3. Wait for the deploy to finish, then open `https://<your-service>.onrender.com/api/health`. It must
-   show `{"ok":true,"data":{"status":"ok","database":"connected"}}`. Note the service address — this
-   is your **API address**.
-4. Now tighten Atlas (step 1.4): add the service's outbound addresses and remove `0.0.0.0/0` if you
-   used it. Check `/api/health` again afterwards.
+   Do **not** set `FRONTEND_URL`: pages and API share one domain, so no other site is allowed to call
+   the API. Do not set `PORT`, `SERVE_FRONTEND` or `NODE_ENV` (Vercel sets production itself).
+   Mark `MONGODB_URI` and `JWT_SECRET` as *Sensitive* if the dashboard offers it.
+4. **Deploy.** When it finishes, open the deployment address.
 
-If the deploy fails, read the service's *Logs*. The server explains what is missing
-(`Invalid configuration: - MONGODB_URI is required.` and so on) without printing any secret.
+Later pushes to `master` redeploy automatically. After changing an environment variable, redeploy
+(*Deployments → … → Redeploy*) — running deployments keep the old values.
 
-## 5. Connect the frontend to the API — you do
+## 5. Verify the live site — you do
 
-1. Open `assets/js/core/app-config.js` and replace the placeholder:
+Not covered by the project's tests; tick these off on the real address.
 
-   ```js
-   export const PRODUCTION_API_BASE_URL = 'https://<your-service>.onrender.com/api';
-   ```
+- [ ] `https://<project>.vercel.app/api/health` → `{"ok":true,"data":{"status":"ok","database":"connected"}}`
+- [ ] `https://<project>.vercel.app/` shows job numbers and six jobs.
+- [ ] `…/pages/auth/login.html` opens directly (nested pages work), with styling and no missing files
+      in the browser's Network tab.
+- [ ] Log in as `student@freshhire.com` / `Student@123`: dashboard, search with a filter, save a job,
+      apply, withdraw.
+- [ ] Reload and log in again: the changes are still there.
+- [ ] Log in as `recruiter@freshhire.com` / `Recruiter@123`: post a job → it is *Pending*; open an
+      applicants page; change a status.
+- [ ] Log in as `admin@freshhire.com` with **your** admin password: approve the job, open Users and
+      Reports, send an announcement.
+- [ ] As the student, upload a small PDF resume; *View* and *Download* it; open it as the recruiter.
+- [ ] Register a new account and log in.
+- [ ] In a private window open `…/pages/admin/dashboard.html` → you are sent to the login page.
+- [ ] `…/api/admin/users` in the address bar → a JSON "Please log in" answer, not a page.
+- [ ] `…/server/src/app.js` and `…/data/users.json` → 404.
+- [ ] F12 → Console: no red errors about *Content Security Policy* or failed files.
 
-   It must start with `https://` and end with `/api`. This address is public; it is not a secret.
-2. If your API is **not** on `onrender.com` (a custom domain), also change `connect-src` in
-   `netlify.toml` to that origin, otherwise the browser blocks the requests.
-3. Commit and push. Netlify redeploys by itself (Render too, harmlessly).
+## 6. Limits to know (Vercel Hobby + Atlas free)
 
-## 6. Verify the live site — you do
-
-None of this has been checked by the project's tests; tick it off yourself.
-
-- [ ] `https://<service>.onrender.com/api/health` → `"database":"connected"`.
-- [ ] The Netlify site opens; the landing page shows job numbers and six jobs (wait up to a minute the
-      first time — the API may be waking up; the page says so).
-- [ ] Log in as `student@freshhire.com` / `Student@123`: dashboard loads; browse, save, apply.
-- [ ] Reload the page and log in again: the saved job and the application are still there.
-- [ ] Log in as `recruiter@freshhire.com` / `Recruiter@123`: post a job; it shows as *Pending*.
-- [ ] Log in as `admin@freshhire.com` with **your** admin password: approve the job; send an
-      announcement; open Reports.
-- [ ] Upload a small PDF resume as the student, then *View* and *Download* it; open it as the
-      recruiter from the applicants page.
-- [ ] Open the browser's developer tools (F12) → Console: no red errors about *CORS* or
-      *Content Security Policy*.
-- [ ] Register a new account and log in with it.
-- [ ] In a private window, open `https://<site>/pages/admin/dashboard.html`: you are sent to the
-      login page.
-
-### Preview deployments
-
-Netlify can build a preview site for every branch or pull request, at an address such as
-`https://deploy-preview-12--your-site-name.netlify.app`. The API will refuse requests from it, because
-only the origins in `FRONTEND_URL` are allowed — that is the intended, safe default. To test one
-preview, add its exact address to `FRONTEND_URL` on Render (comma-separated), and remove it
-afterwards. Do not use a wildcard; the server rejects `*`.
-
-## 7. Free-tier limits and costs
-
-| Service | What to expect on the free plan | Effect on FreshHire |
+| Topic | What to expect | Effect here |
 |---|---|---|
-| **Render** web service | Sleeps after about 15 minutes without requests and takes roughly 30–60 seconds to wake; a monthly allowance of free instance hours; no shell access; no persistent disk; restarts whenever it likes | The first page after a pause is slow (the site shows "The server is waking up…"). Rate-limit counters reset on restart. Nothing is stored on the server's disk — resumes are in the database. For a demo, open the site a minute before presenting. |
-| **MongoDB Atlas** free cluster | 512 MB of storage, shared CPU and memory, a cap on connections, no backups; clusters left unused for a long time may be paused | Room for the demo data many times over, but each resume can take up to 500 KB — a few hundred large resumes would fill it. There is no backup: do not keep anything you cannot lose. |
-| **Netlify** free plan | Monthly bandwidth and build-time allowances; the site is paused if they run out | The site is about 1 MB and each build takes seconds, so a college demo is far below the limits. |
+| Cold starts | A function instance that has not been used recently takes a moment to start and to connect to MongoDB | The first request after a pause is slower; the pages show "The server is waking up…" if it exceeds 4 s |
+| Instances | Vercel starts and stops instances as it likes; each has its own memory | The login rate limit (20 failed attempts / 15 min per address) is counted per instance, so it is weaker than on one long-running server |
+| Request size | About 4.5 MB per request body | Far above the app's own limits (100 KB JSON, 500 KB resume) |
+| Duration | `vercel.json` allows 30 s per request | Normal requests take well under a second |
+| Database addresses | No fixed outgoing address on the free plan | Atlas must allow `0.0.0.0/0` (see 1.3) |
+| Atlas free cluster | 512 MB, shared, no backups, limited connections | Fine for a demo; resumes (≤ 500 KB each) live in it |
+| Usage allowances | Monthly limits on function use and bandwidth; a Hobby project is paused when they run out, not billed | A college demo is far below them |
 
-Avoiding surprise charges:
-- Choose the **Free** instance type on Render and the **free** cluster on Atlas each time you create
-  something; both sites also sell paid tiers on the same screens.
-- Do not add a payment card unless a provider requires it; without one, a free plan can only stop
-  working, not bill you.
-- Nothing in this repository enables a paid feature. `render.yaml` says `plan: free`.
-
-## 8. Troubleshooting
+## 7. Troubleshooting
 
 | What you see | Likely cause and fix |
 |---|---|
-| Pages say *"The site is not connected to its server yet"* | `PRODUCTION_API_BASE_URL` is still the placeholder, or the change was not pushed (step 5). |
-| Pages say *"Could not reach the FreshHire server"*; console shows a **CORS** error | `FRONTEND_URL` on Render does not exactly match the site's address (check `https`, no trailing slash, the right site name). Change it and let Render redeploy. |
-| Console shows *"Refused to connect … Content Security Policy"* | The API is not on `*.onrender.com`; update `connect-src` in `netlify.toml` (step 5.2). |
-| First request takes a long time, then works | The free Render service was asleep. Normal. |
-| Render log: `Could not connect to MongoDB (MongooseServerSelectionError)` | Atlas network access does not include Render's addresses (step 1.4), the cluster is paused, or the host name in `MONGODB_URI` is wrong. |
-| Render log: `MongoServerError: bad auth` / `Authentication failed` | Wrong database username or password in `MONGODB_URI`, or special characters in the password that need URL-encoding. Reset the user's password in Atlas and update the variable. |
-| Render log: `Invalid configuration: …` | A required variable is missing or too short; the message names it. |
-| `/api/health` answers 503 | The API is running but cannot reach the database — see the two rows above. |
-| Login works, then every page returns to the login screen | The token is being refused: `JWT_SECRET` changed (everyone must log in again), or the device clock is far off. |
-| Demo logins fail on the live site | The seed was not run against this database (step 2), or `MONGODB_URI` on Render points to another database name than the one you seeded (`/freshhire`). |
-| Admin "Reset demo data" is greyed out | Intended: `ALLOW_DEMO_RESET` is `false`. Turning it on lets an admin erase the whole database. |
-| Seed says `SEED_ADMIN_PASSWORD is required…` | Intended for any remote database — follow step 2.3. |
-| Netlify build fails on the copy command | The base directory is not the repository root; leave it empty. |
+| Build fails: `cp: cannot stat 'index.html'` | Root Directory is not the repository root. Set it to `./`. |
+| Build fails or pages 404, and the log mentions an Express entry point | The framework preset was changed; it must be **Other** (`"framework": null` in `vercel.json`). |
+| `/api/health` → `"database":"disconnected"` (503) | Atlas network access does not allow `0.0.0.0/0`, the cluster is paused, or `MONGODB_URI` is wrong. Check the function's logs: *Could not connect to MongoDB*. |
+| Function log: `bad auth` / `Authentication failed` | Wrong user or password in `MONGODB_URI`, or special characters that need URL-encoding. |
+| Every `/api/...` answers *"The server is not configured correctly."* | A required variable is missing or `JWT_SECRET` is shorter than 32 characters. The function log names it. Fix and redeploy. |
+| `/api/...` returns `Cannot find module 'express'` | Dependencies were not installed from the root: keep the root `package.json` / `package-lock.json` and the default install command. |
+| Pages load without styles | A file is missing from the deployment: check that `assets/` and `pages/` are committed. |
+| Demo logins fail | The seed was run against another database name than the one in Vercel's `MONGODB_URI` (`/freshhire`), or not at all (step 2). |
+| A request body is rejected oddly (e.g. a 500 for malformed JSON) | `NODEJS_HELPERS=0` is not set (step 4.3). |
+| Admin "Reset demo data" is greyed out | Intended: `ALLOW_DEMO_RESET` is not `true`. |
+| Preview deployment asks for a Vercel login | Vercel's *Deployment Protection* for previews; the production address is public. |
 
-## 9. Updating the deployed site
+## 8. Running locally (unchanged)
 
-- Frontend change: commit and push → Netlify rebuilds.
-- API change: commit and push → Render rebuilds and restarts (open sessions stay valid).
-- New demo data in `/data`: run step 2 again; only missing records are added.
-- To change the admin password later there is no screen for it; delete that admin document in Atlas
-  (*Browse Collections → users*) and run the seed again with a new `SEED_ADMIN_PASSWORD`.
+```bash
+cd server
+npm install
+npm run dev            # API + pages at http://localhost:5000/  (uses server/.env; SERVE_FRONTEND=true)
+```
+
+- Pages only, from VS Code **Live Server** (port 5500): they call the API on port 5000 automatically.
+- No database at hand: `npm run dev:memory` (temporary data).
+- Tests: `npm test`.
+
+The same commands also work from the repository root (`npm run dev`, `npm test`, `npm run seed`); they
+just forward to `server/`. `vercel dev` is not needed and was not tested.

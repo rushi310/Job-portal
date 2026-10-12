@@ -23,9 +23,9 @@ in the browser. That description no longer applies.)
 | Input | Every request body is validated on the server (types, lengths, ranges, allowed values) and only whitelisted fields are stored. Values are turned into plain strings before reaching a query; ids must be ObjectIds; query strings cannot contain nested objects — so MongoDB operators cannot be injected. Search text is escaped before being used as a pattern. | `validators/`, `utils/text.js`, `app.js` |
 | Output in the page | The frontend inserts data with `textContent` / `createElement`, never as HTML. Links from data are shown as text, or checked to be `http(s)` / a project page. | `assets/js` |
 | Resume files | PDF only: the declared type, the size (≤ 500 KB, measured from the bytes received) and the file's first bytes are all checked. The file name is cleaned and used only as a label. Files are stored in the database, not on a public URL, and are sent only to their owner or to the recruiter of a job the student applied to, with `no-store` and `nosniff`. | `validators/profile-validator.js`, `services/profile-service.js` |
-| Rate limiting | Login: 20 failed attempts per IP per 15 minutes (successful logins are not counted, so a class behind one network address is not locked out). Registration: 20 per IP per 15 minutes. All API routes: 300 requests per IP per minute. | `middleware/rate-limiters.js` |
-| CORS | Only the origins listed in `FRONTEND_URL` may call the API from a browser. A wildcard is rejected at start-up. Cookies are not used, so credentials are off. | `app.js`, `config/env.js` |
-| Headers | `helmet` defaults on the API. On Netlify: a Content-Security-Policy (own scripts and styles only, requests only to the site and the API), `X-Frame-Options: DENY`, `nosniff`, a referrer policy. | `app.js`, `netlify.toml` |
+| Rate limiting (per server instance — see §2 "Serverless hosting") | Login: 20 failed attempts per IP per 15 minutes (successful logins are not counted, so a class behind one network address is not locked out). Registration: 20 per IP per 15 minutes. All API routes: 300 requests per IP per minute. | `middleware/rate-limiters.js` |
+| CORS | On Vercel the pages and the API share one domain and `FRONTEND_URL` is unset, so no other site may call the API from a browser. With split hosting, only the origins listed in `FRONTEND_URL`. A wildcard is rejected at start-up. Cookies are not used, so credentials are off. | `app.js`, `config/env.js` |
+| Headers | `helmet` defaults on the API. For the pages (`vercel.json`; `netlify.toml` for the alternative): a Content-Security-Policy (own scripts and styles only, requests only to the site itself / the API), `X-Frame-Options: DENY`, `nosniff`, a referrer policy. | `app.js`, `netlify.toml` |
 | Request size | JSON bodies up to 100 KB; resume uploads up to 500 KB. | `app.js`, `routes/index.js` |
 | Errors | One format; unexpected errors return a generic message. Stack traces, queries and connection details are never sent. | `middleware/error-handler.js` |
 | Logs | Method, path, status and duration only — no query strings, headers, bodies, tokens or passwords. Database connection errors are logged without the connection string. | `middleware/request-logger.js`, `config/database.js` |
@@ -70,11 +70,18 @@ student's *current* resume, not the one that existed when applying.
 **Personal data.** Names, emails, phone numbers and education details are stored in plain form.
 There is no consent screen, no data export or self-service account deletion, and no retention policy.
 
-**Database exposure.** If Atlas network access is left open to all addresses (see DEPLOYMENT.md §1),
-only the database password protects the data. There are no backups on the free tier.
+**Database exposure.** With Vercel's free plan, Atlas network access must be open to all addresses
+(DEPLOYMENT.md §1.3), so only the database username and password protect the data. A database
+password that has been shared anywhere (a chat, a screenshot) must be changed. There are no backups on the free tier.
 
 **Admin power.** An admin can block or delete any account and delete jobs; there is no audit log of
 who did what.
+
+**Serverless hosting.** On Vercel the API runs in instances that start and stop on demand. The
+rate-limit counters live in each instance's memory, so an attacker whose requests are spread over
+several instances gets more attempts than the limit suggests, and counters vanish when an instance
+stops. A shared store would fix this and is not implemented. Vercel's free plan also has no fixed
+outgoing address, so Atlas has to accept connections from anywhere (next point).
 
 **Free hosting.** The service can sleep, restart or be withdrawn by the provider; there is no
 monitoring or alerting; availability is not guaranteed.
@@ -89,7 +96,8 @@ that the rules above hold for the cases written; they cannot show the absence of
 ## 3. If something goes wrong
 
 - A secret was committed or shown: change it at once — reset the database user's password in Atlas
-  and update `MONGODB_URI` on Render; replace `JWT_SECRET` on Render (everyone is logged out).
+  and update `MONGODB_URI` in the hosting dashboard (Vercel) and in `server/.env`; replace `JWT_SECRET`
+  there (everyone is logged out); then redeploy.
   Removing it from Git history afterwards does not make the old value safe again.
 - An account is misused: an admin can block it on the Users page; the block applies to the account's
   next request.

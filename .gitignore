@@ -14,3 +14,7 @@ Thumbs.db
 
 # Netlify build output (copied from index.html, assets/ and pages/)
 dist/
+
+# Vercel: local link data and the build output (copied from index.html, assets/ and pages/)
+.vercel
+public/

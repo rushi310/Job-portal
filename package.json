@@ -1,0 +1,22 @@
+{
+  "name": "freshhire",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FreshHire job portal — static frontend + Express API (server/). This root file lets Vercel install the API dependencies; day-to-day commands live in server/package.json.",
+  "scripts": {
+    "dev": "npm --prefix server run dev",
+    "dev:memory": "npm --prefix server run dev:memory",
+    "seed": "npm --prefix server run seed",
+    "test": "npm --prefix server test"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^7.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5"
+  }
+}

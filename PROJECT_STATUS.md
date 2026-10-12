@@ -11,11 +11,11 @@
 | Field | Value |
 |---|---|
 | **Current phase** | **Phase 15 — Full-Stack Migration & Free Deployment Preparation** |
-| Phase status | ✅ Code complete and verified locally · ⏳ **not deployed** (needs the user's Atlas, Render and Netlify accounts) |
-| **Overall project status** | Full-stack application working locally with 83 API tests and a 92-check browser journey passing. Live deployment, other browsers and the Phase 13 test-case document are open (see "Phase 15" and "Next Task"). |
+| Phase status | ✅ Code complete and verified locally · ⏳ **not deployed** (needs the user's Atlas and Vercel accounts) |
+| **Overall project status** | Full-stack application working locally with 94 API tests and a 92-check browser journey passing; prepared for a single Vercel project (see "Phase 15 addendum"). Live deployment, other browsers and the Phase 13 test-case document are open (see "Phase 15" and "Next Task"). |
 | Last updated | 2026-10-12 |
 | Current task | None |
-| Next phase | None planned. Next actions are the user's deployment steps in DEPLOYMENT.md. |
+| Next phase | None planned. Next actions are the user's deployment steps in DEPLOYMENT.md (Vercel). |
 
 ## Phase Overview
 
@@ -790,22 +790,67 @@ Render and MongoDB Atlas. This replaces the earlier "frontend-only, no backend" 
 - First `npm test` / `npm run dev:memory` downloads a MongoDB binary of about 500 MB.
 - Notification bell and lists update on page load, not in real time.
 
+## Phase 15 addendum — single-project Vercel deployment (2026-10-12)
+
+Requested by the user after Phase 15: serve the pages and the API from one Vercel project and domain.
+Vercel's documentation was read first (Express on Vercel, Node.js runtime, `vercel.json`, Node versions).
+
+**Changes**
+- `api/index.js` (new): Vercel Function exporting a `(req, res)` handler around the unchanged Express app;
+  connects to MongoDB on the first request and reuses the connection; answers a generic 500 if the
+  configuration is invalid. Local start-up (`server/src/server.js` with `listen()`) is untouched.
+- `vercel.json` (new): preset "Other"; build copies `index.html`, `assets/`, `pages/` to `public/`;
+  `/api/(.*)` → `/api` only (no rewrite to `index.html`, `cleanUrls` off); security headers for pages;
+  `maxDuration` 30; `data/**` bundled for the demo reset.
+- Root `package.json` + `package-lock.json` (new): the API's runtime dependencies, for Vercel's root install.
+- `assets/js/core/app-config.js`: deployed pages call the relative `/api`; the "replace this placeholder"
+  setting is gone (`REMOTE_API_BASE_URL`, empty by default, remains for split hosting). `core/api.js`: the
+  matching "not configured" error removed.
+- `server/src/config/env.js`: `FRONTEND_URL` is no longer required in production; unset there means no
+  cross-origin access at all. The production-configuration test was changed to match this new rule (it
+  still requires `MONGODB_URI` and `JWT_SECRET`); no other test was changed.
+- `.gitignore`: `.vercel`, `public/`. `server/.env.example`: `FRONTEND_URL` explained per hosting type.
+- Docs: new DEPLOYMENT.md (Vercel); the previous guide kept as DEPLOYMENT_NETLIFY_RENDER.md; README,
+  ARCHITECTURE, CLAUDE.md, CODING_RULES, PROJECT_SPEC, docs/SECURITY.md updated.
+
+**Verified on this computer**
+- `npm test`: 7 files, **94 tests, 94 passed, 0 failed, 0 skipped** (the 83 earlier ones + 11 in
+  `tests/vercel.test.js`: handler connects on first request, health, register / login / job search, role
+  refusals, raw PDF upload, no cross-origin permission, JSON 404 for unknown API paths, dependency lists
+  equal, rewrites limited to `/api`, only pages published, no secrets, ignore rules).
+- Clean-copy check: the files Vercel would receive were copied to an empty folder, installed from the root
+  `package.json` only (`npm ci --omit=dev`, no `server/node_modules`), built with the `vercel.json` build
+  command, and served by a small stand-in for Vercel's routing (static output first, `/api/*` → the
+  function, headers from `vercel.json`) in production mode without `FRONTEND_URL`. Pages, nested pages, CSS,
+  modules and the logo returned 200; `/server/…`, `/data/…`, `/package.json` returned 404; unknown `/api`
+  paths returned JSON 404. The 92-check browser journey passed against it, and resume View / Download worked.
+
+**Not verified**
+- **Nothing was built or run on Vercel.** The stand-in imitates the documented routing; it is not Vercel's
+  builder, bundler (file tracing), Node 22 / 24 runtime, request helpers or CDN.
+- **MongoDB Atlas was never reached:** the user's cluster refused connections from this computer both times
+  it was tried (network access list). No data was written to it; it has not been seeded.
+- `vercel dev` was not used. Chrome and Firefox remain untested.
+
+**Security note:** the Atlas connection string, including the database password, was pasted into the chat
+on 2026-10-12. It is stored only in `server/.env` (ignored by Git, not committed). The password should be
+changed in Atlas before deploying.
+
 ## Next Task
 
 **For the user (nothing here can be done without your accounts):** follow DEPLOYMENT.md —
-1. create the Atlas free cluster, database user and network rule;
-2. run `npm run seed` against it with your own `SEED_ADMIN_PASSWORD`;
-3. commit and push; create the Netlify site and note its address;
-4. create the Render service (Blueprint) with `MONGODB_URI` and `FRONTEND_URL`;
-5. put the Render address in `assets/js/core/app-config.js`, commit and push;
-6. go through the verification checklist in DEPLOYMENT.md §6.
+1. Atlas: change the database password; allow network access from anywhere (required for Vercel's free plan);
+2. update `MONGODB_URI` in `server/.env`; run `npm run seed` with your own `SEED_ADMIN_PASSWORD`; check locally;
+3. commit and push;
+4. Vercel: import the repository (preset Other, root `./`), add `MONGODB_URI`, `JWT_SECRET`, `NODEJS_HELPERS=0`; deploy;
+5. go through the verification checklist in DEPLOYMENT.md §5.
 
 Optional later work: re-run the checks in Chrome and Firefox; rewrite the Phase 14 report / viva material for the
 full-stack design; `docs/TEST_CASES.md`.
 
 ## Known Issues / Open Questions
 
-- Not deployed; deployment files untested on the real services (see above).
+- Not deployed; the Vercel configuration is untested on Vercel itself, and Atlas has not been reached (see the addendum).
 - Phase 13 still incomplete: `docs/TEST_CASES.md` not written.
 - The end-to-end browser script is not stored in the repository (it needs a browser driver, which the project
   rules keep out of the frontend); only the API tests are.
@@ -837,3 +882,4 @@ full-stack design; `docs/TEST_CASES.md`.
 | 2026-09-30 | 13 | Phase 13 (stopped before completion): QA suites (access matrix, empty / corrupted / full storage, invalid URLs, journeys, long data), cross-browser runs (Edge 1254/1254, Firefox 1254/1254, Chrome 1247/1247 before last fixes), keyboard 22/22, mobile emulation 24/24, Lighthouse 100. Fixed D-01 focus ring (variables.css, components.css), D-02 company-size select (company-profile.html), D-03 long words widening pages (base.css). Not done: docs/TEST_CASES.md, final write-up, Chrome re-run. |
 | 2026-09-30 | 14 | Phase 14: README rewritten; docs/ USER_GUIDE, PROJECT_REPORT, SECURITY, VIVA_QUESTIONS, PRESENTATION_OUTLINE, DEMO_FLOW, SCREENSHOT_CHECKLIST, 24 screenshots; ARCHITECTURE, PROJECT_SPEC, UI_SPEC, CODING_RULES corrected against the code; DEVELOPMENT_PHASES notes for Phases 13–14. **Phase 14 complete; project not marked final (Phase 13 incomplete).** |
 | 2026-10-12 | 15 | Phase 15: full-stack migration (user-directed; replaces the frontend-only rule). Added `server/` (Express API, Mongoose models, validators, services, controllers, routes, middleware, seed and dev scripts, 83 API tests), `core/api.js` + `core/app-config.js`, `dashboard-service.js`, `load-state` / `server-status` / `file-viewer` components; converted all services and 20 page scripts to the API; removed browser seeding and `localStorage` use; added `netlify.toml`, `render.yaml`, `.gitignore`, DEPLOYMENT.md, docs/API.md; rewrote README, ARCHITECTURE, docs/SECURITY.md, CLAUDE.md; updated PROJECT_SPEC, CODING_RULES, UI_SPEC, DEVELOPMENT_PHASES. Verified locally (83 API tests, 92-check browser journey ×3). **Not deployed.** |
+| 2026-10-12 | 15 | Addendum: prepared single-project Vercel deployment — `api/index.js`, `vercel.json`, root `package.json` + lockfile, relative `/api` in the frontend, `FRONTEND_URL` optional in production, new DEPLOYMENT.md (old guide → DEPLOYMENT_NETLIFY_RENDER.md), 11 new tests (94 total). Verified locally incl. a clean-copy build and the 92-check browser journey. **Not deployed; Atlas not reachable from the development computer.** |

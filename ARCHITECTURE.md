@@ -10,7 +10,7 @@
 ## 1. High-Level Architecture
 
 ```
-┌──────────────────────── Browser (static site on Netlify) ────────────────────────┐
+┌──────────────────────── Browser (static files on Vercel) ────────────────────────┐
 │  HTML page ──loads──▶ page script (assets/js/pages/<role>/<page>.js)              │
 │                              │                                                    │
 │                              ▼                                                    │
@@ -25,9 +25,9 @@
 │                 │                        ▼                                        │
 │                 │              sessionStorage: login token, job filters, flash    │
 └─────────────────┼─────────────────────────────────────────────────────────────────┘
-                  │  HTTPS, JSON, "Authorization: Bearer <token>"   (CORS: this origin only)
+                  │  same domain /api/…, JSON, "Authorization: Bearer <token>"
                   ▼
-┌──────────────────────── Express API (Node.js on Render) ─────────────────────────┐
+┌───────────── Express API (Vercel Function api/index.js; node server.js locally) ─┐
 │  helmet → CORS → rate limit → JSON body (100 KB) → routes                         │
 │  routes        which role may call what (authenticate, requireRole, …)            │
 │  controllers   read the request, call a service, send { ok, data }                │
@@ -118,10 +118,12 @@ Job-portal/                       (repository root)
 │   │   ├── utils/                app-error, async-handler, serializers, pagination, dates, text
 │   │   └── scripts/              seed.js (import demo data), dev-memory.js (zero-setup local demo)
 │   └── tests/                    API tests (node:test + supertest + in-memory MongoDB)
-├── netlify.toml                  Netlify: what to publish, security headers
-├── render.yaml                   Render Blueprint: commands, health check, environment variables
+├── api/index.js                  Vercel Function: the Express app + connect-on-first-request
+├── vercel.json                   Vercel: build (copy pages to public/), /api/* → function, headers
+├── package.json, package-lock.json   Root dependency list for Vercel (equal to server/package.json's)
+├── netlify.toml, render.yaml     Alternative split hosting (DEPLOYMENT_NETLIFY_RENDER.md)
 ├── .gitignore                    node_modules, .env, dist
-├── DEPLOYMENT.md                 Atlas, Render and Netlify, step by step
+├── DEPLOYMENT.md                 Atlas and Vercel, step by step
 └── docs/                         API.md, SECURITY.md, and the Phase 14 submission material
 ```
 
@@ -204,10 +206,11 @@ with bcrypt before storing. The server never seeds by itself.
 4. `POST /api/auth/logout` increases the user's token version, so every token issued before stops
    working; the frontend then removes it from the tab.
 
-**Why a token and not a cookie:** the frontend (Netlify) and the API (Render) are on different sites.
-A session cookie would be a third-party cookie, which browsers increasingly block, and would need
-CSRF protection. A token in a header needs neither, and CORS stays simple (`credentials` off). The
-cost is that page scripts can read the token — see `docs/SECURITY.md`.
+**Why a token and not a cookie:** the design also has to work when the pages and the API are on
+different sites (local Live Server, or the Netlify + Render arrangement), where a session cookie would
+be a third-party cookie and would need CSRF protection. A token in a header needs neither, and CORS
+stays simple (`credentials` off). The cost is that page scripts can read the token — see
+`docs/SECURITY.md`. On Vercel everything is on one domain, so no CORS permission is given to anyone.
 
 ### Authorization (on the server, for every request)
 
@@ -291,11 +294,18 @@ The full endpoint list is in `docs/API.md`.
 
 | Where | Setting | Purpose |
 |---|---|---|
-| `assets/js/core/app-config.js` | `PRODUCTION_API_BASE_URL` | The deployed API address (public; the only frontend setting) |
+| `assets/js/core/app-config.js` | `REMOTE_API_BASE_URL` | Empty = the API is on the same domain at `/api` (Vercel). Set only for split hosting. |
 | Server environment | `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL`, `NODE_ENV`, `PORT`, `JWT_EXPIRES_IN`, `APP_TIMEZONE_OFFSET_MINUTES`, `AUTH_RATE_LIMIT_MAX`, `ALLOW_DEMO_RESET`, `SERVE_FRONTEND` | See `server/.env.example` |
 
 On `localhost` the frontend calls the API on port 5000 automatically. In production the server
-refuses to start without `MONGODB_URI`, a `JWT_SECRET` of at least 32 characters and `FRONTEND_URL`.
+refuses to start without `MONGODB_URI` and a `JWT_SECRET` of at least 32 characters. `FRONTEND_URL`
+lists other origins allowed to call the API; unset in production means none (same-domain hosting).
+
+**Two ways to start the same app.** `server/src/app.js` builds the Express app and has no side
+effects. Locally `server/src/server.js` connects to MongoDB and calls `listen()`. On Vercel
+`api/index.js` exports a handler instead: it connects on the first request, keeps the connection for
+later requests on that instance, and passes each request to the app. Vercel serves the static files
+itself (`SERVE_FRONTEND` is a local convenience only).
 Secrets exist only in environment variables — never in the repository or in any frontend file.
 
 Deadlines are calendar dates; a deadline day ends at midnight in the application's time zone
@@ -304,4 +314,4 @@ Deadlines are calendar dates; a deadline day ends at midnight in the application
 ## 9. Running and Deploying
 
 - Local: `README.md` ("Run it on your computer").
-- Deployment on Netlify + Render + MongoDB Atlas: `DEPLOYMENT.md`.
+- Deployment on Vercel + MongoDB Atlas: `DEPLOYMENT.md` (alternative: `DEPLOYMENT_NETLIFY_RENDER.md`).

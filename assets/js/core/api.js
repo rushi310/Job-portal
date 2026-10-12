@@ -9,14 +9,13 @@
  * sends the user to the login page. Tokens and request bodies are never logged.
  */
 
-import { API_BASE_URL, IS_API_CONFIGURED } from './app-config.js';
+import { API_BASE_URL } from './app-config.js';
 import { STORAGE_KEYS, PAGE_PATHS } from './config.js';
 import { getSession, removeSession, setFlash } from './storage.js';
 import { toRoot } from './utils.js';
 
 export const API_ERRORS = Object.freeze({
   NETWORK: 'NETWORK_ERROR',
-  NOT_CONFIGURED: 'API_NOT_CONFIGURED',
   UNAUTHENTICATED: 'UNAUTHENTICATED',
   SERVER: 'SERVER_ERROR',
 });
@@ -26,8 +25,6 @@ export const SLOW_REQUEST_EVENT = 'fh:slow-request';
 const SLOW_REQUEST_MS = 4000;
 
 const NETWORK_MESSAGE = 'Could not reach the FreshHire server. Check your connection and try again.';
-const NOT_CONFIGURED_MESSAGE = 'The site is not connected to its server yet '
-  + '(set PRODUCTION_API_BASE_URL in assets/js/core/app-config.js).';
 
 function failure(code, error, extra = {}) {
   return { ok: false, code, error, ...extra };
@@ -90,8 +87,6 @@ async function readBody(response, responseType) {
 export async function request(method, path, {
   query, body, file, headers = {}, responseType = 'json', redirectOnExpiry = true,
 } = {}) {
-  if (!IS_API_CONFIGURED) return failure(API_ERRORS.NOT_CONFIGURED, NOT_CONFIGURED_MESSAGE);
-
   const token = getToken();
   const requestHeaders = { Accept: 'application/json', ...headers };
   if (token) requestHeaders.Authorization = `Bearer ${token}`;

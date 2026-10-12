@@ -10,8 +10,8 @@ FreshHire is a **full-stack** application:
 
 | Part | Technology | Hosting (free tier) |
 |---|---|---|
-| Frontend | HTML5, CSS3, Vanilla JavaScript (ES modules) — no framework, no build tool | Netlify |
-| Backend | Node.js, Express REST API | Render |
+| Frontend | HTML5, CSS3, Vanilla JavaScript (ES modules) — no framework, no build tool | Vercel (static files) |
+| Backend | Node.js, Express REST API | Vercel (one Function, same project and domain) |
 | Database | MongoDB (through Mongoose) | MongoDB Atlas |
 
 > **Academic demo, not a real hiring service.** It has real logins, server-side permissions and a real
@@ -28,10 +28,10 @@ migrated to this full-stack form in Phase 15. The history is kept in
 
 | Area | State |
 |---|---|
-| Backend API, database models, authentication, authorization | Implemented and tested (83 automated API tests) |
+| Backend API, database models, authentication, authorization | Implemented and tested (94 automated API tests) |
 | Frontend connected to the API (all 20 pages) | Implemented and tested in a browser (92 end-to-end checks, Microsoft Edge) |
-| Deployment files (`netlify.toml`, `render.yaml`, `.env.example`) | Prepared, **not deployed** |
-| Live deployment on Netlify / Render / Atlas | **Needs your accounts** — follow [DEPLOYMENT.md](DEPLOYMENT.md) |
+| Vercel set-up (`vercel.json`, `api/index.js`, root `package.json`) | Prepared and checked locally against a stand-in for Vercel's routing; **not deployed** |
+| Live deployment on Vercel + Atlas | **Needs your accounts** — follow [DEPLOYMENT.md](DEPLOYMENT.md) |
 
 Details, limits and what was not verified: [PROJECT_STATUS.md](PROJECT_STATUS.md) (Phase 15).
 
@@ -57,7 +57,7 @@ Business rules are in [PROJECT_SPEC.md](PROJECT_SPEC.md); every one of them is e
 ## Run it on your computer
 
 You need [Node.js](https://nodejs.org/) 16.20.1 or newer and Git. (The project was developed and tested on
-Node 16.20; the Render settings use Node 20.)
+Node 16.20; Vercel runs it on Node 22 or 24, which was not tested here.)
 
 ### Option A — quickest: everything in one command, no database to install
 
@@ -130,10 +130,10 @@ the seed command refuses to run in production without `SEED_ADMIN_PASSWORD`
 ## How it is built
 
 ```
-Browser (HTML / CSS / JS modules on Netlify)
-   │  HTTPS + JSON, "Authorization: Bearer <token>"
+Browser (HTML / CSS / JS modules — static files on Vercel)
+   │  same domain: /api/…  JSON, "Authorization: Bearer <token>"
    ▼
-Express API on Render:  routes → controllers → validators + services → Mongoose models
+Express API (a Vercel Function, api/index.js):  routes → controllers → validators + services → Mongoose models
    ▼
 MongoDB Atlas
 ```
@@ -147,32 +147,36 @@ MongoDB Atlas
 Full description: [ARCHITECTURE.md](ARCHITECTURE.md). Endpoints: [docs/API.md](docs/API.md).
 
 ```
-index.html, pages/, assets/     the frontend (published by Netlify)
-assets/js/core/app-config.js    the one frontend setting: the API address
+index.html, pages/, assets/     the frontend (copied to public/ and published by Vercel)
+assets/js/core/app-config.js    where the pages find the API ("/api" on the same domain)
+api/index.js                    Vercel Function entry: wraps the Express app in server/
 data/*.json                     demo data read by the seed script
-server/                         the API (run by Render)
+server/                         the API (also runs on its own locally: npm run dev)
   src/  config · models · validators · services · controllers · routes · middleware · scripts
   tests/                        API tests
-netlify.toml, render.yaml       deployment settings
+vercel.json, package.json       Vercel settings and the dependency list Vercel installs
+netlify.toml, render.yaml       settings for the alternative Netlify + Render hosting
 docs/                           API, security, user guide, report, viva material
 ```
 
 ## Deployment
 
-Step-by-step guide for MongoDB Atlas, Render and Netlify: **[DEPLOYMENT.md](DEPLOYMENT.md)**.
+Step-by-step guide for MongoDB Atlas and Vercel (pages and API in one project):
+**[DEPLOYMENT.md](DEPLOYMENT.md)**. The earlier Netlify + Render arrangement is in
+[DEPLOYMENT_NETLIFY_RENDER.md](DEPLOYMENT_NETLIFY_RENDER.md).
 Nothing has been deployed for you; the guide marks what is already prepared in the repository and
 what you do in your own accounts.
 
 ## Testing
 
-- **API tests** (`cd server && npm test`): 83 tests in 6 files covering authentication,
+- **API tests** (`cd server && npm test`): 94 tests in 7 files covering the Vercel entry point, authentication,
   authorization and ownership, jobs, applications, saved jobs, profile and resume, notifications,
   admin workflows, analytics, the seed import and deployment readiness (health check, CORS,
   configuration, error format). They run against an in-memory MongoDB, never a real database. The
   first run downloads the same ~500 MB MongoDB program as `dev:memory`.
 - **Browser check:** the complete journey of all three roles was driven through the real pages in
-  headless Microsoft Edge against the real API (92 checks), same-origin and cross-origin, also with the
-  Content-Security-Policy that Netlify sends. That script used a browser driver outside the project
+  headless Microsoft Edge against the real API (92 checks): same-origin, cross-origin, and against a
+  clean copy built the way Vercel builds it (root install, build command, `vercel.json` routing and headers). That script used a browser driver outside the project
   and is not in the repository.
 
 What each run covered, and what was *not* tested (other browsers, a live deployment), is recorded in
@@ -198,7 +202,7 @@ More: [docs/SECURITY.md](docs/SECURITY.md), [DEPLOYMENT.md](DEPLOYMENT.md) §6.
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Structure, layers, request flow, storage |
 | [docs/API.md](docs/API.md) | Every API endpoint |
 | [docs/SECURITY.md](docs/SECURITY.md) | What is protected, how, and what is not |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Atlas, Render and Netlify, step by step |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Atlas and Vercel, step by step (alternative: [Netlify + Render](DEPLOYMENT_NETLIFY_RENDER.md)) |
 | [UI_SPEC.md](UI_SPEC.md), [CODING_RULES.md](CODING_RULES.md) | Design system and code conventions |
 | [DEVELOPMENT_PHASES.md](DEVELOPMENT_PHASES.md), [PROJECT_STATUS.md](PROJECT_STATUS.md) | Plan and progress |
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) and other files in `docs/` | User guide, report, viva and demo material (written for the earlier frontend-only version; each file says so at the top) |

@@ -7,8 +7,9 @@
 ---
 
 ## 1. General
-- Frontend: no dependencies — no npm, no CDN links, no `package.json`. (The backend has its own
-  `server/package.json`; see §10.)
+- Frontend: no dependencies — no npm packages, no CDN links. (The backend has its own
+  `server/package.json`, see §10; the root `package.json` only repeats the backend's dependencies so
+  Vercel can install them.)
 - UTF-8 encoding, LF or CRLF consistently, 2-space indentation, no tabs.
 - Maximum line length ~100 characters where practical.
 - Remove dead code, commented-out code, and `console.log` before finishing a phase (`console.error` for genuine errors is allowed).
