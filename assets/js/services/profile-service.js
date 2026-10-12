@@ -1,18 +1,15 @@
 /**
- * profile-service.js — The logged-in user's own profile: student profile and resume (Phase 7),
- * recruiter company profile (Phase 8).
- * The user is always taken from the session (getCurrentUser); pages never pass a user id.
- * Each Profile tab saves one section, and only that section's fields change (user-service.js
- * keeps id, role, email, password, status and createdAt untouched).
+ * profile-service.js — The logged-in user's own profile: student profile and resume, recruiter
+ * company profile. The server always edits the account the login token belongs to; pages never
+ * pass a user id. The rules here give quick feedback in the forms; the server applies the same
+ * rules and copies only the fields a section may change.
  */
 
 import {
-  ROLES, PROFILE_LIMITS, PROFILE_LINK_FIELDS, MAX_RESUME_SIZE, RESUME_MIME_TYPE, COMPANY_SIZE_OPTIONS,
+  PROFILE_LIMITS, PROFILE_LINK_FIELDS, MAX_RESUME_SIZE, RESUME_MIME_TYPE, COMPANY_SIZE_OPTIONS,
 } from '../core/config.js';
-import { getCurrentUser } from '../core/auth.js';
-import {
-  validateRegistrationField, updateStudentRecord, updateRecruiterRecord, isValidUrl,
-} from './user-service.js';
+import * as api from '../core/api.js';
+import { validateRegistrationField, isValidUrl } from './user-service.js';
 
 /** The editable sections, one per Profile tab (the Resume tab uses uploadResume/removeResume). */
 export const PROFILE_SECTIONS = Object.freeze({
@@ -29,29 +26,17 @@ export const PROFILE_ERRORS = Object.freeze({
   VALIDATION_FAILED: 'VALIDATION_FAILED',
   INVALID_FILE: 'INVALID_FILE',
   NO_RESUME: 'NO_RESUME',
-  CORRUPTED_RESUME: 'CORRUPTED_RESUME',
-  STORAGE_ERROR: 'STORAGE_ERROR',
+  PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
 });
 
-const PDF_DATA_URL_PREFIX = `data:${RESUME_MIME_TYPE};base64,`;
 const CURRENT_YEAR = new Date().getFullYear();
 const MAX_EDUCATION_YEAR = CURRENT_YEAR + 5; // allows courses that are still in progress
-
-function failure(code, error, extra = {}) {
-  return { ok: false, code, error, ...extra };
-}
 
 const text = (value) => String(value ?? '').trim();
 const firstError = (...messages) => messages.find(Boolean) ?? '';
 
-/** @returns {object|null} the logged-in student, or null for anyone else */
-function getStudent() {
-  const user = getCurrentUser();
-  return user?.role === ROLES.STUDENT ? user : null;
-}
-
 /* ==========================================================================
-   Validation
+   Form rules
    ========================================================================== */
 
 const tooLong = (label, limit) => (value) => (
@@ -188,73 +173,29 @@ export function validateProfileSection(section, values = {}) {
   return validator ? validator(values) : {};
 }
 
-/* ==========================================================================
-   Saving a section (only whitelisted fields are copied)
-   ========================================================================== */
-
-const SECTION_BUILDERS = {
-  [PROFILE_SECTIONS.PERSONAL]: (values, profile) => ({
-    name: text(values.name),
-    phone: text(values.phone),
-    profile: { ...profile, location: text(values.location), about: text(values.about) },
-  }),
-  [PROFILE_SECTIONS.EDUCATION]: (values, profile) => ({
-    profile: {
-      ...profile,
-      college: text(values.college),
-      degree: values.degree,
-      branch: text(values.branch),
-      graduationYear: Number(values.graduationYear),
-      cgpa: Math.round(Number(values.cgpa) * 100) / 100,
-      education: values.education.map((entry) => ({
-        level: text(entry.level),
-        institute: text(entry.institute),
-        year: Number(entry.year),
-        score: text(entry.score),
-      })),
-    },
-  }),
-  [PROFILE_SECTIONS.SKILLS]: (values, profile) => ({
-    profile: { ...profile, skills: values.skills.map(text) },
-  }),
-  [PROFILE_SECTIONS.PROJECTS]: (values, profile) => ({
-    profile: {
-      ...profile,
-      projects: values.projects.map((entry) => ({
-        title: text(entry.title),
-        description: text(entry.description),
-        link: text(entry.link),
-      })),
-      links: Object.fromEntries(PROFILE_LINK_FIELDS.map(({ name }) => [name, text(values.links?.[name])])),
-    },
-  }),
-};
+/** The result for a form that failed the checks here (same shape as the server's answer). */
+function validationFailure(fieldErrors) {
+  return {
+    ok: false, code: PROFILE_ERRORS.VALIDATION_FAILED, error: 'Please correct the highlighted fields.', fieldErrors,
+  };
+}
 
 /**
- * Validate and save one Profile tab for the logged-in student.
+ * Validate and save one Profile tab for the logged-in student. Obvious mistakes are reported
+ * straight away; the server validates again before saving.
  * @param {string} section one of PROFILE_SECTIONS
  * @param {object} values the tab's form values
- * @returns {{ ok: true, data: object }
- *   | { ok: false, code: string, error: string, fieldErrors?: Object<string, string> }} data = updated user
+ * @returns {Promise<{ ok: true, data: object }
+ *   | { ok: false, code: string, error: string, fieldErrors?: Object<string, string> }>} data = updated user
  */
-export function updateProfileSection(section, values = {}) {
-  const student = getStudent();
-  if (!student) return failure(PROFILE_ERRORS.NOT_ALLOWED, 'Please log in as a student to edit your profile.');
-
-  const build = SECTION_BUILDERS[section];
-  if (!build) return failure(PROFILE_ERRORS.INVALID_SECTION, 'This part of the profile cannot be edited.');
-
+export async function updateProfileSection(section, values = {}) {
   const fieldErrors = validateProfileSection(section, values);
-  if (Object.keys(fieldErrors).length > 0) {
-    return failure(PROFILE_ERRORS.VALIDATION_FAILED, 'Please correct the highlighted fields.', { fieldErrors });
-  }
-
-  const saved = updateStudentRecord(student.id, build(values, student.profile ?? {}));
-  return saved.ok ? { ok: true, data: saved.data } : failure(PROFILE_ERRORS.STORAGE_ERROR, saved.error);
+  if (Object.keys(fieldErrors).length > 0) return validationFailure(fieldErrors);
+  return api.patch(`/student/profile/${encodeURIComponent(section)}`, values);
 }
 
 /* ==========================================================================
-   Resume (PDF ≤ 500 KB stored as Base64 in profile.resume — PROJECT_SPEC.md §3.2, §5.1)
+   Resume (PDF ≤ 500 KB, kept on the server — PROJECT_SPEC.md §3.2, §5.1)
    ========================================================================== */
 
 /** "12.3 KB" style size for messages and the resume card. */
@@ -265,7 +206,7 @@ export function formatFileSize(bytes) {
 }
 
 /**
- * Check a chosen file before reading it.
+ * Check a chosen file before sending it (the server checks the real content again).
  * @param {File|null} file
  * @returns {string} error message, or '' when the file can be uploaded
  */
@@ -279,129 +220,61 @@ export function validateResumeFile(file) {
   return '';
 }
 
-function readAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener('load', () => resolve(String(reader.result)));
-    reader.addEventListener('error', () => reject(reader.error));
-    reader.readAsDataURL(file);
-  });
-}
-
-function saveResume(student, resume) {
-  const saved = updateStudentRecord(student.id, { profile: { ...student.profile, resume } });
-  return saved.ok ? { ok: true, data: saved.data } : failure(PROFILE_ERRORS.STORAGE_ERROR, saved.error);
-}
-
 /**
- * Upload or replace the logged-in student's resume. If anything fails (invalid file, full storage)
- * the previous resume is kept, because nothing is written until the new one is ready.
+ * Upload or replace the logged-in student's resume. If anything fails the previous resume is
+ * kept, because the server replaces it only after the new file passed every check.
  * @param {File} file
- * @returns {Promise<{ ok: true, data: object } | { ok: false, code: string, error: string }>}
+ * @returns {Promise<{ ok: true, data: object } | { ok: false, code: string, error: string }>} data = updated user
  */
 export async function uploadResume(file) {
-  const student = getStudent();
-  if (!student) return failure(PROFILE_ERRORS.NOT_ALLOWED, 'Please log in as a student to upload a resume.');
-
   const message = validateResumeFile(file);
-  if (message) return failure(PROFILE_ERRORS.INVALID_FILE, message);
+  if (message) return { ok: false, code: PROFILE_ERRORS.INVALID_FILE, error: message };
 
-  let dataUrl;
-  try {
-    dataUrl = await readAsDataUrl(file);
-  } catch {
-    return failure(PROFILE_ERRORS.INVALID_FILE, 'This file could not be read. Please try another PDF.');
-  }
-  if (!dataUrl.startsWith(PDF_DATA_URL_PREFIX)) {
-    return failure(PROFILE_ERRORS.INVALID_FILE, 'This file could not be read as a PDF. Please try another file.');
-  }
-
-  // Re-check the session: it may have changed while the file was being read.
-  const current = getStudent();
-  if (!current || current.id !== student.id) {
-    return failure(PROFILE_ERRORS.NOT_ALLOWED, 'Your session changed. Please log in again.');
-  }
-  return saveResume(current, {
-    fileName: text(file.name) || 'resume.pdf',
-    dataUrl,
-    uploadedAt: new Date().toISOString(),
+  const result = await api.request('PUT', '/student/resume', {
+    file,
+    // The file name travels in a header (URL-encoded, so any characters are safe to send).
+    headers: { 'Content-Type': RESUME_MIME_TYPE, 'X-File-Name': encodeURIComponent(text(file.name) || 'resume.pdf') },
   });
+  if (!result.ok && result.code === PROFILE_ERRORS.PAYLOAD_TOO_LARGE) {
+    return { ...result, code: PROFILE_ERRORS.INVALID_FILE, error: `This file is too large. The maximum size is ${formatFileSize(MAX_RESUME_SIZE)}.` };
+  }
+  return result;
 }
 
 /**
  * Remove the logged-in student's resume. Past applications keep their recorded file name (BR-17).
- * @returns {{ ok: true, data: object } | { ok: false, code: string, error: string }}
+ * @returns {Promise<{ ok: true, data: object } | { ok: false, code: string, error: string }>} data = updated user
  */
 export function removeResume() {
-  const student = getStudent();
-  if (!student) return failure(PROFILE_ERRORS.NOT_ALLOWED, 'Please log in as a student to manage your resume.');
-  if (!student.profile?.resume) return failure(PROFILE_ERRORS.NO_RESUME, 'There is no resume to remove.');
-  return saveResume(student, null);
-}
-
-function isStoredResumeValid(resume) {
-  return typeof resume?.fileName === 'string'
-    && typeof resume.dataUrl === 'string'
-    && resume.dataUrl.startsWith(PDF_DATA_URL_PREFIX);
+  return api.del('/student/resume');
 }
 
 /**
- * Display details of a student's stored resume (never the file itself).
+ * Display details of a student's resume (never the file itself).
  * @param {object} user
- * @returns {null | { fileName: string, fileType: string, sizeBytes: number, uploadedAt: string, isCorrupted: boolean }}
+ * @returns {null | { fileName: string, fileType: string, sizeBytes: number, uploadedAt: string }}
  */
 export function getResumeInfo(user) {
   const resume = user?.profile?.resume;
-  if (!resume) return null;
-  if (!isStoredResumeValid(resume)) {
-    const fileName = typeof resume.fileName === 'string' && resume.fileName ? resume.fileName : 'Unknown file';
-    return { fileName, fileType: 'PDF', sizeBytes: 0, uploadedAt: '', isCorrupted: true };
-  }
-  const base64 = resume.dataUrl.slice(PDF_DATA_URL_PREFIX.length);
-  const padding = (base64.match(/=+$/)?.[0].length) ?? 0;
+  if (!resume || typeof resume.fileName !== 'string') return null;
   return {
     fileName: resume.fileName,
     fileType: 'PDF',
-    sizeBytes: Math.floor((base64.length * 3) / 4) - padding,
+    sizeBytes: Number.isFinite(resume.sizeBytes) ? resume.sizeBytes : 0,
     uploadedAt: typeof resume.uploadedAt === 'string' ? resume.uploadedAt : '',
-    isCorrupted: false,
   };
 }
 
 /**
- * The logged-in student's own resume as a PDF Blob, for viewing or downloading in this browser.
- * @returns {{ ok: true, data: { blob: Blob, fileName: string } } | { ok: false, code: string, error: string }}
+ * The logged-in student's own resume as a PDF Blob, for viewing or downloading.
+ * @returns {Promise<{ ok: true, data: Blob } | { ok: false, code: string, error: string }>}
  */
 export function getOwnResumeFile() {
-  const student = getStudent();
-  if (!student) return failure(PROFILE_ERRORS.NOT_ALLOWED, 'Please log in as a student to open your resume.');
-  const resume = student.profile?.resume;
-  if (!resume) return failure(PROFILE_ERRORS.NO_RESUME, 'You have not uploaded a resume yet.');
-
-  return decodeResumeFile(resume, 'Your saved resume file is damaged and cannot be opened. Please upload it again.');
-}
-
-/**
- * Turn a stored `profile.resume` into a PDF Blob. Callers must have checked who may open it
- * (the student themself, or — in application-service — the recruiter of a job they applied to).
- * @param {object} resume
- * @param {string} [damagedMessage]
- * @returns {{ ok: true, data: { blob: Blob, fileName: string } } | { ok: false, code: string, error: string }}
- */
-export function decodeResumeFile(resume, damagedMessage = 'This resume file is damaged and cannot be opened.') {
-  const corrupted = failure(PROFILE_ERRORS.CORRUPTED_RESUME, damagedMessage);
-  if (!isStoredResumeValid(resume)) return corrupted;
-  try {
-    const binary = atob(resume.dataUrl.slice(PDF_DATA_URL_PREFIX.length));
-    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-    return { ok: true, data: { blob: new Blob([bytes], { type: RESUME_MIME_TYPE }), fileName: resume.fileName } };
-  } catch {
-    return corrupted;
-  }
+  return api.download('/student/resume');
 }
 
 /* ==========================================================================
-   Recruiter company profile (Phase 8) — PROJECT_SPEC.md §5.1 "Recruiter profile"
+   Recruiter company profile — PROJECT_SPEC.md §5.1 "Recruiter profile"
    ========================================================================== */
 
 /** Editable fields on Company Profile: contact (user) fields + the recruiter `profile` fields. */
@@ -429,34 +302,17 @@ export function validateCompanyField(field, value) {
 }
 
 /**
- * Save the logged-in recruiter's contact and company details. Pending recruiters may do this too
- * (it does not post anything); id, role, email, password, status and createdAt never change.
+ * Validate and save the logged-in recruiter's contact and company details. Pending recruiters may
+ * do this too (it does not post anything); email, role and status never change here.
  * @param {object} values form values
- * @returns {{ ok: true, data: object }
- *   | { ok: false, code: string, error: string, fieldErrors?: Object<string, string> }} data = updated user
+ * @returns {Promise<{ ok: true, data: object }
+ *   | { ok: false, code: string, error: string, fieldErrors?: Object<string, string> }>} data = updated user
  */
-export function updateCompanyProfile(values = {}) {
-  const recruiter = getCurrentUser();
-  if (recruiter?.role !== ROLES.RECRUITER) {
-    return failure(PROFILE_ERRORS.NOT_ALLOWED, 'Please log in as a recruiter to edit the company profile.');
-  }
-
+export async function updateCompanyProfile(values = {}) {
   const fieldErrors = COMPANY_PROFILE_FIELDS.reduce((errors, field) => {
     const message = validateCompanyField(field, values[field]);
     return message ? { ...errors, [field]: message } : errors;
   }, {});
-  if (Object.keys(fieldErrors).length > 0) {
-    return failure(PROFILE_ERRORS.VALIDATION_FAILED, 'Please correct the highlighted fields.', { fieldErrors });
-  }
-
-  const profileFields = COMPANY_PROFILE_FIELDS.filter((field) => field !== 'name' && field !== 'phone');
-  const saved = updateRecruiterRecord(recruiter.id, {
-    name: text(values.name),
-    phone: text(values.phone),
-    profile: {
-      ...(recruiter.profile ?? {}),
-      ...Object.fromEntries(profileFields.map((field) => [field, text(values[field])])),
-    },
-  });
-  return saved.ok ? { ok: true, data: saved.data } : failure(PROFILE_ERRORS.STORAGE_ERROR, saved.error);
+  if (Object.keys(fieldErrors).length > 0) return validationFailure(fieldErrors);
+  return api.patch('/recruiter/profile', values);
 }

@@ -1,5 +1,10 @@
 # FreshHire — Live Demo Flow
 
+> **Note (Phase 15):** this document was written for the earlier **frontend-only** version of FreshHire.
+> The project is now full-stack (Express API + MongoDB): data is stored on the server, not in the browser, and
+> start the API first (README, "Run it on your computer"); the demo steps themselves still apply.
+> Current descriptions: [README](../README.md), [ARCHITECTURE](../ARCHITECTURE.md), [SECURITY](SECURITY.md).
+
 A 10–12 minute live demo using only implemented features and the seed data.
 
 ## Before the demo

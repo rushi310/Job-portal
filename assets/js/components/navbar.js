@@ -137,8 +137,9 @@ function createElement(tag, className, text) {
 }
 
 /** Logout through auth.js, then go to the documented destination (ARCHITECTURE.md §5). */
-function handleLogout() {
-  logout();
+async function handleLogout(event) {
+  event.currentTarget.disabled = true; // one request, even on a double click
+  await logout();
   setFlash('You have been logged out.', 'info');
   window.location.assign(toRoot(PAGE_PATHS.HOME));
 }

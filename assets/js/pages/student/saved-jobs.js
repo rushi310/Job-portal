@@ -11,12 +11,12 @@ import { initProtectedPage } from '../../components/app-shell.js';
 import { createJobCard, createViewDetailsLink } from '../../components/job-card.js';
 import { createEmptyState } from '../../components/empty-state.js';
 import { createSaveButton, bindSaveButtons } from '../../components/save-button.js';
-import { getSavedJobsWithDetails } from '../../services/saved-job-service.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
+import { getSavedJobs } from '../../services/saved-job-service.js';
 import { JOB_AVAILABILITY } from '../../services/job-service.js';
 
 const listEl = document.querySelector('[data-saved-list]');
 const countEl = document.querySelector('[data-saved-count]');
-let student = null;
 
 function createElement(tag, className, text) {
   const el = document.createElement(tag);
@@ -56,9 +56,15 @@ function createSavedCard(item) {
   });
 }
 
-function render() {
+async function render() {
+  const result = await getSavedJobs();
+  if (!result.ok) {
+    countEl.textContent = '';
+    renderLoadError(listEl, { title: 'Saved jobs could not be loaded', message: result.error });
+    return;
+  }
   try {
-    const items = getSavedJobsWithDetails(student.id);
+    const { items } = result.data;
     countEl.textContent = items.length === 0 ? '' : `${pluralize(items.length, 'saved job')}`;
     if (items.length === 0) {
       listEl.replaceChildren(createEmptyState({
@@ -73,27 +79,24 @@ function render() {
   } catch (error) {
     console.error('saved-jobs: could not render saved jobs', error);
     countEl.textContent = '';
-    listEl.replaceChildren(createEmptyState({
-      icon: 'alert',
-      title: 'Saved jobs could not be loaded',
-      message: 'Please reload the page.',
-    }));
+    renderLoadError(listEl, { title: 'Saved jobs could not be loaded' });
   }
 }
 
 async function init() {
-  student = await initProtectedPage(ROLES.STUDENT);
+  const student = await initProtectedPage(ROLES.STUDENT);
   if (!student) return;
   // Unsaving here removes the card; focus moves to the count so keyboard users are not lost.
   bindSaveButtons(listEl, {
-    onChange: (jobId, isSaved) => {
+    onChange: async (jobId, isSaved) => {
       if (isSaved) return;
-      render();
+      await render();
       countEl.tabIndex = -1;
       countEl.focus();
     },
   });
-  render();
+  renderLoading(listEl, 'Loading your saved jobs…');
+  await render();
 }
 
 init();

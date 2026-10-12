@@ -1,5 +1,10 @@
 # FreshHire — User Guide
 
+> **Note (Phase 15):** this document was written for the earlier **frontend-only** version of FreshHire.
+> The project is now full-stack (Express API + MongoDB): data is stored on the server, not in the browser, and
+> the app is started as the README now describes. The steps for each role are unchanged, except that "this browser only" no longer applies and the admin password on a deployed site is private.
+> Current descriptions: [README](../README.md), [ARCHITECTURE](../ARCHITECTURE.md), [SECURITY](SECURITY.md).
+
 Step-by-step instructions for each role. FreshHire is a frontend-only demo: everything you do is saved in
 **this browser only**. Start the app as described in the [README](../README.md#how-to-run).
 

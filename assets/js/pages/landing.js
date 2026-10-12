@@ -1,19 +1,18 @@
 /**
  * landing.js — Public landing page (index.html).
- * Seeds demo data on first visit, then renders the stats strip and featured jobs.
+ * Renders the stats strip and the newest open jobs from the API's public landing data.
  */
 
-import { FEATURED_JOBS_COUNT } from '../core/config.js';
-import { ensureSeeded } from '../core/seed.js';
 import { consumeFlash } from '../core/storage.js';
 import { redirectIfLoggedIn } from '../core/auth.js';
-import { getFeaturedJobs, getPublicJobStats, isJobExpired } from '../services/job-service.js';
+import { getLandingData, isJobExpired } from '../services/job-service.js';
 import { renderPublicNavbar } from '../components/navbar.js';
 import { renderFooter } from '../components/footer.js';
 import { createJobCard } from '../components/job-card.js';
 import { createEmptyState } from '../components/empty-state.js';
 import { createIcon } from '../components/icons.js';
 import { showToast } from '../components/toast.js';
+import { watchServerStatus } from '../components/server-status.js';
 
 const featuredListEl = document.querySelector('[data-featured-jobs]');
 
@@ -24,16 +23,13 @@ function renderStaticIcons() {
   });
 }
 
-function renderStats() {
-  const stats = getPublicJobStats();
+function renderStats(stats) {
   document.querySelectorAll('[data-stat]').forEach((el) => {
     el.textContent = String(stats[el.dataset.stat] ?? 0);
   });
 }
 
-function renderFeaturedJobs() {
-  const jobs = getFeaturedJobs(FEATURED_JOBS_COUNT);
-
+function renderFeaturedJobs(jobs) {
   if (jobs.length === 0) {
     featuredListEl.replaceChildren(createEmptyState({
       icon: 'briefcase',
@@ -48,7 +44,7 @@ function renderFeaturedJobs() {
   featuredListEl.setAttribute('aria-busy', 'false');
 }
 
-/** Shown when seed data can't be loaded (e.g. page opened via file://). */
+/** Shown when the jobs can't be loaded (e.g. the server is unreachable). */
 function renderLoadError(message) {
   const alertEl = document.createElement('div');
   alertEl.className = 'alert alert--danger';
@@ -64,22 +60,20 @@ async function init() {
   renderPublicNavbar(document.querySelector('[data-mount="navbar"]'));
   renderFooter(document.querySelector('[data-mount="footer"]'));
   renderStaticIcons();
+  watchServerStatus();
 
-  try {
-    const { seeded } = await ensureSeeded();
-    if (redirectIfLoggedIn()) return; // already logged in → own dashboard (ARCHITECTURE.md §5)
-    renderStats();
-    renderFeaturedJobs();
-    if (seeded) {
-      showToast('Demo data loaded into your browser.', { type: 'success' });
-    }
-    const flash = consumeFlash(); // e.g. "Welcome back…" after logging in
-    if (flash) showToast(flash.message, { type: flash.type });
-  } catch (error) {
-    console.error('landing: could not load demo data', error);
-    renderLoadError(error.message);
-    showToast('Could not load demo data.', { type: 'error' });
+  if (await redirectIfLoggedIn()) return; // already logged in → own dashboard (ARCHITECTURE.md §5)
+  const flash = consumeFlash(); // e.g. "You have been logged out."
+  if (flash) showToast(flash.message, { type: flash.type });
+
+  const result = await getLandingData();
+  if (!result.ok) {
+    console.error('landing: could not load jobs', result.code);
+    renderLoadError(result.error);
+    return;
   }
+  renderStats(result.data.stats);
+  renderFeaturedJobs(result.data.featuredJobs);
 }
 
 init();

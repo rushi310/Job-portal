@@ -52,8 +52,3 @@ export function setButtonLoading(buttonEl, isLoading, { idleText, loadingText })
   buttonEl.textContent = isLoading ? loadingText : idleText;
   buttonEl.form?.setAttribute('aria-busy', String(isLoading));
 }
-
-/** Resolve after `ms` milliseconds (used to simulate a network round-trip). */
-export function wait(ms) {
-  return new Promise((resolve) => { setTimeout(resolve, ms); });
-}

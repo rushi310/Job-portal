@@ -2,8 +2,8 @@
  * post-job.js — Recruiter "Post a Job" / "Edit Job" page (Phase 8).
  * Create: only `active` recruiters (BR-07); the job is saved as `pending` (BR-08).
  * Edit (?id=<jobId>): only the recruiter's own pending or approved job; changing core fields of an
- * approved job sends it back to `pending` (BR-11). Owner, company and status always come from
- * job-service, never from the form or URL. A preview is shown before anything is saved (UI_SPEC §5).
+ * approved job sends it back to `pending` (BR-11). Owner, company and status are decided by the
+ * server, never by the form or URL. A preview is shown before anything is saved (UI_SPEC §5).
  */
 
 import {
@@ -21,7 +21,7 @@ import { createEmptyState } from '../../components/empty-state.js';
 import { renderApprovalBanner } from '../../components/approval-banner.js';
 import { setFlash } from '../../core/storage.js';
 import {
-  JOB_FORM_FIELDS, validateJobField, validateJobForm, validateJobSkill, createJob, updateJob,
+  JOB_FORM_FIELDS, JOB_ERRORS, validateJobField, validateJobForm, validateJobSkill, createJob, updateJob,
   getOwnJob, canEditJob, isActiveRecruiter,
 } from '../../services/job-service.js';
 
@@ -251,11 +251,11 @@ function createPreview(values) {
   return previewEl;
 }
 
-function save(values) {
+async function save(values) {
   const submitEl = $('[data-submit]');
   if (submitEl.disabled) return; // already saving
   setButtonLoading(submitEl, true, { idleText: 'Preview job', loadingText: 'Saving…' });
-  const result = editingJob ? updateJob(editingJob.id, values) : createJob(values);
+  const result = await (editingJob ? updateJob(editingJob.id, values) : createJob(values));
   setButtonLoading(submitEl, false, { idleText: 'Preview job', loadingText: 'Saving…' });
 
   if (!result.ok) {
@@ -268,7 +268,7 @@ function save(values) {
   }
   let message = 'Job submitted. It will be visible to students once an admin approves it.';
   if (editingJob) {
-    message = result.returnedToPending
+    message = result.data.returnedToPending
       ? 'Changes saved. The job was sent back for admin approval because core details changed.'
       : 'Changes saved.';
   }
@@ -354,10 +354,19 @@ async function init() {
 
   const jobId = getQueryParam('id');
   if (jobId !== null) {
-    editingJob = getOwnJob(jobId); // another recruiter's job looks exactly like a missing one
+    const result = await getOwnJob(jobId); // another recruiter's job looks exactly like a missing one
+    editingJob = result.ok ? result.data : null;
     const title = editingJob ? `Edit: ${editingJob.title}` : 'Edit job';
     $('[data-page-title]').textContent = 'Edit Job';
     document.title = 'Edit Job · FreshHire';
+    if (!result.ok && result.code !== JOB_ERRORS.NOT_FOUND) {
+      showMessage({
+        title: 'This job could not be loaded',
+        message: result.error,
+        action: { label: 'Back to My Jobs', href: toRoot(PAGE_PATHS.MY_JOBS) },
+      });
+      return;
+    }
     if (!editingJob) {
       showMessage({
         title: 'Job not found',

@@ -1,5 +1,10 @@
 # FreshHire — Screenshot Checklist
 
+> **Note (Phase 15):** this document was written for the earlier **frontend-only** version of FreshHire.
+> The project is now full-stack (Express API + MongoDB): data is stored on the server, not in the browser, and
+> the screenshots show the earlier version (the footer notice and a few texts have changed since).
+> Current descriptions: [README](../README.md), [ARCHITECTURE](../ARCHITECTURE.md), [SECURITY](SECURITY.md).
+
 Screenshots for the project report and presentation are in [`screenshots/`](screenshots/). They were captured in
 Phase 14 from the running application (Microsoft Edge, fresh demo data, 1280 × 800 unless marked mobile), so
 they show the final UI.

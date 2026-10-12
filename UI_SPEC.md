@@ -1,6 +1,6 @@
 # UI_SPEC.md — FreshHire UI & Design System
 
-> FreshHire is a **frontend-only** project; the UI is rendered entirely in the browser.
+> The UI is rendered entirely in the browser from data it loads from the FreshHire API (Phase 15).
 > All UI is hand-written HTML5 + CSS3. No CSS frameworks, no icon fonts, no external fonts or CDNs.
 > Tokens below are implemented as CSS custom properties in `assets/css/variables.css` (Phase 1).
 
@@ -11,7 +11,11 @@
 2. **Consistent** — every page is built from the same tokens and components.
 3. **Mobile-first** — base styles target small screens; larger layouts are added with `min-width` media queries.
 4. **Accessible** — WCAG AA contrast, keyboard operable, clear focus, labelled inputs.
-5. **Honest** — the footer always shows: "Demo project — data stored locally in your browser."
+5. **Honest** — the footer always shows: "Demo project — not a real hiring service. Please do not enter real
+   personal data."
+6. **Never frozen** — a section that is waiting for the server shows "Loading…", a failed load shows a clear
+   message in that section (`components/load-state.js`), and a slow first answer (free hosting waking up) is
+   explained with a toast (`components/server-status.js`).
 
 ## 2. Design Tokens
 

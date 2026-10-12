@@ -1,7 +1,9 @@
 # DEVELOPMENT_PHASES.md — FreshHire Roadmap
 
-> **Frontend-only project.** Every phase uses only HTML5, CSS3, Vanilla JavaScript ES6+, JSON mock data,
-> `localStorage`, and `sessionStorage`. No phase introduces a backend, database, framework, or dependency.
+> **Phases 0–14 were frontend-only:** HTML5, CSS3, Vanilla JavaScript ES6+, JSON mock data, `localStorage` and
+> `sessionStorage`, with no backend. **Phase 15** (user-approved, 2026-10-12) turns the project into a
+> full-stack application: the same frontend, an Express API and MongoDB. The descriptions of Phases 0–14 below
+> are kept as written, as the project's history.
 >
 > **Gating rule:** a phase starts only when the user explicitly approves it. The current phase is recorded in
 > `PROJECT_STATUS.md`. At the end of each phase, verify its acceptance criteria, update the status file, report, and stop.
@@ -274,3 +276,39 @@ File paths below refer to the structure in `ARCHITECTURE.md`.
 - A new person can run and demo the project using only the README.
 - Documentation matches the implemented behaviour.
 - `PROJECT_STATUS.md` marks the project complete.
+
+---
+
+## Phase 15 — Full-Stack Migration & Free Deployment Preparation
+**Goal:** Replace the browser-only simulation with a real backend — REST API, database, authentication and
+server-side authorization — keep the existing vanilla frontend and every existing feature, and prepare a
+free-tier deployment (Netlify, Render, MongoDB Atlas).
+
+**Deliverables**
+- `server/`: Express API with configuration, MongoDB connection, models and indexes, validators, services,
+  controllers, routes, error handling, security headers, CORS allow-list, rate limiting, health check.
+- Authentication (register, login, logout, current user) with hashed passwords and bearer tokens; role,
+  approval and ownership checks on every protected route.
+- APIs for jobs, applications, saved jobs, profile and resume, recruiter and admin workflows, notifications
+  and analytics, enforcing every business rule in PROJECT_SPEC §4.
+- A repeatable seed script importing `data/*.json` (hashed passwords, relationships kept, nothing overwritten).
+- Frontend: `core/api.js` and `core/app-config.js`; every service calls the API; every page awaits it and
+  shows loading, empty, error and success states; no business data in the browser; browser seeding removed.
+- API tests; an end-to-end browser check of all roles.
+- `netlify.toml`, `render.yaml`, `server/.env.example`, `.gitignore`.
+- Documentation: README, ARCHITECTURE, PROJECT_SPEC, CODING_RULES, CLAUDE.md, DEPLOYMENT.md, docs/API.md,
+  docs/SECURITY.md, PROJECT_STATUS.
+
+**Acceptance criteria**
+- Every feature of Phases 1–12 works against the API, and data survives a reload and a new login.
+- A user cannot read or change another user's data, act in another role, or approve their own job, by any
+  request — proven by tests, not only by the interface.
+- Passwords are stored only as hashes and never returned; no secret is in the repository or the frontend.
+- `npm test` passes; no console errors from the application in the browser check.
+- The deployment files match the repository structure and contain no secrets.
+- Documentation states what is implemented and tested, what is prepared but not deployed, and what needs the
+  user's accounts. No live deployment is claimed unless it was verified.
+
+**Out of scope (future work):** email verification and password reset, changing a password, real-time
+notifications, external file storage, automated browser tests kept in the repository, the Phase 13 test-case
+document, rewriting the Phase 14 report / viva / presentation material for the new architecture.

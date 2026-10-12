@@ -1,10 +1,11 @@
 /**
  * login.js — Login page (pages/auth/login.html).
- * UI only: validation, feedback, and loading state. Authentication itself is done by core/auth.js.
+ * UI only: validation, feedback, and loading state. Authentication is done by the API through
+ * core/auth.js.
  */
 
-import { ROLES, SIMULATED_DELAY_MS } from '../../core/config.js';
-import { ensureSeeded } from '../../core/seed.js';
+import { ROLES } from '../../core/config.js';
+import { IS_LOCAL } from '../../core/app-config.js';
 import { setFlash, consumeFlash } from '../../core/storage.js';
 import {
   login, getPostLoginPath, redirectIfLoggedIn, AUTH_ERRORS,
@@ -15,15 +16,18 @@ import {
 import { renderFooter } from '../../components/footer.js';
 import { renderIconsBefore } from '../../components/icons.js';
 import { showToast } from '../../components/toast.js';
-import {
-  setFieldError, initPasswordToggle, setButtonLoading, wait,
-} from '../../components/form-field.js';
+import { setFieldError, initPasswordToggle, setButtonLoading } from '../../components/form-field.js';
+import { watchServerStatus } from '../../components/server-status.js';
 
-/** Demo accounts documented in PROJECT_SPEC.md §6 (simulation only). */
+/**
+ * Demo accounts created by the seed script (PROJECT_SPEC.md §6). Their passwords are public on
+ * purpose. The admin shortcut is offered only on a local copy: a deployed site's admin gets its
+ * own private password when the database is seeded (DEPLOYMENT.md).
+ */
 const DEMO_ACCOUNTS = [
   { role: ROLES.STUDENT, email: 'student@freshhire.com', password: 'Student@123' },
   { role: ROLES.RECRUITER, email: 'recruiter@freshhire.com', password: 'Recruiter@123' },
-  { role: ROLES.ADMIN, email: 'admin@freshhire.com', password: 'Admin@123' },
+  ...(IS_LOCAL ? [{ role: ROLES.ADMIN, email: 'admin@freshhire.com', password: 'Admin@123' }] : []),
 ];
 
 const formEl = document.querySelector('[data-login-form]');
@@ -107,8 +111,7 @@ async function handleSubmit(event) {
   if (!validateForm()) return;
 
   setLoading(true);
-  await wait(SIMULATED_DELAY_MS);
-  const result = login(emailEl.value, passwordEl.value);
+  const result = await login(emailEl.value, passwordEl.value);
 
   if (result.ok) {
     handleLoginSuccess(result.data); // page navigates away; keep the button disabled
@@ -197,16 +200,10 @@ async function init() {
   renderIconsBefore();
   renderDemoAccounts();
   bindEvents();
+  watchServerStatus();
 
-  try {
-    await ensureSeeded();
-    if (redirectIfLoggedIn()) return; // already logged in → own dashboard (ARCHITECTURE.md §5)
-    applyRegistrationHandoff();
-  } catch (error) {
-    console.error('login: could not load demo data', error);
-    showFormAlert(error.message);
-    submitEl.disabled = true;
-  }
+  if (await redirectIfLoggedIn()) return; // already logged in → own dashboard (ARCHITECTURE.md §5)
+  applyRegistrationHandoff();
 }
 
 init();

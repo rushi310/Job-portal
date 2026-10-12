@@ -7,7 +7,7 @@ import { toRoot } from '../core/utils.js';
 import { createIcon } from './icons.js';
 import { openModal } from './modal.js';
 
-const DEMO_NOTICE = 'Demo project — data stored locally in your browser.';
+const DEMO_NOTICE = 'Demo project — not a real hiring service. Please do not enter real personal data.';
 
 const EXPLORE_LINKS = [
   { label: 'Home', path: 'index.html#top' },
@@ -15,14 +15,14 @@ const EXPLORE_LINKS = [
   { label: 'Featured jobs', path: 'index.html#featured-jobs' },
 ];
 
-/** Explains the simulation honestly; shown from the "About this demo" button. */
+/** Explains honestly what the project is; shown from the "About this demo" button. */
 function openAboutDemoModal() {
   const contentEl = document.createElement('div');
   const points = [
     `${APP_NAME} is a final-year college project that simulates a job portal for freshers.`,
-    'It is frontend-only: there is no server, database, or API.',
-    'Demo data is copied from JSON files into your browser\'s localStorage on your first visit.',
-    'Anything you do stays in this browser only. Clearing site data resets the demo.',
+    'The pages are plain HTML, CSS and JavaScript. They talk to a small Node.js / Express API that stores data in MongoDB.',
+    'Accounts, jobs and applications here are for demonstration only: no real company is hiring through this site.',
+    'It runs on free hosting and is not hardened like a production service, so use a made-up name and a password you do not use anywhere else.',
   ];
   const listEl = document.createElement('ul');
   points.forEach((point) => {
@@ -61,7 +61,7 @@ function createInfoColumn() {
   headingEl.className = 'site-footer__heading';
   headingEl.textContent = 'Project';
   const textEl = document.createElement('p');
-  textEl.textContent = 'Built with HTML5, CSS3 and Vanilla JavaScript. No backend.';
+  textEl.textContent = 'Built with HTML5, CSS3 and Vanilla JavaScript, with a Node.js, Express and MongoDB API.';
   const aboutBtnEl = document.createElement('button');
   aboutBtnEl.type = 'button';
   aboutBtnEl.className = 'btn btn--outline btn--sm mt-2';

@@ -13,17 +13,17 @@ import { initProtectedPage } from '../../components/app-shell.js';
 import { createEmptyState } from '../../components/empty-state.js';
 import { confirmDialog } from '../../components/modal.js';
 import { showToast } from '../../components/toast.js';
-import {
-  getApplicationsByStudent, canWithdraw, withdrawApplication,
-} from '../../services/application-service.js';
-import { getJobById, getJobAvailability, JOB_AVAILABILITY } from '../../services/job-service.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
+import { getOwnApplications, canWithdraw, withdrawApplication } from '../../services/application-service.js';
+import { JOB_AVAILABILITY } from '../../services/job-service.js';
 
 const ALL = 'all';
 const filterEl = document.querySelector('[data-status-filter]');
 const listEl = document.querySelector('[data-application-list]');
 const countEl = document.querySelector('[data-application-count]');
 
-let student = null;
+let entries = []; // { application, job, availability } from the server, most recent activity first
+let totalOnServer = 0;
 let activeFilter = ALL;
 
 function createElement(tag, className, text) {
@@ -76,9 +76,7 @@ function createTimeline(application) {
   return detailsEl;
 }
 
-function createApplicationCard(application) {
-  const job = getJobById(application.jobId);
-  const availability = getJobAvailability(job);
+function createApplicationCard({ application, job, availability }) {
   const canOpenJob = availability === JOB_AVAILABILITY.OPEN || availability === JOB_AVAILABILITY.EXPIRED;
   const title = job?.title ?? 'Job no longer available';
 
@@ -122,11 +120,13 @@ function createApplicationCard(application) {
 
 /* ---------- Render ---------- */
 
+/** Draw the list from the applications already loaded (also used when only the filter changes). */
 function render() {
   try {
-    const applications = getApplicationsByStudent(student.id);
+    const applications = entries.map((entry) => entry.application);
     renderFilter(applications);
-    const visible = activeFilter === ALL ? applications : applications.filter((a) => a.status === activeFilter);
+    const visible = activeFilter === ALL
+      ? entries : entries.filter((entry) => entry.application.status === activeFilter);
 
     if (applications.length === 0) {
       countEl.textContent = '';
@@ -142,6 +142,9 @@ function render() {
     countEl.textContent = activeFilter === ALL
       ? pluralize(applications.length, 'application')
       : `${pluralize(visible.length, 'application')} with status ${getLabel(activeFilter)}`;
+    if (totalOnServer > applications.length) {
+      countEl.textContent += ` · showing your ${applications.length} most recent of ${totalOnServer}`;
+    }
 
     if (visible.length === 0) {
       const emptyEl = createEmptyState({
@@ -164,12 +167,21 @@ function render() {
   } catch (error) {
     console.error('applications: could not render applications', error);
     countEl.textContent = '';
-    listEl.replaceChildren(createEmptyState({
-      icon: 'alert',
-      title: 'Applications could not be loaded',
-      message: 'Please reload the page.',
-    }));
+    renderLoadError(listEl, { title: 'Applications could not be loaded' });
   }
+}
+
+/** Fetch the student's applications from the server, then draw them. */
+async function load() {
+  const result = await getOwnApplications();
+  if (!result.ok) {
+    countEl.textContent = '';
+    renderLoadError(listEl, { title: 'Applications could not be loaded', message: result.error });
+    return;
+  }
+  entries = result.data.items;
+  totalOnServer = result.data.total;
+  render();
 }
 
 /* ---------- Events ---------- */
@@ -183,14 +195,15 @@ async function handleWithdraw(buttonEl) {
   });
   if (!confirmed) return;
 
-  const result = withdrawApplication(cardEl.dataset.applicationId);
+  buttonEl.disabled = true; // one request, even on a double click
+  const result = await withdrawApplication(cardEl.dataset.applicationId);
   if (!result.ok) {
     showToast(result.error, { type: 'error' });
-    render();
+    await load();
     return;
   }
   showToast('Application withdrawn.', { type: 'success' });
-  render();
+  await load();
   countEl.tabIndex = -1;
   countEl.focus();
 }
@@ -201,7 +214,7 @@ function setFilter(value) {
 }
 
 async function init() {
-  student = await initProtectedPage(ROLES.STUDENT);
+  const student = await initProtectedPage(ROLES.STUDENT);
   if (!student) return;
 
   filterEl.addEventListener('click', (event) => {
@@ -217,7 +230,8 @@ async function init() {
     const showAllEl = event.target.closest('[data-status]');
     if (showAllEl) setFilter(showAllEl.dataset.status);
   });
-  render();
+  renderLoading(listEl, 'Loading your applications…');
+  await load();
 }
 
 init();

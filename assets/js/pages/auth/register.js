@@ -1,22 +1,21 @@
 /**
  * register.js — Registration page (pages/auth/register.html).
  * UI only: role switching, inline validation messages, and loading state.
- * The rules live in services/user-service.js; the account is created by core/auth.js register().
+ * The form rules live in services/user-service.js; the account is created by the API through
+ * core/auth.js register(), which checks every rule again (including that the email is free).
  */
 
 import {
-  ROLES, PAGE_PATHS, PUBLIC_REGISTRATION_ROLES, DEGREE_OPTIONS, GRADUATION_YEAR_OPTIONS, SIMULATED_DELAY_MS,
+  ROLES, PAGE_PATHS, PUBLIC_REGISTRATION_ROLES, DEGREE_OPTIONS, GRADUATION_YEAR_OPTIONS,
 } from '../../core/config.js';
-import { ensureSeeded } from '../../core/seed.js';
 import { setFlash } from '../../core/storage.js';
 import { register, redirectIfLoggedIn } from '../../core/auth.js';
 import { validateRegistrationField, validateRegistration } from '../../services/user-service.js';
 import { toRoot, getQueryParam } from '../../core/utils.js';
 import { renderFooter } from '../../components/footer.js';
 import { renderIconsBefore } from '../../components/icons.js';
-import {
-  setFieldError, initPasswordToggle, setButtonLoading, wait,
-} from '../../components/form-field.js';
+import { setFieldError, initPasswordToggle, setButtonLoading } from '../../components/form-field.js';
+import { watchServerStatus } from '../../components/server-status.js';
 
 const formEl = document.querySelector('[data-register-form]');
 const submitEl = formEl.querySelector('[data-submit]');
@@ -114,8 +113,7 @@ async function handleSubmit(event) {
   }
 
   setLoading(true);
-  await wait(SIMULATED_DELAY_MS);
-  const result = register(getFormValues());
+  const result = await register(getFormValues());
 
   if (result.ok) {
     handleRegisterSuccess(result.data); // page navigates away; keep the button disabled
@@ -123,7 +121,7 @@ async function handleSubmit(event) {
   }
   setLoading(false);
   if (result.fieldErrors) {
-    showFieldErrors(result.fieldErrors); // e.g. the email was taken in another tab meanwhile
+    showFieldErrors(result.fieldErrors); // e.g. the email is already registered
   } else {
     showFormAlert(result.error);
   }
@@ -181,15 +179,8 @@ async function init() {
   if (PUBLIC_REGISTRATION_ROLES.includes(requestedRole)) formEl.elements.role.value = requestedRole;
   applyRole(getSelectedRole() || ROLES.STUDENT);
   bindEvents();
-
-  try {
-    await ensureSeeded(); // needed for the email uniqueness check
-    redirectIfLoggedIn(); // already logged in → own dashboard (ARCHITECTURE.md §5)
-  } catch (error) {
-    console.error('register: could not load demo data', error);
-    showFormAlert(error.message);
-    submitEl.disabled = true;
-  }
+  watchServerStatus();
+  await redirectIfLoggedIn(); // already logged in → own dashboard (ARCHITECTURE.md §5)
 }
 
 init();

@@ -18,16 +18,6 @@ export function toRoot(path = '') {
   return new URL(path, ROOT_URL).href;
 }
 
-/**
- * Create a unique id such as "job_lx2k9a_4f7".
- * @param {string} prefix one of usr, job, app, ntf
- */
-export function generateId(prefix) {
-  const time = Date.now().toString(36);
-  const random = Math.random().toString(36).slice(2, 5);
-  return `${prefix}_${time}_${random}`;
-}
-
 /** Escape text for safe use inside HTML strings. */
 export function escapeHtml(value) {
   return String(value ?? '')
@@ -175,30 +165,6 @@ export function isValidEmail(email) {
 /** Password rule BR-02: ≥ 8 chars, one uppercase, one lowercase, one digit. */
 export function isStrongPassword(password) {
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(String(password));
-}
-
-/**
- * Split a list into pages. The page number is clamped into range.
- * @param {Array} items
- * @param {number} page 1-based
- * @param {number} perPage
- * @returns {{ items: Array, page: number, totalPages: number, total: number, from: number, to: number }}
- *   from/to are 1-based positions of the first/last item shown (0 when empty)
- */
-export function paginate(items, page, perPage) {
-  const total = items.length;
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const currentPage = Math.min(Math.max(1, Math.trunc(Number(page)) || 1), totalPages);
-  const start = (currentPage - 1) * perPage;
-  const pageItems = items.slice(start, start + perPage);
-  return {
-    items: pageItems,
-    page: currentPage,
-    totalPages,
-    total,
-    from: total === 0 ? 0 : start + 1,
-    to: start + pageItems.length,
-  };
 }
 
 /** Pluralise a simple English noun: pluralize(1, 'job') → "1 job". */

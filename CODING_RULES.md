@@ -1,12 +1,14 @@
 # CODING_RULES.md — FreshHire Coding Conventions
 
-> FreshHire is **frontend-only**: HTML5, CSS3, Vanilla JavaScript ES6+ (ES modules), JSON seed data,
-> `localStorage`, and `sessionStorage`. No frameworks, libraries, build tools, or backend code.
+> **Frontend:** HTML5, CSS3, Vanilla JavaScript ES6+ (ES modules) — no frameworks, libraries or build tools.
+> **Backend (`server/`, Phase 15):** Node.js, Express, Mongoose — see §10.
+> Sections 1–9 are about the frontend unless they say otherwise.
 
 ---
 
 ## 1. General
-- No dependencies: no npm, no CDN links, no `package.json`, no `node_modules`.
+- Frontend: no dependencies — no npm, no CDN links, no `package.json`. (The backend has its own
+  `server/package.json`; see §10.)
 - UTF-8 encoding, LF or CRLF consistently, 2-space indentation, no tabs.
 - Maximum line length ~100 characters where practical.
 - Remove dead code, commented-out code, and `console.log` before finishing a phase (`console.error` for genuine errors is allowed).
@@ -69,9 +71,13 @@
 
 ### 5.3 Structure
 - Respect the layer rules in `ARCHITECTURE.md` §1: pages → components/services → core.
-- Only `core/storage.js` calls `localStorage`/`sessionStorage`.
-- Only services contain business rules (eligibility, status transitions, validation of domain data).
-- Constants (roles, statuses, keys, limits, `DATA_VERSION`) live in `core/config.js` — no magic strings.
+- Only `core/storage.js` touches `sessionStorage`; only `core/api.js` calls `fetch()`. `localStorage` is not used.
+- Business rules are enforced by the server. Frontend services call the API and may repeat a rule only to
+  give quick feedback in a form (the server's answer always wins).
+- Service functions that call the API are `async` and resolve to `{ ok: true, data }` or
+  `{ ok: false, code, error, fieldErrors? }`; pages `await` them and show a loading state meanwhile.
+- Constants (roles, statuses, keys, limits) live in `core/config.js` — no magic strings. The API address
+  lives in `core/app-config.js`.
 - Functions do one thing and stay short (aim < 40 lines).
 - Services return data or `{ ok, data, error }`; they never `alert()` or touch the DOM.
 - Use event delegation for lists (one listener on the container, read `data-*` attributes).
@@ -85,10 +91,10 @@
 - Validate uploaded resume: MIME type `application/pdf` and size ≤ 500 KB (`MAX_RESUME_SIZE`).
 
 ### 5.5 Storage
-- Always read/write JSON through `storage.js` helpers (`getLocal`, `setLocal`, `removeLocal`, `getSession`, `setSession`, `removeSession`).
-- Handle `QuotaExceededError` in `setLocal` and surface a friendly error.
-- Never store derived data (e.g. "expired", counts) — compute it.
-- Bump `DATA_VERSION` in `config.js` whenever seed JSON structure changes.
+- The browser stores only per-tab conveniences, through `storage.js` helpers (`getSession`, `setSession`,
+  `removeSession`, `setFlash`, `consumeFlash`): the login token, the last job filters, a one-time message.
+- Never keep business data (users, jobs, applications, notifications) in the browser.
+- Never store derived data (e.g. "expired", counts) — the server computes it for each request.
 
 ### 5.6 Errors
 - Catch errors at page level; show a toast, not a raw error.
@@ -111,7 +117,7 @@
 
 ## 8. Version Control (recommended, not required)
 - If Git is used: small commits per feature, messages like `feat(student): add job search filters`.
-- Never commit secrets (there should be none — this is a frontend-only demo).
+- Never commit secrets. `server/.env` is ignored by Git; `.env.example` and `render.yaml` contain no values.
 
 ## 9. Pre-Phase-Completion Checklist
 - [ ] No console errors on any page touched.
@@ -119,3 +125,32 @@
 - [ ] No inline styles or handlers; no hard-coded storage keys.
 - [ ] Works at 360px, 768px, and 1280px widths.
 - [ ] Docs updated (`PROJECT_STATUS.md`, and `README.md` if needed).
+
+## 10. Backend (`server/`)
+
+- **Language:** Node.js, CommonJS modules (`require` / `module.exports`), `async` / `await`. Same naming, comment
+  and formatting rules as the frontend (§1, §5.2, §5.7).
+- **Layers** (ARCHITECTURE.md §1): `routes` declare who may call what → `controllers` read the request and send
+  the response → `validators` check input and build whitelisted values → `services` hold the business rules
+  and queries → `models` define schemas and indexes. No queries in routes or controllers; no `req` / `res` in
+  services.
+- **Identity:** the acting user is `req.user` (loaded from the database by `middleware/auth.js`). Never read a
+  user id, role, owner or status from the body, query or URL to decide who is acting or what they own.
+- **Ownership in the query:** find a record together with its owner (`{ _id, recruiter: req.user._id }`), and
+  answer "not found" for someone else's record.
+- **State changes are conditional updates:** `findOneAndUpdate` with the expected current status in the filter,
+  so two requests at once cannot both succeed. Uniqueness is enforced by an index, not only by a prior check.
+- **Input:** never pass `req.body` or `req.query` to a model. Validators turn values into plain strings / numbers
+  (`utils/text.js`) and copy only named fields. Escape text before using it in a pattern.
+- **Output:** send data only through `utils/serializers.js` and `sendData`; never a Mongoose document directly.
+- **Errors:** throw an `AppError` (helpers in `utils/app-error.js`); the central handler formats it. Messages are
+  written for the user; never include stack traces, queries or configuration.
+- **Configuration:** only `config/env.js` reads `process.env`. New settings are added there, to
+  `.env.example` and to `render.yaml` (without secret values).
+- **Logging:** `console.info` / `console.error` with no personal data, passwords, tokens or connection strings.
+- **Notifications** are created in the service that made the change, after it succeeded, and never by a read.
+- **Tests:** every route has tests in `server/tests/` for the allowed case and for the refused ones (logged
+  out, wrong role, someone else's record, invalid input). Tests use the helpers in `tests/helpers.js` and an
+  in-memory database; they never connect to a real one. Wrap each file in one top-level `describe` that owns
+  `before` / `after` (file-level hooks do not run on Node 16).
+- **Dependencies:** only those listed in CLAUDE.md §2; adding one needs the user's approval.

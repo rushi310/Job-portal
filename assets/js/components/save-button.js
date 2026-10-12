@@ -49,7 +49,7 @@ export function createSaveButton(job, isSaved, { block = false } = {}) {
  * @param {{ onChange?: (jobId: string, isSaved: boolean) => void }} [options]
  */
 export function bindSaveButtons(containerEl, { onChange } = {}) {
-  containerEl.addEventListener('click', (event) => {
+  containerEl.addEventListener('click', async (event) => {
     const buttonEl = event.target.closest('[data-action="toggle-save"]');
     if (!buttonEl || !containerEl.contains(buttonEl)) return;
     event.preventDefault(); // never let a save click trigger other card behaviour
@@ -58,7 +58,7 @@ export function bindSaveButtons(containerEl, { onChange } = {}) {
     const { jobId } = buttonEl.dataset;
     const wasSaved = buttonEl.getAttribute('aria-pressed') === 'true';
     buttonEl.setAttribute('aria-busy', 'true');
-    const result = wasSaved ? unsaveJob(jobId) : saveJob(jobId);
+    const result = await (wasSaved ? unsaveJob(jobId) : saveJob(jobId));
     buttonEl.removeAttribute('aria-busy');
 
     if (!result.ok) {

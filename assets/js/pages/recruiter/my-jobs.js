@@ -13,16 +13,17 @@ import { confirmDialog } from '../../components/modal.js';
 import { showToast } from '../../components/toast.js';
 import { renderApprovalBanner } from '../../components/approval-banner.js';
 import { watchScrollRegion } from '../../components/scroll-region.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
 import {
-  getOwnJobs, getOwnJob, isJobExpired, canEditJob, canCloseJob, closeJob, isActiveRecruiter,
+  getOwnJobs, isJobExpired, canEditJob, canCloseJob, closeJob, isActiveRecruiter,
 } from '../../services/job-service.js';
-import { getApplicationsForRecruiter } from '../../services/application-service.js';
 
 const ALL = 'all';
 const FILTERS = [ALL, JOB_STATUS.PENDING, JOB_STATUS.APPROVED, JOB_STATUS.REJECTED, JOB_STATUS.CLOSED];
 const $ = (selector) => document.querySelector(selector);
 
 let currentUser = null;
+let entries = []; // { job, applicantCount } for every own job, newest first
 let activeFilter = ALL;
 
 function createElement(tag, className, text) {
@@ -136,13 +137,11 @@ function renderFilter(jobs) {
   }));
 }
 
+/** Draw the table from the jobs already loaded (also used when only the filter changes). */
 function render() {
-  const jobs = getOwnJobs();
+  const jobs = entries.map((entry) => entry.job);
   const canManage = isActiveRecruiter(currentUser);
-  const countsByJob = new Map();
-  getApplicationsForRecruiter().forEach((application) => {
-    countsByJob.set(application.jobId, (countsByJob.get(application.jobId) ?? 0) + 1);
-  });
+  const countsByJob = new Map(entries.map((entry) => [entry.job.id, entry.applicantCount]));
   renderFilter(jobs);
 
   const shown = activeFilter === ALL ? jobs : jobs.filter((job) => job.status === activeFilter);
@@ -171,8 +170,20 @@ function render() {
   $('[data-jobs-list]').replaceChildren(createTable(shown, countsByJob, canManage));
 }
 
+/** Fetch the recruiter's own jobs from the server, then draw them. */
+async function load() {
+  const result = await getOwnJobs();
+  if (!result.ok) {
+    $('[data-jobs-count]').textContent = '';
+    renderLoadError($('[data-jobs-list]'), { title: 'Your jobs could not be loaded', message: result.error });
+    return;
+  }
+  entries = result.data.items;
+  render();
+}
+
 async function handleClose(jobId) {
-  const job = getOwnJob(jobId);
+  const job = entries.find((entry) => entry.job.id === jobId)?.job;
   if (!job) return;
   const confirmed = await confirmDialog({
     title: 'Close this job?',
@@ -181,13 +192,14 @@ async function handleClose(jobId) {
     confirmLabel: 'Close job',
   });
   if (!confirmed) return;
-  const result = closeJob(jobId);
+  const result = await closeJob(jobId);
   if (!result.ok) {
     showToast(result.error, { type: 'error' });
+    await load();
     return;
   }
   showToast('Job closed.', { type: 'success' });
-  render();
+  await load();
   $('[data-jobs-count]').focus();
 }
 
@@ -211,7 +223,8 @@ async function init() {
   renderApprovalBanner($('[data-approval-banner]'), user);
   if (isActiveRecruiter(user)) $('[data-header-action]').append(createLink('Post a Job', PAGE_PATHS.POST_JOB, 'btn btn--primary'));
   bindEvents();
-  render();
+  renderLoading($('[data-jobs-list]'), 'Loading your jobs…');
+  await load();
 }
 
 init();

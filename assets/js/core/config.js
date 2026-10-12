@@ -1,41 +1,18 @@
 /**
  * config.js — Central constants for FreshHire.
- * Storage keys, seed data version, roles, statuses, and limits live here so no other
- * module needs "magic strings" (see CODING_RULES.md §5.3).
+ * Storage keys, roles, statuses, and limits live here so no other module needs "magic strings"
+ * (see CODING_RULES.md §5.3). The server enforces its own copy of the roles, statuses and limits
+ * (server/src/config/constants.js); the values here drive the forms and labels.
  */
 
 export const APP_NAME = 'FreshHire';
 
-/** Bump whenever the seed JSON in /data changes, so browsers re-seed on next load. */
-export const DATA_VERSION = '1.0.0';
-
-/** Prefix shared by every FreshHire storage key. */
-export const STORAGE_PREFIX = 'fh_';
-
+/** sessionStorage keys (per tab). Business data is not kept in the browser. */
 export const STORAGE_KEYS = Object.freeze({
-  // localStorage
-  DATA_VERSION: 'fh_data_version',
-  USERS: 'fh_users',
-  JOBS: 'fh_jobs',
-  APPLICATIONS: 'fh_applications',
-  SAVED_JOBS: 'fh_saved_jobs',
-  NOTIFICATIONS: 'fh_notifications',
-  // sessionStorage
-  SESSION: 'fh_session',
+  SESSION: 'fh_session', // login token and who is logged in
   JOB_FILTERS: 'fh_job_filters',
   FLASH: 'fh_flash',
 });
-
-/** Seed files (paths relative to the project root) and the localStorage key each fills. */
-export const SEED_SOURCES = Object.freeze([
-  { key: STORAGE_KEYS.USERS, path: 'data/users.json' },
-  { key: STORAGE_KEYS.JOBS, path: 'data/jobs.json' },
-  { key: STORAGE_KEYS.APPLICATIONS, path: 'data/applications.json' },
-  { key: STORAGE_KEYS.NOTIFICATIONS, path: 'data/notifications.json' },
-]);
-
-/** Keys that start empty (no seed file). */
-export const EMPTY_COLLECTION_KEYS = Object.freeze([STORAGE_KEYS.SAVED_JOBS]);
 
 /** Public page paths, relative to the project root (ARCHITECTURE.md §3). */
 export const PAGE_PATHS = Object.freeze({
@@ -255,29 +232,13 @@ export const RECRUITER_STATUS_FLOW = Object.freeze({
   withdrawn: Object.freeze([]),
 });
 
-/** The forward stages of an application (BR-15), in order; used by the recruiter status funnel. */
-export const APPLICATION_PIPELINE = Object.freeze([
-  APPLICATION_STATUS.APPLIED,
-  APPLICATION_STATUS.UNDER_REVIEW,
-  APPLICATION_STATUS.SHORTLISTED,
-  APPLICATION_STATUS.INTERVIEW,
-  APPLICATION_STATUS.SELECTED,
-]);
-
-/**
- * "Applications over time" (Phase 11): weekly points while the data spans at most this many weeks,
- * monthly points beyond that, so the line never has hundreds of points.
- */
-export const REPORT_MAX_WEEKLY_POINTS = 16;
-
 /** Delay before a typed search runs (UI_SPEC: debounced search). */
 export const SEARCH_DEBOUNCE_MS = 300;
 
 /** Limits & UI settings */
 export const MAX_RESUME_SIZE = 500 * 1024; // 500 KB (PROJECT_SPEC.md §3.2)
 export const JOBS_PER_PAGE = 9;
-export const FEATURED_JOBS_COUNT = 6;
+/** Rows per page in the admin Users and Jobs tables. */
+export const ADMIN_PAGE_SIZE = 25;
 export const TOAST_DURATION = 4000;
-/** Short pause on form submits so the loading state is visible (simulated network round-trip). */
-export const SIMULATED_DELAY_MS = 600;
 export const MAX_CARD_SKILLS = 4;

@@ -1,7 +1,7 @@
 /**
  * company-profile.js — Recruiter "Company Profile" page (Phase 8).
  * Edits the logged-in recruiter's contact and company details (PROJECT_SPEC §5.1 recruiter profile)
- * through profile-service.updateCompanyProfile, which takes the recruiter from the session.
+ * through profile-service.updateCompanyProfile; the server edits the logged-in recruiter's own account.
  * Pending recruiters may edit this page too; it does not post anything (BR-07).
  */
 
@@ -114,13 +114,13 @@ function showFieldErrors(fieldErrors) {
   formEl.elements[firstInvalid].focus();
 }
 
-function handleSubmit(event) {
+async function handleSubmit(event) {
   event.preventDefault();
   const submitEl = $('button[type="submit"]', formEl);
   if (submitEl.disabled) return; // a save is already running
   showAlert('');
   setButtonLoading(submitEl, true, { idleText: 'Save changes', loadingText: 'Saving…' });
-  const result = updateCompanyProfile(readValues());
+  const result = await updateCompanyProfile(readValues());
   setButtonLoading(submitEl, false, { idleText: 'Save changes', loadingText: 'Saving…' });
 
   if (!result.ok) {

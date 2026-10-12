@@ -1,8 +1,8 @@
 /**
  * announcements.js — Admin "Announcements" page (Phase 10, PROJECT_SPEC §3.4, §4.5).
  * Audience select, title and message; sending asks for confirmation (it cannot be undone) and
- * creates one notification per recipient through admin-service. The "Sent announcements" list is
- * rebuilt from those notifications.
+ * creates one notification per recipient on the server. The "Sent announcements" list is rebuilt
+ * there from those notifications.
  */
 
 import { ROLES, ANNOUNCEMENT_AUDIENCES } from '../../core/config.js';
@@ -12,6 +12,7 @@ import { setFieldError, setButtonLoading } from '../../components/form-field.js'
 import { confirmDialog } from '../../components/modal.js';
 import { showToast } from '../../components/toast.js';
 import { createEmptyState } from '../../components/empty-state.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
 import {
   validateAnnouncement, sendAnnouncement, getSentAnnouncements,
 } from '../../services/admin-service.js';
@@ -41,8 +42,14 @@ function showErrors(fieldErrors) {
   if (first) formEl.elements[first].focus();
 }
 
-function renderSent() {
-  const sent = getSentAnnouncements();
+async function renderSent() {
+  const result = await getSentAnnouncements();
+  if (!result.ok) {
+    $('[data-sent-count]').textContent = '';
+    renderLoadError($('[data-sent-list]'), { title: 'Sent announcements could not be loaded', message: result.error });
+    return;
+  }
+  const sent = result.data;
   $('[data-sent-count]').textContent = pluralize(sent.length, 'announcement');
   if (sent.length === 0) {
     $('[data-sent-list]').replaceChildren(createEmptyState({ title: 'No announcements yet', icon: 'megaphone' }));
@@ -91,7 +98,7 @@ async function handleSubmit(event) {
   if (!confirmed) return;
 
   setButtonLoading(submitEl, true, { idleText: 'Send announcement', loadingText: 'Sending…' });
-  const result = sendAnnouncement(values);
+  const result = await sendAnnouncement(values);
   setButtonLoading(submitEl, false, { idleText: 'Send announcement', loadingText: 'Sending…' });
   if (!result.ok) {
     if (result.fieldErrors) showErrors(result.fieldErrors);
@@ -102,7 +109,7 @@ async function handleSubmit(event) {
     return;
   }
   formEl.reset();
-  renderSent();
+  await renderSent();
   showToast(`Announcement sent to ${pluralize(result.data.recipients, 'user')}.`, { type: 'success' });
   $('[data-sent-count]').focus();
 }
@@ -128,7 +135,8 @@ async function init() {
       if (inputEl.hasAttribute('aria-invalid')) setFieldError(inputEl, validateAnnouncement(readValues())[field] ?? '');
     });
   });
-  renderSent();
+  renderLoading($('[data-sent-list]'), 'Loading sent announcements…');
+  await renderSent();
 }
 
 init();

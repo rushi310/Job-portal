@@ -1,26 +1,25 @@
 /**
  * jobs.js — Browse Jobs page (Phase 4; PROJECT_SPEC.md §3.2, UI_SPEC.md §5 "Browse Jobs").
  * Search (debounced), filters, sort, pagination, "Show expired", and a mobile filter drawer.
- * Filtering/sorting rules live in job-service.js; this file only manages page state and rendering.
+ * Searching, filtering, sorting and paging happen on the server (job-service.js calls the API);
+ * this file only manages page state and rendering.
  * State is kept for the current tab in sessionStorage (fh_job_filters) via storage.js.
  */
 
 import {
   ROLES, STORAGE_KEYS, JOB_TYPES, WORK_MODES, JOB_SORT_OPTIONS, PAY_RANGES,
-  JOBS_PER_PAGE, SEARCH_DEBOUNCE_MS,
+  SEARCH_DEBOUNCE_MS,
 } from '../../core/config.js';
 import { getSession, setSession } from '../../core/storage.js';
-import {
-  getLabel, debounce, paginate, pluralize,
-} from '../../core/utils.js';
+import { getLabel, debounce, pluralize } from '../../core/utils.js';
 import { initProtectedPage } from '../../components/app-shell.js';
 import { createIcon } from '../../components/icons.js';
 import { keepFocusInside } from '../../components/modal.js';
 import { createJobCard, createViewDetailsLink } from '../../components/job-card.js';
 import { createEmptyState } from '../../components/empty-state.js';
 import { renderPagination } from '../../components/pagination.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
 import { searchJobs, getJobFilterOptions, isJobExpired } from '../../services/job-service.js';
-import { getSavedJobsByStudent } from '../../services/saved-job-service.js';
 import { createSaveButton, bindSaveButtons } from '../../components/save-button.js';
 
 const DESKTOP_QUERY = window.matchMedia('(min-width: 1024px)');
@@ -52,7 +51,7 @@ const paginationEl = $('[data-pagination]');
 
 let state = { ...DEFAULT_STATE };
 let filterOptions = { locations: [], skills: [] };
-let currentUser = null; // the logged-in student (from the session)
+let latestSearch = 0; // only the newest search may update the page
 
 /* ---------- State ---------- */
 
@@ -88,8 +87,8 @@ function countActiveFilters() {
 /** Apply a change, go back to page 1 (unless the page itself changed), re-render and remember. */
 function updateState(changes) {
   state = { ...state, page: 1, ...changes };
-  render();
   saveState();
+  render();
 }
 
 /* ---------- Controls ---------- */
@@ -175,40 +174,52 @@ function renderActiveFilterCount() {
   openFiltersEl.setAttribute('aria-label', active ? `Filters, ${active} active` : 'Filters');
 }
 
-function render() {
-  try {
-    const page = paginate(searchJobs(state), state.page, JOBS_PER_PAGE);
-    const savedJobIds = new Set(getSavedJobsByStudent(currentUser.id).map((record) => record.jobId));
-    state.page = page.page; // clamp an out-of-range page (e.g. restored from an older session)
+function renderResults(page) {
+  if (state.page !== page.page) {
+    state.page = page.page; // the server clamps an out-of-range page (e.g. restored from an older session)
+    saveState();
+  }
+  renderCount(page);
+  if (page.total === 0) {
+    renderEmptyState();
+  } else {
+    resultsEl.replaceChildren(...page.items.map((job) => createJobCard(job, {
+      isExpired: isJobExpired(job),
+      actions: [createSaveButton(job, job.isSaved), createViewDetailsLink(job)],
+    })));
+  }
+  renderPagination(paginationEl, {
+    page: page.page,
+    totalPages: page.totalPages,
+    onChange: (newPage) => {
+      updateState({ page: newPage });
+      countEl.scrollIntoView({ block: 'start' });
+    },
+  });
+}
 
-    renderCount(page);
-    if (page.total === 0) {
-      renderEmptyState();
-    } else {
-      resultsEl.replaceChildren(...page.items.map((job) => createJobCard(job, {
-        isExpired: isJobExpired(job),
-        actions: [createSaveButton(job, savedJobIds.has(job.id)), createViewDetailsLink(job)],
-      })));
-    }
-    renderPagination(paginationEl, {
-      page: page.page,
-      totalPages: page.totalPages,
-      onChange: (newPage) => {
-        updateState({ page: newPage });
-        countEl.scrollIntoView({ block: 'start' });
-      },
-    });
-  } catch (error) {
-    console.error('jobs: could not render job results', error);
+/** Ask the server for the current page of results. The previous results stay visible meanwhile. */
+async function render() {
+  renderActiveFilterCount();
+  latestSearch += 1;
+  const searchId = latestSearch;
+  resultsEl.setAttribute('aria-busy', 'true');
+
+  const result = await searchJobs(state);
+  if (searchId !== latestSearch) return; // the criteria changed while this request was running
+  resultsEl.removeAttribute('aria-busy');
+  if (!result.ok) {
     countEl.textContent = '';
     paginationEl.replaceChildren();
-    resultsEl.replaceChildren(createEmptyState({
-      icon: 'alert',
-      title: 'Jobs could not be loaded',
-      message: 'Please reload the page. If the problem continues, reset the demo data.',
-    }));
+    renderLoadError(resultsEl, { title: 'Jobs could not be loaded', message: result.error });
+    return;
   }
-  renderActiveFilterCount();
+  try {
+    renderResults(result.data);
+  } catch (error) {
+    console.error('jobs: could not render job results', error);
+    renderLoadError(resultsEl, { title: 'Jobs could not be loaded' });
+  }
 }
 
 /* ---------- Filter drawer (below 1024px) ---------- */
@@ -247,8 +258,8 @@ function closeFilters({ restoreFocus = true } = {}) {
 function clearFilters() {
   state = { ...DEFAULT_STATE };
   syncControls();
-  render();
   saveState();
+  render();
 }
 
 function bindEvents() {
@@ -290,14 +301,11 @@ function bindEvents() {
 
 async function init() {
   const user = await initProtectedPage(ROLES.STUDENT);
-  currentUser = user;
   if (!user) return;
 
-  try {
-    filterOptions = getJobFilterOptions();
-  } catch (error) {
-    console.error('jobs: could not read filter options', error);
-  }
+  renderLoading(resultsEl, 'Loading jobs…');
+  const options = await getJobFilterOptions();
+  if (options.ok) filterOptions = options.data; // without them the location and skill filters stay empty
   buildControls();
   state = sanitizeState(getSession(STORAGE_KEYS.JOB_FILTERS)); // restore this tab's last filters
   syncControls();

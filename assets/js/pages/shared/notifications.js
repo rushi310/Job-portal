@@ -1,10 +1,10 @@
 /**
  * notifications.js — Notification centre for every role (Phase 10, UI_SPEC §5 "Notifications").
- * Shows only the logged-in user's notifications (from the session), grouped by date, newest first.
- * Unread items are marked in text ("Unread") as well as style. Opening a notification marks it read
- * and follows its link — only when the link is a page of the user's own role (or shared); the page
- * itself still runs its guards and ownership checks. "Mark as read" / "Mark all as read" update
- * the list and the navbar bell without reloading.
+ * Shows only the logged-in user's notifications (the server returns no one else's), grouped by
+ * date, newest first. Unread items are marked in text ("Unread") as well as style. Opening a
+ * notification marks it read and follows its link — only when the link is a page of the user's own
+ * role (or shared); that page and the API still check access. "Mark as read" / "Mark all as read"
+ * update the list and the navbar bell without reloading.
  */
 
 import { ROLES } from '../../core/config.js';
@@ -15,12 +15,16 @@ import { initProtectedPage } from '../../components/app-shell.js';
 import { createEmptyState } from '../../components/empty-state.js';
 import { showToast } from '../../components/toast.js';
 import { setNotificationBadge } from '../../components/navbar.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
 import {
-  getOwnNotifications, countUnread, markAsRead, markAllAsRead, getSafeLink, NOTIFICATION_TYPE_LABELS,
+  getOwnNotifications, markAsRead, markAllAsRead, getSafeLink, NOTIFICATION_TYPE_LABELS,
 } from '../../services/notification-service.js';
 
 const $ = (selector) => document.querySelector(selector);
 let user = null;
+let notifications = []; // the user's notifications as last loaded, newest first
+let unread = 0;
+let total = 0;
 
 function createElement(tag, className, text) {
   const el = document.createElement(tag);
@@ -86,9 +90,8 @@ function createItem(notification) {
   return itemEl;
 }
 
+/** Draw the list from the notifications already loaded. */
 function render() {
-  const notifications = getOwnNotifications();
-  const unread = countUnread(notifications);
   setNotificationBadge(unread);
   $('[data-mark-all]').disabled = unread === 0;
 
@@ -102,9 +105,10 @@ function render() {
     }));
     return;
   }
-  $('[data-notifications-count]').textContent = unread === 0
-    ? `You're all caught up · ${pluralize(notifications.length, 'notification')}`
-    : `${unread} unread · ${pluralize(notifications.length, 'notification')}`;
+  $('[data-notifications-count]').textContent = (unread === 0
+    ? `You're all caught up · ${pluralize(total, 'notification')}`
+    : `${unread} unread · ${pluralize(total, 'notification')}`)
+    + (total > notifications.length ? ` · showing the ${notifications.length} newest` : '');
 
   const groups = new Map();
   notifications.forEach((notification) => {
@@ -124,23 +128,51 @@ function render() {
   }));
 }
 
-function handleMarkOne(notificationId) {
-  const result = markAsRead(notificationId);
+/** Fetch the user's notifications from the server, then draw them. */
+async function load() {
+  const result = await getOwnNotifications();
   if (!result.ok) {
-    showToast(result.error, { type: 'error' });
-    render();
+    $('[data-notifications-count]').textContent = '';
+    renderLoadError($('[data-notifications-list]'), {
+      title: 'Notifications could not be loaded', message: result.error, headingLevel: 2,
+    });
     return;
   }
+  ({ items: notifications, unread, total } = result.data);
+  render();
+}
+
+/** Remember that a notification is read without loading the whole list again. */
+function setRead(isMatch, unreadNow) {
+  notifications = notifications.map((item) => (isMatch(item) ? { ...item, read: true } : item));
+  unread = unreadNow;
+}
+
+async function handleMarkOne(notificationId) {
+  const result = await markAsRead(notificationId);
+  if (!result.ok) {
+    showToast(result.error, { type: 'error' });
+    await load();
+    return;
+  }
+  setRead((item) => item.id === notificationId, result.data.unread);
   render();
   $(`[data-notification-id="${CSS.escape(notificationId)}"]`)?.focus();
 }
 
-function handleMarkAll() {
-  const result = markAllAsRead();
+/** Mark the notification read first, then follow its link (so the request is not cut off). */
+async function handleOpen(linkEl) {
+  await markAsRead(linkEl.dataset.openNotification);
+  window.location.assign(linkEl.href);
+}
+
+async function handleMarkAll() {
+  const result = await markAllAsRead();
   if (!result.ok) {
     showToast(result.error, { type: 'error' });
     return;
   }
+  setRead(() => true, 0);
   render();
   showToast(result.data.changed ? 'All notifications marked as read.' : 'Everything was already read.', { type: 'success' });
   $('[data-notifications-count]').focus();
@@ -156,12 +188,14 @@ async function init() {
       handleMarkOne(markEl.dataset.markRead);
       return;
     }
-    // Opening a notification marks it read first; the browser then follows the link.
     const openEl = event.target.closest('[data-open-notification]');
-    if (openEl) markAsRead(openEl.dataset.openNotification);
+    if (openEl) {
+      event.preventDefault();
+      handleOpen(openEl);
+    }
   });
-  window.addEventListener('storage', render); // e.g. a new notification arrived in another tab
-  render();
+  renderLoading($('[data-notifications-list]'), 'Loading notifications…');
+  await load();
 }
 
 init();

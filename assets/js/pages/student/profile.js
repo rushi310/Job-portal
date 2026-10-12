@@ -1,8 +1,8 @@
 /**
  * profile.js — Student "Profile & Resume" page (Phase 7).
  * Tabs: Personal, Education, Skills, Projects & Links, Resume. Each tab saves its own section through
- * profile-service.js, which always edits the logged-in student from the session. Completeness uses the
- * same calculation as the dashboard (user-service.getProfileCompleteness).
+ * profile-service.js; the server always edits the logged-in student. Completeness is calculated by the
+ * server and sent with the user (the same figure the dashboard shows).
  */
 
 import {
@@ -16,6 +16,7 @@ import { showToast } from '../../components/toast.js';
 import { initTabs } from '../../components/tabs.js';
 import { updateNavbarUser } from '../../components/navbar.js';
 import { createResumeSheet } from '../../components/resume-sheet.js';
+import { openFile } from '../../components/file-viewer.js';
 import { getProfileCompleteness } from '../../services/user-service.js';
 import {
   PROFILE_SECTIONS, PROFILE_ERRORS, validateProfileField, validateNewSkill, updateProfileSection,
@@ -464,7 +465,7 @@ function applyUpdatedUser(user) {
   if (nameChanged) updateNavbarUser(user);
 }
 
-function handleSectionSubmit(event) {
+async function handleSectionSubmit(event) {
   event.preventDefault();
   const formEl = event.currentTarget;
   const section = formEl.dataset.profileForm;
@@ -473,7 +474,7 @@ function handleSectionSubmit(event) {
 
   hideFormAlert(formEl);
   setButtonLoading(submitEl, true, { idleText: 'Save changes', loadingText: 'Saving…' });
-  const result = updateProfileSection(section, VALUE_READERS[section](formEl));
+  const result = await updateProfileSection(section, VALUE_READERS[section](formEl));
   setButtonLoading(submitEl, false, { idleText: 'Save changes', loadingText: 'Saving…' });
 
   if (!result.ok) {
@@ -510,13 +511,6 @@ function renderResumeCurrent(info) {
     return;
   }
   const actionsEl = createElement('div', 'profile-resume__actions');
-  if (info.isCorrupted) {
-    const alertEl = createElement('p', 'alert alert--warning',
-      `Your saved resume "${info.fileName}" is damaged and cannot be opened. Upload it again or remove it.`);
-    actionsEl.append(createResumeActionButton('Remove', 'remove', 'btn--danger'));
-    currentEl.replaceChildren(alertEl, actionsEl);
-    return;
-  }
   const detailsEl = createElement('dl', 'resume-file');
   [
     ['File name', info.fileName],
@@ -580,35 +574,21 @@ async function handleResumeSubmit(event) {
   $('#resume-upload-title').focus();
 }
 
-/** Open or download the student's own PDF from a temporary in-browser (blob:) URL. */
+/** Open or download the student's own PDF (fetched with the login token). */
 function openResumeFile({ download }) {
-  const result = getOwnResumeFile();
-  if (!result.ok) {
-    showToast(result.error, { type: 'error' });
-    return;
-  }
-  const url = URL.createObjectURL(result.data.blob);
-  const linkEl = createElement('a');
-  linkEl.href = url;
-  if (download) linkEl.download = result.data.fileName;
-  else linkEl.target = '_blank';
-  linkEl.rel = 'noopener';
-  document.body.append(linkEl);
-  linkEl.click();
-  linkEl.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60000); // time for the new tab to load it
+  return openFile(getOwnResumeFile, { download, fileName: getResumeInfo(currentUser)?.fileName });
 }
 
 async function handleRemoveResume() {
   const info = getResumeInfo(currentUser);
   const confirmed = await confirmDialog({
     title: 'Remove resume?',
-    message: `"${info?.fileName ?? 'Your resume'}" will be deleted from this browser. Applications you already sent keep their record of it.`,
+    message: `"${info?.fileName ?? 'Your resume'}" will be deleted from your profile. Applications you already sent keep their record of it.`,
     confirmLabel: 'Remove resume',
   });
   if (!confirmed) return;
 
-  const result = removeResume();
+  const result = await removeResume();
   if (!result.ok) {
     showToast(result.error, { type: 'error' });
     return;

@@ -1,10 +1,9 @@
 /**
  * reports.js — Admin "Reports" page (Phase 11; PROJECT_SPEC §3.4, UI_SPEC §5 "Reports").
- * Four reports built from the current stored data by analytics-service: users by role (donut),
- * jobs by status and applications by status (bars), applications over time (line). Each chart has
- * a text summary and a table with the same numbers, and each report can be exported as CSV
- * (downloaded in the browser from a Blob — nothing leaves the browser).
- * The page re-renders when another tab changes the data (`storage` event).
+ * Four reports counted by the server from the database (admins only): users by role (donut), jobs
+ * by status and applications by status (bars), applications over time (line). Each chart has a
+ * text summary and a table with the same numbers, and each report can be exported as CSV — built
+ * in the browser from the numbers the server sent, so an export always matches what is shown.
  */
 
 import { ROLES } from '../../core/config.js';
@@ -13,9 +12,11 @@ import { initProtectedPage } from '../../components/app-shell.js';
 import { renderBarChart, renderDonutChart, renderLineChart } from '../../components/charts.js';
 import { showToast } from '../../components/toast.js';
 import { watchScrollRegion } from '../../components/scroll-region.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
 import { getPlatformReport, getReportCsv, REPORTS } from '../../services/analytics-service.js';
 
 const $ = (selector, root = document) => root.querySelector(selector);
+let report = null; // the report as last loaded; the CSV export uses the same numbers
 
 function createElement(tag, className, text) {
   const el = document.createElement(tag);
@@ -141,7 +142,7 @@ const SECTION_RENDERERS = {
 };
 
 /** Render one report; a failure only affects that section. */
-function renderSection(sectionEl, report) {
+function renderSection(sectionEl) {
   try {
     SECTION_RENDERERS[sectionEl.dataset.report](sectionEl, report);
   } catch (error) {
@@ -152,10 +153,17 @@ function renderSection(sectionEl, report) {
   }
 }
 
-function render() {
-  const report = getPlatformReport();
-  if (!report) return; // session ended (e.g. in another tab); the next page load redirects
-  document.querySelectorAll('[data-report]').forEach((sectionEl) => renderSection(sectionEl, report));
+/** Load the report from the server and draw every section. */
+async function render() {
+  const result = await getPlatformReport();
+  if (!result.ok) {
+    document.querySelectorAll('[data-report] [data-chart]').forEach((chartEl) => {
+      renderLoadError(chartEl, { title: 'This report could not be loaded', message: result.error });
+    });
+    return;
+  }
+  report = result.data;
+  document.querySelectorAll('[data-report]').forEach((sectionEl) => renderSection(sectionEl));
 }
 
 function downloadFile(fileName, content) {
@@ -175,7 +183,7 @@ function handleExportClick(event) {
   const buttonEl = event.target.closest('[data-export]');
   if (!buttonEl) return;
   const reportKey = buttonEl.dataset.export;
-  const csv = getReportCsv(reportKey);
+  const csv = getReportCsv(reportKey, report);
   if (!csv) {
     showToast('This report could not be exported. Please reload the page and try again.', { type: 'error' });
     return;
@@ -187,10 +195,9 @@ function handleExportClick(event) {
 async function init() {
   const user = await initProtectedPage(ROLES.ADMIN);
   if (!user) return;
-  render();
   $('main').addEventListener('click', handleExportClick);
-  // Another tab changed the data (e.g. a student applied): recalculate every report.
-  window.addEventListener('storage', render);
+  document.querySelectorAll('[data-report] [data-chart]').forEach((chartEl) => renderLoading(chartEl));
+  await render();
 }
 
 init();

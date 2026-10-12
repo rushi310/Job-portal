@@ -9,41 +9,53 @@
 ## 1. Project Identity
 
 - **Name:** FreshHire
-- **Type:** Final-year college project — a *simulated* job portal for freshers.
-- **Nature:** **FRONTEND-ONLY.** There is no backend, no database server, no API server, and no build step.
-- **Roles:** Student, Recruiter, Admin (all simulated in the browser).
+- **Type:** Final-year college project — a job portal for freshers.
+- **Nature:** **FULL-STACK** since Phase 15 (user-approved change, 2026-10-12): a static Vanilla
+  JavaScript frontend, an Express REST API in `server/`, and MongoDB.
+  Phases 0–14 built a frontend-only simulation; that history is kept in `PROJECT_STATUS.md`.
+- **Roles:** Student, Recruiter, Admin.
+- **Hosting target:** Netlify (frontend), Render (API), MongoDB Atlas (database) — free tiers.
 
 ## 2. Absolute Technology Rules (Non-Negotiable)
 
-### Allowed
+### Frontend (`index.html`, `pages/`, `assets/`)
+
 | Purpose | Technology |
 |---|---|
 | Markup | HTML5 |
 | Styling | CSS3 (custom properties, Flexbox, Grid, media queries) |
 | Logic | Vanilla JavaScript ES6+ (ES modules) |
-| Seed / mock data | JSON files in `/data` |
-| Persistent data | `localStorage` |
-| Per-tab session | `sessionStorage` |
-| Charts | Canvas API / inline SVG / CSS (hand-written) |
+| Data | The FreshHire API only, through `assets/js/core/api.js` |
+| Per-tab state | `sessionStorage` (login token, job filters, flash message) |
+| Charts | Inline SVG / CSS (hand-written) |
 | Icons | Inline SVG or Unicode characters |
-| Local preview | Any **static file server** (e.g. VS Code "Live Server" extension). It only serves files; it runs no project code. |
 
-### Forbidden
-- Node.js, npm packages, Express, or any server-side code
-- MongoDB, SQL, SQLite, IndexedDB-as-backend-substitute, or any database server
-- Firebase, Supabase, Appwrite, or any BaaS
-- React, Angular, Vue, Svelte, jQuery, or any JS framework/library
-- Bootstrap, Tailwind, or any CSS framework
-- Chart.js or any charting library
-- Any external API server or network call other than `fetch()` of the project's own `/data/*.json` files
-- Bundlers, transpilers, `package.json`, `node_modules`
-- Backend folders such as `server/`, `backend/`, `api/`, `routes/`, `models/`, `controllers/`
+**Forbidden in the frontend:** React, Angular, Vue, Svelte, jQuery or any JS framework/library;
+Bootstrap, Tailwind or any CSS framework; Chart.js or any charting library; bundlers, transpilers or a
+frontend `package.json`; CDN scripts; `localStorage` for business data; any network call other than to
+the project's own API; any secret (database string, token secret, password).
 
-If a feature seems to need a backend, **simulate it** with `localStorage` and document the simulation. Never add a backend.
+### Backend (`server/` only)
+
+| Purpose | Technology |
+|---|---|
+| Runtime | Node.js (16.20.1 or newer; Render runs 20) |
+| Web framework | Express 4 |
+| Database | MongoDB through Mongoose |
+| Auth | `bcryptjs` (password hashes), `jsonwebtoken` (bearer tokens) |
+| Protection | `helmet`, `cors`, `express-rate-limit` |
+| Configuration | `dotenv` + environment variables |
+| Tests | `node:test`, `supertest`, `mongodb-memory-server` (dev dependencies) |
+
+**Forbidden in the backend:** any other database or BaaS (SQL, Firebase, Supabase, …); paid services;
+Docker as a requirement; new npm packages without the user's approval; secrets in source control;
+anything that seeds or deletes data automatically at start-up.
+
+Do not migrate the frontend to a framework. Do not move backend code outside `server/`.
 
 ## 3. Phase Gating (Mandatory)
 
-Development follows the 15 phases in `DEVELOPMENT_PHASES.md` (Phase 0 → Phase 14).
+Development follows the phases in `DEVELOPMENT_PHASES.md` (Phase 0 → Phase 15).
 
 1. Work **only** on the phase recorded as current in `PROJECT_STATUS.md`.
 2. **Never start the next phase without explicit approval from the user** (e.g. "Start Phase 3").
@@ -63,10 +75,13 @@ Development follows the 15 phases in `DEVELOPMENT_PHASES.md` (Phase 0 → Phase 
 | `PROJECT_STATUS.md` | Current phase, progress, next task, change log | End of every work session/phase |
 | `DEVELOPMENT_PHASES.md` | Phase goals, deliverables, acceptance criteria | Scope change (user-approved only) |
 | `PROJECT_SPEC.md` | Features, roles, business rules, data models | Requirements change |
-| `ARCHITECTURE.md` | Folder structure, modules, storage keys, data flow | Structure changes |
+| `ARCHITECTURE.md` | Folder structure, layers, storage, request flow | Structure changes |
 | `UI_SPEC.md` | Design system, layouts, page inventory, components | UI decisions change |
 | `CODING_RULES.md` | Code style and conventions | Conventions change |
 | `README.md` | Public overview, run guide, credentials | Features/run steps change |
+| `DEPLOYMENT.md` | Atlas, Render and Netlify set-up | Deployment steps or settings change |
+| `docs/API.md` | Every API endpoint | An endpoint is added or changed |
+| `docs/SECURITY.md` | Protections and remaining risks | Anything security-relevant changes |
 
 If two documents ever disagree, **stop, report the contradiction to the user, and fix the documents** before writing code. Precedence while resolving: `CLAUDE.md` > `PROJECT_SPEC.md` > `ARCHITECTURE.md` > `UI_SPEC.md` > `CODING_RULES.md` > others.
 
@@ -75,24 +90,41 @@ If two documents ever disagree, **stop, report the contradiction to the user, an
 1. Read `CLAUDE.md` → `PROJECT_STATUS.md` → the current phase in `DEVELOPMENT_PHASES.md`.
 2. Consult `PROJECT_SPEC.md`, `ARCHITECTURE.md`, `UI_SPEC.md`, `CODING_RULES.md` before writing code.
 3. Place every file exactly where `ARCHITECTURE.md` says. Do not invent new top-level folders.
-4. Pages never touch `localStorage`/`sessionStorage` directly — only through the service/core modules.
+4. Frontend: pages never call `fetch()` or touch `sessionStorage` directly — only through the
+   service / core modules. `core/api.js` is the only module that calls the API.
 5. All storage keys come from `assets/js/core/config.js` (prefix `fh_`). No hard-coded key strings elsewhere.
 6. Escape all user-supplied text before inserting it into the DOM (prefer `textContent`).
-7. Keep the app runnable after every phase — no broken links to pages that don't exist yet (use disabled "Coming soon" items instead).
-8. Do not add dependencies. Do not create `package.json`.
-9. Keep code readable for viva: small functions, clear names, brief comments explaining *why*.
+7. **The server is the security boundary.** Every protected route checks the token, the role and the
+   ownership of the data. Frontend guards and hidden buttons are presentation only. Never trust an
+   id, role, owner, status, count or total sent by the client.
+8. Every business rule in `PROJECT_SPEC.md` is enforced in a server service. A matching check in the
+   frontend is allowed for quick feedback, never instead of the server check.
+9. Backend layering: routes → controllers → validators + services → models. No database queries in
+   routes or controllers. Only `config/env.js` reads `process.env`.
+10. Never put secrets in the repository or in frontend files. Never log passwords, tokens or the
+    database connection string. Never ask the user to paste secrets into chat.
+11. Do not add dependencies without the user's approval.
+12. Keep the app runnable after every change, and keep the API tests passing (`cd server && npm test`).
+    Do not weaken or delete a test to make it pass.
+13. Do not commit, push or deploy unless the user asks.
+14. Keep code readable for viva: small functions, clear names, brief comments explaining *why*.
 
-## 6. Honesty About the Simulation
+## 6. Honesty About the Project
 
-FreshHire is a simulation. Documentation and UI must never claim real security or real hiring.
-- Passwords are stored in `localStorage` in plain text **for demonstration only**.
-- Data lives only in the current browser; clearing site data resets the app to seed data.
-- Show a small "Demo project — data stored locally in your browser" notice in the footer.
+FreshHire is an academic demo. Documentation and UI must never overstate it.
+- It has real authentication and server-side authorization, but it is **not** production-secure;
+  `docs/SECURITY.md` lists the remaining risks and must stay accurate.
+- No real company hires through it; there is no email, SMS or identity verification.
+- Show a small demo notice in the footer ("Demo project — not a real hiring service…").
+- Never claim a live deployment, a test result or a browser check that was not actually done.
+  Record in `PROJECT_STATUS.md` what was verified and what was not.
 
 ## 7. Definition of Done (any task)
 
-- Works in the latest Chrome, Edge, and Firefox when served by a static server.
-- No console errors or warnings.
+- Works in the latest Chrome, Edge, and Firefox against a running API.
+- No console errors or warnings from the application (the browser's own log line for an expected
+  4xx answer, such as a refused login, does not count).
+- API changes are covered by a test in `server/tests/`, and `npm test` passes.
 - Follows `UI_SPEC.md` and `CODING_RULES.md`.
-- Responsive at 360px width and above (full polish in Phase 12).
-- Relevant docs updated.
+- Responsive at 360px width and above.
+- Relevant docs updated (including `docs/API.md` and `docs/SECURITY.md` where they apply).

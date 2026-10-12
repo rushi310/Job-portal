@@ -3,10 +3,11 @@
  * Read-only overview built from the logged-in student's own data: stat cards, profile completeness,
  * recent applications, application status breakdown (Phase 11), recent updates, recommended jobs,
  * and quick actions.
- * All data comes from services; all text is inserted with textContent (no HTML from data).
+ * The data arrives in one request (dashboard-service); the server limits it to the logged-in
+ * student. All text is inserted with textContent (no HTML from data).
  */
 
-import { ROLES, APPLICATION_STATUS } from '../../core/config.js';
+import { ROLES } from '../../core/config.js';
 import {
   toRoot, getLabel, formatDate, formatRelativeTime, pluralize,
 } from '../../core/utils.js';
@@ -15,17 +16,14 @@ import { NAV_ITEMS } from '../../components/sidebar.js';
 import { createIcon } from '../../components/icons.js';
 import { createJobCard, createViewDetailsLink } from '../../components/job-card.js';
 import { createEmptyState } from '../../components/empty-state.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
 import { getProfileCompleteness } from '../../services/user-service.js';
-import { getApplicationsByStudent, countApplicationsByStatus } from '../../services/application-service.js';
-import { getSavedJobsByStudent } from '../../services/saved-job-service.js';
-import { getNotificationsForUser, countUnread } from '../../services/notification-service.js';
-import { getJobById, getRecommendedJobs, isJobExpired } from '../../services/job-service.js';
-import { getStudentStatusBreakdown } from '../../services/analytics-service.js';
+import { isJobExpired } from '../../services/job-service.js';
+import { getStudentDashboard } from '../../services/dashboard-service.js';
 import { renderBarChart } from '../../components/charts.js';
 
-const RECENT_APPLICATIONS_LIMIT = 5;
-const RECENT_UPDATES_LIMIT = 3;
-const RECOMMENDED_JOBS_LIMIT = 3;
+/** Sections filled from the dashboard request (they show "Loading…" until it answers). */
+const DATA_SECTIONS = ['[data-applications]', '[data-status-chart]', '[data-notifications]', '[data-recommended]'];
 
 /** Quick actions reuse the sidebar's paths and availability, so they switch on with the pages. */
 const QUICK_ACTION_PATHS = [
@@ -93,16 +91,11 @@ function createStatCard({ label, value, icon, tone }) {
   return itemEl;
 }
 
-function renderStats(listEl, { applications, savedCount, completeness }) {
+function renderStats(listEl, { stats: totals, completeness }) {
   const stats = [
-    { label: 'Applications', value: String(applications.length), icon: 'send' },
-    {
-      label: 'Shortlisted',
-      value: String(countApplicationsByStatus(applications, APPLICATION_STATUS.SHORTLISTED)),
-      icon: 'userPlus',
-      tone: 'success',
-    },
-    { label: 'Saved jobs', value: String(savedCount), icon: 'bookmark', tone: 'info' },
+    { label: 'Applications', value: String(totals.applications), icon: 'send' },
+    { label: 'Shortlisted', value: String(totals.shortlisted), icon: 'userPlus', tone: 'success' },
+    { label: 'Saved jobs', value: String(totals.savedJobs), icon: 'bookmark', tone: 'info' },
     { label: 'Profile complete', value: `${completeness.percent}%`, icon: 'user', tone: 'warning' },
   ];
   listEl.replaceChildren(...stats.map(createStatCard));
@@ -134,8 +127,7 @@ function renderProfile(containerEl, completeness) {
   containerEl.replaceChildren(progressEl, hintEl, actionEl);
 }
 
-function createApplicationItem(application) {
-  const job = getJobById(application.jobId);
+function createApplicationItem({ application, job }) {
   const itemEl = createElement('li', 'dashboard-list__item');
   const bodyEl = createElement('div', 'dashboard-list__body');
   bodyEl.append(
@@ -162,7 +154,7 @@ function renderApplications(containerEl, applications) {
   }
   const listEl = createElement('ul', 'dashboard-list');
   listEl.setAttribute('role', 'list');
-  listEl.append(...applications.slice(0, RECENT_APPLICATIONS_LIMIT).map(createApplicationItem));
+  listEl.append(...applications.map(createApplicationItem));
   containerEl.replaceChildren(listEl);
 }
 
@@ -182,7 +174,7 @@ function createNotificationItem(notification) {
   return itemEl;
 }
 
-function renderNotifications(containerEl, notifications) {
+function renderNotifications(containerEl, { items: notifications, unread }) {
   if (notifications.length === 0) {
     containerEl.replaceChildren(createEmptyState({
       icon: 'bell',
@@ -191,22 +183,15 @@ function renderNotifications(containerEl, notifications) {
     }));
     return;
   }
-  const unread = countUnread(notifications);
   const summaryEl = createElement('p', 'text-sm text-muted mb-4',
     unread === 0 ? 'You are all caught up.' : `You have ${unread} unread update${unread === 1 ? '' : 's'}.`);
   const listEl = createElement('ul', 'dashboard-list');
   listEl.setAttribute('role', 'list');
-  listEl.append(...notifications.slice(0, RECENT_UPDATES_LIMIT).map(createNotificationItem));
+  listEl.append(...notifications.map(createNotificationItem));
   containerEl.replaceChildren(summaryEl, listEl);
 }
 
-function renderRecommended(containerEl, user, applications) {
-  const { items, isSkillBased } = getRecommendedJobs({
-    skills: Array.isArray(user.profile?.skills) ? user.profile.skills : [],
-    excludeJobIds: applications.map((application) => application.jobId),
-    limit: RECOMMENDED_JOBS_LIMIT,
-  });
-
+function renderRecommended(containerEl, { items, isSkillBased }) {
   $('[data-recommended-subtitle]').textContent = isSkillBased
     ? 'Open jobs that match the skills on your profile.'
     : 'Latest open jobs. Add skills to your profile to get personalised recommendations.';
@@ -227,8 +212,7 @@ function renderRecommended(containerEl, user, applications) {
 }
 
 /** Phase 11: how many of the student's applications are in each status (bars + text values). */
-function renderStatusBreakdown(containerEl) {
-  const breakdown = getStudentStatusBreakdown() ?? { total: 0, items: [] };
+function renderStatusBreakdown(containerEl, breakdown) {
   const summaryEl = $('[data-status-summary]');
   summaryEl.textContent = breakdown.total === 0 ? ''
     : `Where your ${pluralize(breakdown.total, 'application')} stand now. Percentages are of all your applications.`;
@@ -261,21 +245,29 @@ async function init() {
   const user = await initProtectedPage(ROLES.STUDENT);
   if (!user) return;
 
-  // Every query is scoped to the session user's id — never to a URL parameter.
-  const applications = getApplicationsByStudent(user.id);
-  const savedCount = getSavedJobsByStudent(user.id).length;
-  const notifications = getNotificationsForUser(user.id);
   const completeness = getProfileCompleteness(user);
 
+  // Parts that need no further data are shown straight away.
   renderGreeting(user);
-  renderSection($('[data-stats]'), (el) => renderStats(el, { applications, savedCount, completeness }));
   renderSection($('[data-profile]'), (el) => renderProfile(el, completeness));
-  renderSection($('[data-applications]'), (el) => renderApplications(el, applications));
-  renderSection($('[data-status-chart]'), renderStatusBreakdown);
-  renderSection($('[data-notifications]'), (el) => renderNotifications(el, notifications));
-  renderSection($('[data-recommended]'), (el) => renderRecommended(el, user, applications));
   renderSection($('[data-quick-actions]'), renderQuickActions);
   renderViewAllLinks();
+  DATA_SECTIONS.forEach((selector) => renderLoading($(selector)));
+
+  // The server builds the dashboard from the logged-in student's own records only.
+  const result = await getStudentDashboard();
+  if (!result.ok) {
+    DATA_SECTIONS.forEach((selector) => renderLoadError($(selector), {
+      title: 'This section could not be loaded', message: result.error,
+    }));
+    return;
+  }
+  const { stats, recentApplications, statusBreakdown, notifications, recommended } = result.data;
+  renderSection($('[data-stats]'), (el) => renderStats(el, { stats, completeness }));
+  renderSection($('[data-applications]'), (el) => renderApplications(el, recentApplications));
+  renderSection($('[data-status-chart]'), (el) => renderStatusBreakdown(el, statusBreakdown));
+  renderSection($('[data-notifications]'), (el) => renderNotifications(el, notifications));
+  renderSection($('[data-recommended]'), (el) => renderRecommended(el, recommended));
 }
 
 init();

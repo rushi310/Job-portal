@@ -17,6 +17,8 @@ import { openModal, confirmDialog } from '../../components/modal.js';
 import { showToast } from '../../components/toast.js';
 import { setFieldError } from '../../components/form-field.js';
 import { watchScrollRegion } from '../../components/scroll-region.js';
+import { renderPagination } from '../../components/pagination.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
 import { isJobExpired } from '../../services/job-service.js';
 import {
   listJobs, canModerateJob, approveJob, rejectJob, deleteJob, validateRejectionReason,
@@ -26,6 +28,8 @@ const ALL = 'all';
 const FILTERS = [ALL, ...Object.values(JOB_STATUS)];
 const $ = (selector) => document.querySelector(selector);
 let activeFilter = ALL;
+let entries = []; // { job, recruiterName, applicantCount } on the page last loaded
+let currentPage = 1;
 
 function createElement(tag, className, text) {
   const el = document.createElement(tag);
@@ -34,7 +38,7 @@ function createElement(tag, className, text) {
   return el;
 }
 
-const findEntry = (jobId) => listJobs().find(({ job }) => job.id === jobId);
+const findEntry = (jobId) => entries.find(({ job }) => job.id === jobId);
 
 /* ---------- Table ---------- */
 
@@ -99,9 +103,9 @@ function createRow({ job, recruiterName, applicantCount }) {
   return rowEl;
 }
 
-function renderFilter(entries) {
+function renderFilter(counts) {
   $('[data-status-filter]').replaceChildren(...FILTERS.map((value) => {
-    const count = value === ALL ? entries.length : entries.filter(({ job }) => job.status === value).length;
+    const count = counts[value] ?? 0;
     const buttonEl = createElement('button', 'tabs__tab', `${value === ALL ? 'All' : getLabel(value)} (${count})`);
     buttonEl.type = 'button';
     buttonEl.dataset.status = value;
@@ -110,13 +114,32 @@ function renderFilter(entries) {
   }));
 }
 
-function render() {
-  const entries = listJobs();
-  renderFilter(entries);
-  const shown = activeFilter === ALL ? entries : entries.filter(({ job }) => job.status === activeFilter);
-  $('[data-jobs-count]').textContent = activeFilter === ALL
-    ? `${pluralize(shown.length, 'job')} in total`
-    : `${pluralize(shown.length, 'job')} ${getLabel(activeFilter).toLowerCase()}`;
+/** Load one page of jobs for the chosen status from the server, then draw the table. */
+async function render() {
+  const result = await listJobs({ status: activeFilter === ALL ? '' : activeFilter, page: currentPage });
+  if (!result.ok) {
+    $('[data-jobs-count]').textContent = '';
+    $('[data-jobs-pagination]').replaceChildren();
+    renderLoadError($('[data-jobs-list]'), { title: 'Jobs could not be loaded', message: result.error });
+    return;
+  }
+  entries = result.data.items;
+  currentPage = result.data.page;
+  const { total, from, to } = result.data;
+  const shown = entries;
+  renderFilter(result.data.counts);
+  $('[data-jobs-count]').textContent = (activeFilter === ALL
+    ? `${pluralize(total, 'job')} in total`
+    : `${pluralize(total, 'job')} ${getLabel(activeFilter).toLowerCase()}`)
+    + (total > shown.length ? ` · showing ${from}–${to}` : '');
+  renderPagination($('[data-jobs-pagination]'), {
+    page: currentPage,
+    totalPages: result.data.totalPages,
+    onChange: (page) => {
+      currentPage = page;
+      render();
+    },
+  });
 
   if (shown.length === 0) {
     $('[data-jobs-list]').replaceChildren(createEmptyState({
@@ -145,9 +168,9 @@ function render() {
   $('[data-jobs-list]').replaceChildren(wrapperEl);
 }
 
-function afterChange(message) {
+async function afterChange(message) {
   showToast(message, { type: 'success' });
-  render();
+  await render();
   $('[data-jobs-count]').focus();
 }
 
@@ -218,14 +241,18 @@ function openRejectDialog(job) {
   formEl.append(createElement('p', '', `Reject "${job.title}" from ${job.companyName}?`), groupEl);
 
   let modal = null;
-  const submit = () => {
+  let isSubmitting = false;
+  const submit = async () => {
+    if (isSubmitting) return; // blocks double clicks
     const message = validateRejectionReason(textareaEl.value);
     setFieldError(textareaEl, message);
     if (message) {
       textareaEl.focus();
       return;
     }
-    const result = rejectJob(job.id, textareaEl.value);
+    isSubmitting = true;
+    const result = await rejectJob(job.id, textareaEl.value);
+    isSubmitting = false;
     if (!result.ok) {
       setFieldError(textareaEl, result.error);
       return;
@@ -270,10 +297,11 @@ async function handleAction(buttonEl) {
     });
     if (!confirmed) return;
   }
-  const result = action === 'approve' ? approveJob(jobId) : deleteJob(jobId);
+  buttonEl.disabled = true; // one request, even on a double click
+  const result = await (action === 'approve' ? approveJob(jobId) : deleteJob(jobId));
   if (!result.ok) {
     showToast(result.error, { type: 'error' });
-    render();
+    await render();
     return;
   }
   afterChange(action === 'approve'
@@ -290,14 +318,15 @@ async function init() {
     const buttonEl = event.target.closest('[data-status]');
     if (!buttonEl) return;
     activeFilter = buttonEl.dataset.status;
+    currentPage = 1;
     render();
   });
   $('[data-jobs-list]').addEventListener('click', (event) => {
     const buttonEl = event.target.closest('[data-job-action]');
     if (buttonEl) handleAction(buttonEl);
   });
-  window.addEventListener('storage', render); // data changed in another tab
-  render();
+  renderLoading($('[data-jobs-list]'), 'Loading jobs…');
+  await render();
 }
 
 init();

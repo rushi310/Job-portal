@@ -71,7 +71,9 @@
         <section class="card danger-zone" aria-labelledby="danger-title">
           <h2 class="card__title" id="danger-title">Danger zone</h2>
           <p class="danger-zone__text">Reset demo data replaces every account, job, application, saved job and notification
-            with the original demo data. Changes made in this browser are lost. You stay logged in.</p>
+            with the original demo data. Everything else in the database is erased (admin accounts are kept). You stay logged in.</p>
+          <p class="text-sm text-muted" data-reset-note hidden>Resetting is turned off on this server
+            (<code>ALLOW_DEMO_RESET</code>), so the stored data cannot be erased from here.</p>
           <button class="btn btn--danger" type="button" data-reset-demo>Reset demo data</button>
         </section>
       </main>

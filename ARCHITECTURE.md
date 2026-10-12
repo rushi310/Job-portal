@@ -1,302 +1,307 @@
 # ARCHITECTURE.md — FreshHire Technical Architecture
 
-> **Frontend-only.** FreshHire is a set of static HTML pages, CSS files, JavaScript ES modules, and JSON seed files.
-> Everything runs in the browser. There is no server-side code, no database, and no API.
+> **Full-stack since Phase 15.** A static frontend (HTML pages, CSS, JavaScript ES modules) talks over
+> HTTP to an Express REST API, which stores everything in MongoDB.
+> Phases 0–14 built a frontend-only simulation that kept its data in the browser; that design is
+> described in the Git history and in `PROJECT_STATUS.md`.
 
 ---
 
 ## 1. High-Level Architecture
 
 ```
-┌──────────────────────────────── Browser ────────────────────────────────┐
-│                                                                          │
-│   HTML pages  ──loads──▶  Page script (assets/js/pages/<role>/<page>.js) │
-│                                   │                                      │
-│                                   ▼                                      │
-│                  Components (navbar, toast, modal, job-card, ...)        │
-│                                   │                                      │
-│                                   ▼                                      │
-│      Services (user, job, application, saved-job, notification,          │
-│                analytics)  — all business rules live here                │
-│                                   │                                      │
-│                                   ▼                                      │
-│      Core (config, storage, auth, seed, utils)                           │
-│             │                              │                             │
-│             ▼                              ▼                             │
-│      localStorage (fh_*)            sessionStorage (fh_session, ...)     │
-│             ▲                                                            │
-│             │  first run only: fetch()                                   │
-│      /data/*.json  (static seed files served with the site)              │
-└──────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────── Browser (static site on Netlify) ────────────────────────┐
+│  HTML page ──loads──▶ page script (assets/js/pages/<role>/<page>.js)              │
+│                              │                                                    │
+│                              ▼                                                    │
+│                 components (navbar, toast, modal, job-card, charts, …)            │
+│                              │                                                    │
+│                              ▼                                                    │
+│        services (job, application, profile, admin, …): API calls + form rules     │
+│                              │                                                    │
+│                              ▼                                                    │
+│        core:  api.js ── fetch ──▶  auth.js · storage.js · config.js · utils.js    │
+│                 │                        │                                        │
+│                 │                        ▼                                        │
+│                 │              sessionStorage: login token, job filters, flash    │
+└─────────────────┼─────────────────────────────────────────────────────────────────┘
+                  │  HTTPS, JSON, "Authorization: Bearer <token>"   (CORS: this origin only)
+                  ▼
+┌──────────────────────── Express API (Node.js on Render) ─────────────────────────┐
+│  helmet → CORS → rate limit → JSON body (100 KB) → routes                         │
+│  routes        which role may call what (authenticate, requireRole, …)            │
+│  controllers   read the request, call a service, send { ok, data }                │
+│  validators    input rules; build whitelisted, normalised values                  │
+│  services      business rules, ownership checks, notifications                    │
+│  models        Mongoose schemas + indexes                                         │
+│  error handler every failure → { ok: false, code, error, fieldErrors? }           │
+└─────────────────┬─────────────────────────────────────────────────────────────────┘
+                  ▼
+        MongoDB Atlas:  users · jobs · applications · savedjobs · notifications · resumes
 ```
 
-**Layer rules**
-- Pages → may use components, services, core `auth`/`utils`/`config`.
-- Components → may use core `utils`/`config`; they never read storage.
-- Services → may use core `storage`/`utils`/`config`; they never touch the DOM.
-- Core `storage` is the **only** module that calls `localStorage` / `sessionStorage` APIs.
-- Exception: core `auth` uses `user-service` to look up accounts (user-service never imports auth, so there is no cycle).
-- Exception: the app navbar's Log out action calls `auth.logout()` and `storage.setFlash()` (it still never reads storage itself).
-- Exception: `components/app-shell.js` runs page start-up for protected pages (`ensureSeeded`, `auth.requireRole`, `storage.consumeFlash`) and, from Phase 10, reads the unread notification count (`notification-service.getUnreadCount`) for the navbar bell.
-- Exception: `components/save-button.js` calls `saved-job-service` (save/unsave), so every page shares one save toggle.
+**Frontend layer rules**
+- Pages → may use components, services, core `auth` / `utils` / `config`.
+- Components → may use core `utils` / `config`; they do not call the API.
+- Services → may use core `api` / `utils` / `config`; they never touch the DOM.
+- `core/api.js` is the **only** module that calls `fetch()`. `core/storage.js` is the **only** module
+  that touches `sessionStorage`. Nothing uses `localStorage`.
+- Exceptions: the app navbar's Log out action calls `auth.logout()` and `storage.setFlash()`;
+  `components/app-shell.js` runs page start-up (`auth.requireRole`, `storage.consumeFlash`, unread
+  count); `components/save-button.js` calls `saved-job-service`; `components/file-viewer.js` shows a
+  toast when a file cannot be fetched.
+
+**Backend layer rules**
+- Routes declare protection and nothing else. Controllers contain no business rules and no queries.
+- Only services (and the models they use) talk to the database.
+- Validators never read the database; they return messages or whitelisted values.
+- The acting user is always `req.user`, loaded from the database by `middleware/auth.js`. An id, role
+  or owner sent by the client is never used to decide who is acting.
+- Only `config/env.js` reads `process.env`.
 
 ## 2. Folder Structure
 
 ```
-Job portal/                     (project root)
-├── index.html                  Landing page (public)
-├── CLAUDE.md
-├── PROJECT_STATUS.md
-├── DEVELOPMENT_PHASES.md
-├── PROJECT_SPEC.md
-├── ARCHITECTURE.md
-├── UI_SPEC.md
-├── CODING_RULES.md
-├── README.md
-│
+Job-portal/                       (repository root)
+├── index.html                    Landing page (public)
 ├── pages/
-│   ├── auth/
-│   │   ├── login.html
-│   │   └── register.html
-│   ├── student/
-│   │   ├── dashboard.html
-│   │   ├── jobs.html
-│   │   ├── job-details.html        (?id=<jobId>)
-│   │   ├── applications.html
-│   │   ├── saved-jobs.html
-│   │   └── profile.html
-│   ├── recruiter/
-│   │   ├── dashboard.html
-│   │   ├── post-job.html           (?id=<jobId> → edit mode)
-│   │   ├── my-jobs.html
-│   │   ├── applicants.html         (?jobId=<jobId>)
-│   │   └── company-profile.html
-│   ├── admin/
-│   │   ├── dashboard.html
-│   │   ├── users.html
-│   │   ├── jobs.html
-│   │   ├── announcements.html
-│   │   └── reports.html
-│   └── shared/
-│       └── notifications.html      (any logged-in role)
-│
+│   ├── auth/        login.html, register.html
+│   ├── student/     dashboard, jobs, job-details (?id=), applications, saved-jobs, profile
+│   ├── recruiter/   dashboard, post-job (?id= → edit), my-jobs, applicants (?jobId=), company-profile
+│   ├── admin/       dashboard, users, jobs, announcements, reports
+│   └── shared/      notifications.html (any logged-in role)
 ├── assets/
-│   ├── css/
-│   │   ├── variables.css           Design tokens (colors, spacing, fonts, radii, shadows)
-│   │   ├── base.css                Reset + element defaults + typography
-│   │   ├── layout.css              Header, sidebar, app shell, grid, containers
-│   │   ├── components.css          Buttons, forms, cards, badges, tables, modal, toast, ...
-│   │   ├── utilities.css           Small helper classes (spacing, text, visibility)
-│   │   └── pages/
-│   │       ├── landing.css
-│   │       ├── auth.css
-│   │       ├── student.css
-│   │       ├── recruiter.css
-│   │       └── admin.css
-│   ├── js/
-│   │   ├── core/
-│   │   │   ├── config.js           Storage keys, DATA_VERSION, roles, statuses, limits
-│   │   │   ├── storage.js          JSON get/set/remove for local & session storage
-│   │   │   ├── seed.js             Loads /data/*.json into localStorage on first run
-│   │   │   ├── auth.js             register, login, logout, getSession, requireRole
-│   │   │   └── utils.js            ids, dates, escapeHtml, validation, debounce, query params, paths
-│   │   ├── services/
-│   │   │   ├── user-service.js
-│   │   │   ├── profile-service.js  The logged-in student's own profile sections and resume (Phase 7)
-│   │   │   ├── job-service.js
-│   │   │   ├── application-service.js
-│   │   │   ├── saved-job-service.js
-│   │   │   ├── notification-service.js
-│   │   │   ├── admin-service.js    Admin moderation: users, jobs, platform totals, reset demo data (Phase 9)
-│   │   │   └── analytics-service.js
-│   │   ├── components/
-│   │   │   ├── icons.js            Inline SVG icon set shared by components
-│   │   │   ├── form-field.js       Inline field errors, password toggle, loading button
-│   │   │   ├── app-shell.js        Protected-page start-up: seed → guard → navbar/sidebar/footer → flash
-│   │   │   ├── save-button.js      "♡ Save / ♥ Saved" toggle shared by job cards and Job Details
-│   │   │   ├── tabs.js             Accessible tabs (arrow keys, URL hash) — used on Profile & Resume
-│   │   │   ├── resume-sheet.js     Printable resume generated from a student profile (also the applicant profile view)
-│   │   │   ├── approval-banner.js  "Awaiting admin approval" banner for pending recruiters (Phase 8)
-│   │   │   ├── navbar.js           Top bar (logo, role menu, bell, user menu)
-│   │   │   ├── sidebar.js          Role-based side navigation
-│   │   │   ├── footer.js
-│   │   │   ├── toast.js
-│   │   │   ├── modal.js
-│   │   │   ├── job-card.js
-│   │   │   ├── pagination.js
-│   │   │   ├── empty-state.js      Friendly empty message (optional heading level, Phase 12)
-│   │   │   ├── scroll-region.js    Wide tables: focusable, named scroll region + edge fade (Phase 12)
-│   │   │   └── charts.js           Hand-written inline-SVG bar, donut and line charts (Phase 11)
-│   │   └── pages/
-│   │       ├── landing.js
-│   │       ├── auth/        login.js, register.js
-│   │       ├── student/     dashboard.js, jobs.js, job-details.js, applications.js, saved-jobs.js, profile.js
-│   │       ├── recruiter/   dashboard.js, post-job.js, my-jobs.js, applicants.js, company-profile.js
-│   │       ├── admin/       dashboard.js, users.js, jobs.js, announcements.js, reports.js
-│   │       └── shared/      notifications.js
-│   └── images/                     logo.svg (avatars are initials drawn with CSS; no other images)
-│
-├── data/
-│   ├── users.json
-│   ├── jobs.json
-│   ├── applications.json
-│   └── notifications.json
-│
-└── docs/                           Created in Phase 14 (submission material)
-    ├── USER_GUIDE.md               Step-by-step guide per role
-    ├── PROJECT_REPORT.md           Project report
-    ├── SECURITY.md                 Frontend-only security model and limits
-    ├── VIVA_QUESTIONS.md           Viva questions and answers (incl. hard follow-ups)
-    ├── PRESENTATION_OUTLINE.md     Slide plan
-    ├── DEMO_FLOW.md                Live demo script
-    ├── SCREENSHOT_CHECKLIST.md     List of screenshots
-    └── screenshots/                24 PNG screenshots of the final UI
+│   ├── css/         variables, base, layout, components, utilities, pages/*.css
+│   ├── images/      logo.svg
+│   └── js/
+│       ├── core/
+│       │   ├── app-config.js     API address for local and deployed use (the one setting to edit)
+│       │   ├── api.js            Every API request: token, JSON, errors, expired sessions
+│       │   ├── auth.js           login, register, logout, current user, page guards
+│       │   ├── storage.js        sessionStorage helpers + one-time flash message
+│       │   ├── config.js         Roles, statuses, limits, page paths, storage keys
+│       │   └── utils.js          Dates, formatting, validation helpers, paths
+│       ├── services/
+│       │   ├── user-service.js          Registration form rules, profile completeness reader
+│       │   ├── job-service.js           Job search and recruiter job API calls, job form rules
+│       │   ├── application-service.js   Apply / track / withdraw / recruiter review API calls
+│       │   ├── saved-job-service.js     Saved jobs API calls
+│       │   ├── profile-service.js       Profile sections, resume, company profile
+│       │   ├── notification-service.js  Notification API calls, safe links
+│       │   ├── dashboard-service.js     Student and recruiter dashboards (one request each)
+│       │   ├── admin-service.js         Admin API calls, admin form rules
+│       │   └── analytics-service.js     Report labels and CSV export
+│       ├── components/           app-shell, navbar, sidebar, footer, toast, modal, job-card,
+│       │                         pagination, tabs, charts, save-button, resume-sheet,
+│       │                         approval-banner, scroll-region, form-field, empty-state, icons,
+│       │                         load-state (loading / error states), server-status (slow-server
+│       │                         notice), file-viewer (private PDF view / download)
+│       └── pages/                one script per HTML page, same name
+├── data/                         Demo data (JSON) — input for the seed script, not served
+│   ├── users.json  jobs.json  applications.json  notifications.json
+├── server/                       The API
+│   ├── package.json              Dependencies and npm scripts
+│   ├── .env.example              Every environment variable, with placeholders
+│   ├── src/
+│   │   ├── server.js             Connect to MongoDB, listen on PORT
+│   │   ├── app.js                Build the Express app (middleware order, /api router)
+│   │   ├── config/               env.js (configuration), database.js (connection + indexes),
+│   │   │                         constants.js (roles, statuses, limits)
+│   │   ├── models/               user, job, application, saved-job, notification, resume
+│   │   ├── validators/           auth, job, profile, admin (+ application form)
+│   │   ├── services/             auth, job, application, saved-job, profile, notification,
+│   │   │                         analytics, admin, seed
+│   │   ├── controllers/          auth, public, student, recruiter, admin, notification
+│   │   ├── routes/index.js       Every route and its protection
+│   │   ├── middleware/           auth (token, role, approval, id check), error-handler,
+│   │   │                         rate-limiters, request-logger
+│   │   ├── utils/                app-error, async-handler, serializers, pagination, dates, text
+│   │   └── scripts/              seed.js (import demo data), dev-memory.js (zero-setup local demo)
+│   └── tests/                    API tests (node:test + supertest + in-memory MongoDB)
+├── netlify.toml                  Netlify: what to publish, security headers
+├── render.yaml                   Render Blueprint: commands, health check, environment variables
+├── .gitignore                    node_modules, .env, dist
+├── DEPLOYMENT.md                 Atlas, Render and Netlify, step by step
+└── docs/                         API.md, SECURITY.md, and the Phase 14 submission material
 ```
 
 **Rules**
-- One page script per HTML page, same base name (`pages/student/jobs.html` ↔ `assets/js/pages/student/jobs.js`).
-- No other top-level folders may be added without updating this document first.
-- **No backend folders** (`server/`, `api/`, `backend/`, `routes/`, `models/`, `controllers/`) — ever.
-- Folders are created in Phase 1 (empty ones hold a `.gitkeep`); files are created in the phase that needs them (see `DEVELOPMENT_PHASES.md`), not in advance.
+- One page script per HTML page, same base name.
+- Backend code lives only in `server/`. The frontend has no `package.json` and no build tool.
+- No other top-level folders without updating this document first.
 
 ## 3. Page Inventory
 
-| Page | Path | Access | Phase |
+| Page | Path | Access |
+|---|---|---|
+| Landing | `index.html` | Public |
+| Login / Register | `pages/auth/login.html`, `register.html` | Public |
+| Student Dashboard, Browse Jobs, Job Details, Saved Jobs, My Applications, Profile & Resume | `pages/student/*.html` | Student |
+| Recruiter Dashboard, Post / Edit Job, My Jobs, Applicants, Company Profile | `pages/recruiter/*.html` | Recruiter (job and applicant actions need an `active` account) |
+| Admin Dashboard, Users, Moderate Jobs, Announcements, Reports | `pages/admin/*.html` | Admin |
+| Notifications | `pages/shared/notifications.html` | Any logged-in role |
+
+"Access" is what the page guard shows. The data behind every page is protected separately by the API
+(§5).
+
+## 4. Data Storage
+
+### 4.1 MongoDB (authoritative)
+
+| Collection | Model | Contents | Indexes |
 |---|---|---|---|
-| Landing | `index.html` | Public | 1 |
-| Login | `pages/auth/login.html` | Public | 2 |
-| Register | `pages/auth/register.html` | Public | 2 |
-| Student Dashboard | `pages/student/dashboard.html` | Student | 3 |
-| Browse Jobs | `pages/student/jobs.html` | Student | 4 |
-| Job Details | `pages/student/job-details.html` | Student | 5 |
-| Saved Jobs | `pages/student/saved-jobs.html` | Student | 6 |
-| My Applications | `pages/student/applications.html` | Student | 6 |
-| Profile & Resume | `pages/student/profile.html` | Student | 7 |
-| Recruiter Dashboard | `pages/recruiter/dashboard.html` | Recruiter | 8 |
-| Post / Edit Job | `pages/recruiter/post-job.html` | Recruiter (`active`) | 8 |
-| My Jobs | `pages/recruiter/my-jobs.html` | Recruiter | 8 |
-| Applicants | `pages/recruiter/applicants.html` | Recruiter | 8 |
-| Company Profile | `pages/recruiter/company-profile.html` | Recruiter | 8 |
-| Admin Dashboard | `pages/admin/dashboard.html` | Admin | 9 |
-| Manage Users | `pages/admin/users.html` | Admin | 9 |
-| Moderate Jobs | `pages/admin/jobs.html` | Admin | 9 |
-| Announcements | `pages/admin/announcements.html` | Admin | 10 |
-| Notifications | `pages/shared/notifications.html` | Any logged-in | 10 |
-| Reports | `pages/admin/reports.html` | Admin | 11 |
+| `users` | `models/user.js` | Account, bcrypt password hash, status, token version; embedded `studentProfile` or `recruiterProfile` | unique `email` (stored lower-case); `{ role, status, createdAt }` |
+| `jobs` | `models/job.js` | Job posting, owner (`recruiter`), status, deadline | `{ recruiter, postedAt }`; `{ status, deadlineAt, postedAt }`; `{ status, annualPay }` |
+| `applications` | `models/application.js` | Job, student, cover note, status, status history | **unique `{ student, job }`**; `{ student, updatedAt }`; `{ job, appliedAt }` |
+| `savedjobs` | `models/saved-job.js` | Student ↔ job link | **unique `{ student, job }`**; `{ student, savedAt }` |
+| `notifications` | `models/notification.js` | One per recipient | `{ user, createdAt }`; `{ user, read }`; `{ type, createdAt }` |
+| `resumes` | `models/resume.js` | One PDF per student (bytes) | unique `student` |
 
-The three dashboards first appear in Phase 2 as minimal shells (welcome + logout) so login redirects work; the Phase column shows when each is fully built.
-Analytics for students and recruiters (Phase 11) are added as sections on their existing dashboards — no new pages.
+- **Identifiers** are MongoDB ObjectIds, sent to the frontend as 24-character strings in `id`,
+  `jobId`, `studentId`, `userId`, `recruiterId`. Records imported from the JSON files also keep their
+  original id in `legacyId` (unique, sparse), which is what makes the seed script repeatable.
+- **References, not copies.** An application stores the job id and the student id only; the recruiter
+  is always found through the job. A deleted job leaves its applications and saved links in place as
+  history ("Job no longer available") — the application layer handles the missing reference.
+- **Derived fields** on a job (`deadlineAt`, `annualPay`, a maximum pay not below the minimum) are
+  recalculated from the recruiter's own fields on every save, only so MongoDB can filter and sort.
+  "Expired" is never stored: it is `deadlineAt < now`.
+- **Indexes are created explicitly** right after connecting (`config/database.js`), so the unique
+  constraints are in force before the first request.
+- **Resumes** are stored as bytes in MongoDB (500 KB limit each) so the free deployment needs no
+  separate file storage. They are served only through authorised routes, never from a public URL.
 
-## 4. Storage Design
+### 4.2 Browser `sessionStorage` (per tab, convenience only)
 
-All keys are defined once in `assets/js/core/config.js` in a `STORAGE_KEYS` object.
+| Key | Contents |
+|---|---|
+| `fh_session` | `{ token, userId, role, name, loginAt }` — the login token and who is logged in |
+| `fh_job_filters` | Last used job search filters / sort / page |
+| `fh_flash` | One-time message for the next page (e.g. "Account created") |
 
-### 4.1 localStorage (persistent, per browser)
+Keys are defined once in `assets/js/core/config.js`. `localStorage` is not used. Changing these values
+in DevTools changes nothing on the server: the role and user in `fh_session` are only hints for the
+interface, and every request is checked against the token.
 
-| Key | Type | Contents |
-|---|---|---|
-| `fh_data_version` | string | Version of seed data currently loaded |
-| `fh_users` | array | All users (see PROJECT_SPEC §5.1) |
-| `fh_jobs` | array | All jobs (§5.2) |
-| `fh_applications` | array | All applications (§5.3) |
-| `fh_saved_jobs` | array | Saved-job records (§5.4) |
-| `fh_notifications` | array | Notifications (§5.5) |
+### 4.3 Seed data
 
-### 4.2 sessionStorage (per tab, cleared on close)
+`data/*.json` holds the demo data. `npm run seed` (`server/src/scripts/seed.js` →
+`services/seed-service.js`) imports it:
+users are matched by `legacyId` or email, other records by `legacyId`, and a record is created only
+when it is missing — nothing is updated or deleted. Legacy ids are mapped to ObjectIds so users, jobs,
+applications and notifications keep their relationships. Plain-text passwords in the JSON are hashed
+with bcrypt before storing. The server never seeds by itself.
 
-| Key | Type | Contents |
-|---|---|---|
-| `fh_session` | object | Logged-in user session (§5.6) |
-| `fh_job_filters` | object | Last used job search filters/sort/page (restored when returning to Browse Jobs) |
-| `fh_flash` | object | One-time message shown on the next page (e.g. "Registered successfully") |
+## 5. Authentication & Authorization
 
-### 4.3 Seeding Flow (`core/seed.js`)
-```
-page loads → ensureSeeded()
-   ├─ fh_data_version === DATA_VERSION ? → done
-   └─ else → fetch data/users.json, jobs.json, applications.json, notifications.json
-             → write fh_users, fh_jobs, fh_applications, fh_notifications
-             → write fh_saved_jobs = []
-             → write fh_data_version = DATA_VERSION
-```
-Every page script awaits `ensureSeeded()` before doing anything else. Admin "Reset demo data" removes all `fh_` keys and calls `ensureSeeded()` again.
+### Login (bearer token)
 
-## 5. Authentication & Routing
+1. `POST /api/auth/login` checks the email and bcrypt hash and returns a JWT (HS256) signed with
+   `JWT_SECRET`, valid for `JWT_EXPIRES_IN` (2 hours), containing the user id, role and token version.
+2. The frontend keeps the token in `sessionStorage` and sends it as `Authorization: Bearer <token>`.
+3. `middleware/auth.js` verifies the signature and expiry, then **loads the user from the database**
+   and refuses the token if the user is gone, blocked, has another role, or has a newer token version.
+4. `POST /api/auth/logout` increases the user's token version, so every token issued before stops
+   working; the frontend then removes it from the tab.
 
-- **No router library.** Each page is a separate HTML file; navigation is normal links.
-- `auth.login(email, password)` → validates against `fh_users` → writes `fh_session` → redirects to the role's dashboard.
-- `auth.requireRole(...roles)` is the first call in every protected page script (via `components/app-shell.js`):
-  - no session → redirect to `pages/auth/login.html?returnTo=<this page>` with a "Please log in" flash
-  - session role not allowed → redirect to the user's own dashboard with a warning flash
-  - user no longer exists or is `blocked` → clear session → login
-  - redirects use `location.replace`, and a role's own dashboard always accepts that role, so redirects cannot loop
-- After login, `auth.getPostLoginPath(role, returnTo)` returns `returnTo` only if it is a project page in the user's own role folder or `pages/shared/`; otherwise the role dashboard.
-- `auth.logout()` → removes `fh_session`; the navbar then redirects to `index.html`.
-- Public pages (landing, login, register) call `auth.redirectIfLoggedIn()` to send an already-logged-in user to their dashboard.
-- Protected pages start with their `[data-app-shell]` wrapper `hidden`; it is shown only after the guard passes.
+**Why a token and not a cookie:** the frontend (Netlify) and the API (Render) are on different sites.
+A session cookie would be a third-party cookie, which browsers increasingly block, and would need
+CSRF protection. A token in a header needs neither, and CORS stays simple (`credentials` off). The
+cost is that page scripts can read the token — see `docs/SECURITY.md`.
+
+### Authorization (on the server, for every request)
+
+| Check | Where |
+|---|---|
+| Logged in, account not blocked | `authenticate` |
+| Role | `requireRole(...)` on each router |
+| Recruiter approved (`active`) for job and applicant actions (BR-07) | `requireActiveRecruiter` |
+| Ownership — own profile, own applications, own saved jobs, own notifications, own jobs, applications to own jobs | services: every query includes the authenticated user's id |
+| State — pending-only approval, allowed status steps, withdraw rules | services: conditional updates (`findOneAndUpdate` with the expected current status) |
+
+A record that exists but belongs to someone else is answered exactly like one that does not exist
+(404), so ids cannot be probed.
+
+### Page guards (in the browser, for presentation)
+
+`components/app-shell.js` → `auth.requireRole(...roles)` asks `GET /api/auth/me`:
+- no valid session → `pages/auth/login.html?returnTo=<this page>` with a "Please log in" message;
+- wrong role → the user's own dashboard with a warning;
+- the API answers 401 later (token expired, logged out elsewhere, blocked) → `core/api.js` clears
+  the session and goes to the login page.
+
+Protected pages start with `[data-app-shell]` hidden and are shown only after the guard passes.
+`returnTo` is trusted only for a project page in the user's own role folder or `pages/shared/`.
 
 ### Paths
-All links and redirects use **relative paths** — never root-absolute paths (`/pages/...`) — so the site works from any base URL (Live Server, a sub-folder, or GitHub Pages). `utils.js` exposes a `toRoot(path)` helper that resolves a root-relative project path using `import.meta.url`.
+All links use **relative paths**, never root-absolute ones, so the site works from any base URL.
+`utils.toRoot(path)` resolves a project-root-relative path from `import.meta.url`.
 
-## 6. Page Script Lifecycle
+## 6. Request Lifecycle
 
 ```js
-// assets/js/pages/student/jobs.js (pattern for protected pages)
-import { ROLES } from '../../core/config.js';
-import { initProtectedPage } from '../../components/app-shell.js';
-
+// assets/js/pages/student/saved-jobs.js (pattern for protected pages)
 async function init() {
-  // seeds data, runs requireRole, renders navbar + sidebar + footer, shows flash message
-  const user = await initProtectedPage(ROLES.STUDENT);
-  if (!user) return;               // redirect already happening
-  // read data via services, render, bind events
+  const student = await initProtectedPage(ROLES.STUDENT); // GET /auth/me, guard, navbar, sidebar
+  if (!student) return;                                    // a redirect has started
+  renderLoading(listEl, 'Loading your saved jobs…');
+  const result = await getSavedJobs();                     // service → core/api.js → GET /api/student/saved-jobs
+  if (!result.ok) { renderLoadError(listEl, { title: '…', message: result.error }); return; }
+  render(result.data.items);
 }
-
-init();
 ```
-Each HTML page loads exactly one script: `<script type="module" src="..."></script>`.
 
-## 7. Services (business logic)
+Every service call is asynchronous and resolves to `{ ok: true, data }` or
+`{ ok: false, code, error, fieldErrors? }` — the same shape the API sends — so pages handle a failed
+rule, a validation error and a network error the same way and never need `try / catch` for HTTP.
+Lists that follow a search field carry a request number, so a slow older answer cannot overwrite a
+newer one.
 
-| Service | Responsibilities |
+On the server, `POST /api/jobs/:jobId/applications` runs:
+`authenticate` → `requireRole('student')` → `validateIdParam` → `student-controller.applyToJob` →
+`application-service.applyToJob` (job approved? deadline? already applied? eligible? cover note?) →
+`Application.create` (the unique index refuses a duplicate that slipped past the check) →
+`notification-service.createNotification` for the job's recruiter → `201 { ok: true, data }`.
+
+## 7. Main Workflows
+
+| Workflow | Frontend service → API route → server service |
 |---|---|
-| `user-service.js` | find/create/update users, email uniqueness, status changes, profile completeness |
-| `profile-service.js` | the logged-in student's profile edits (per tab, whitelisted fields, validation) and resume upload/replace/remove/view; student always from the session. Sits above `auth` and `user-service` so neither imports the other in a cycle |
-| `job-service.js` | CRUD jobs, search/filter/sort/paginate, approval, close, expiry check. Recruiter writes (`createJob`, `updateJob`, `closeJob`) take the recruiter from the session and require an `active` account |
-| `application-service.js` | apply (with eligibility + duplicate checks), withdraw, status transitions, history |
-| `saved-job-service.js` | toggle/list saved jobs |
-| `notification-service.js` | create, list, mark read, unread count, broadcast |
-| `admin-service.js` | admin-only (admin from the session): platform totals, user list/search/filters, approve recruiter, block/unblock, delete user with cleanup of related jobs/applications/saved jobs/notifications, job list, approve/reject (reason)/delete job, reset demo data via `ensureSeeded({ force: true })`. Never returns passwords |
-| `analytics-service.js` | aggregate counts for dashboards and reports; CSV export data |
+| Register / login / logout | `core/auth` → `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/me` → `auth-service` |
+| Landing | `job-service.getLandingData` → `GET /public/landing` → `job-service.getLandingData` |
+| Browse jobs | `job-service.searchJobs`, `getJobFilterOptions` → `GET /jobs`, `/jobs/filter-options` — search, filters, sort and paging run in MongoDB |
+| Job details, apply | `getJobDetails`, `applyToJob` → `GET /jobs/:id`, `POST /jobs/:id/applications` → `application-service` |
+| My applications, withdraw | `getOwnApplications`, `withdrawApplication` → `/student/applications…` |
+| Saved jobs | `saved-job-service` → `GET/PUT/DELETE /student/saved-jobs…` |
+| Profile, resume | `profile-service` → `PATCH /student/profile/:section`, `GET/PUT/DELETE /student/resume` |
+| Recruiter jobs | `job-service` → `/recruiter/jobs…` (create `pending`; core edits return to `pending`; close) |
+| Applicants | `application-service` → `/recruiter/jobs/:id/applications`, `/recruiter/applications/:id…` |
+| Admin | `admin-service` → `/admin/dashboard`, `/admin/users…`, `/admin/jobs…`, `/admin/announcements`, `/admin/reset-demo-data` |
+| Notifications | created inside the server service that made the change; read through `/notifications…` |
+| Analytics | counted on the server per request: student breakdown and recruiter funnel arrive with the dashboards; `GET /admin/reports` for the admin; charts and CSV are drawn in the browser from those numbers |
 
-Services return plain objects/arrays or `{ ok: true, data }` / `{ ok: false, error }` for operations that can fail.
+Job lifecycle: `pending` → admin `approved` / `rejected` (reason) → recruiter may `close` an approved
+job. Application lifecycle: `applied → under_review → shortlisted → interview → selected`, or
+`rejected` from any of these (recruiter); `withdrawn` from `applied` / `under_review` (student). Every
+change is appended to `statusHistory`.
 
-Services are created with the read-only queries the current phase needs and grow in later phases (e.g. `application-service`, `saved-job-service` and `notification-service` were added in Phase 3 with read-only queries for the student dashboard; their write operations arrive in Phases 5, 6 and 10). There is no separate dashboard service: dashboard pages compose these services. Phase 8 added to `job-service`: `getJobsByRecruiter`, `getOwnJobs`, `getOwnJob`, `isActiveRecruiter`, `canEditJob`, `canCloseJob`, `validateJobField` / `validateJobForm` / `validateJobSkill`, `createJob`, `updateJob`, `closeJob` (job-service now imports `auth.getCurrentUser`); to `application-service`: `getApplicationsForRecruiter`, `getRecruiterApplicants`, `getApplicantsForJob`, `getApplicantDetails`, `getApplicantResumeFile`, `getNextStatuses` (from `RECRUITER_STATUS_FLOW` in config) and `updateApplicationStatus` — ownership is always `application.jobId` → `job.recruiterId`, and applicant data never includes passwords; to `profile-service`: `updateCompanyProfile`, `validateCompanyField` and the shared `decodeResumeFile`; to `user-service`: `updateRecruiterRecord` (same whitelist as students). Shared dashboard styles (stat grid, lists, quick actions, status-filter tabs, `.avatar--lg`) moved from `pages/student.css` to `components.css` so every role dashboard uses them. Phase 7 added `profile-service.js` (`updateProfileSection`, `validateProfileField`, `validateNewSkill`, `uploadResume`, `removeResume`, `getResumeInfo`, `getOwnResumeFile`; file reading uses the browser `FileReader`/`Blob` APIs, never the DOM), `updateStudentRecord` in `user-service` (only `name`, `phone`, `profile` can change), and `components/tabs.js` + `components/resume-sheet.js`. Phase 6 added `saveJob`, `unsaveJob`, `isJobSaved`, `getSavedJobsWithDetails` to `saved-job-service`, `canWithdraw` / `withdrawApplication` to `application-service`, `getJobAvailability` to `job-service`, and `components/save-button.js`; all writes take the student from the session. Phase 5 added `getVisibleJob(id)` to `job-service` and `checkEligibility`, `getApplyStatus`, `validateApplicationForm` and `applyToJob` to `application-service`; `applyToJob` takes the student from `auth.getCurrentUser()` (core), never from a parameter, and re-checks every rule before writing. Phase 4 added `searchJobs(criteria)` and `getJobFilterOptions()` to `job-service` (pure functions over derived arrays; stored jobs are never modified), `paginate()` to `utils.js`, and `components/pagination.js`.
+The full endpoint list is in `docs/API.md`.
 
-## 7a. Main Workflows
+## 8. Configuration
 
-Every workflow below runs in the browser. The page calls a service; the service takes the acting user from the
-session (`auth.getCurrentUser()`), checks the business rules, writes through `core/storage.js`, and — where
-PROJECT_SPEC §4.5 says so — creates a notification after the change is saved.
+| Where | Setting | Purpose |
+|---|---|---|
+| `assets/js/core/app-config.js` | `PRODUCTION_API_BASE_URL` | The deployed API address (public; the only frontend setting) |
+| Server environment | `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL`, `NODE_ENV`, `PORT`, `JWT_EXPIRES_IN`, `APP_TIMEZONE_OFFSET_MINUTES`, `AUTH_RATE_LIMIT_MAX`, `ALLOW_DEMO_RESET`, `SERVE_FRONTEND` | See `server/.env.example` |
 
-| Workflow | Flow (page → service → storage) |
-|---|---|
-| **Authentication** | Register / login pages → `auth.register` / `auth.login` (uses `user-service`) → `fh_users`; session written to `fh_session` (sessionStorage). Logout removes the session. |
-| **Authorization** | `app-shell.initProtectedPage(role)` → `auth.requireRole`: no session → login with `returnTo`; wrong role → own dashboard; blocked / deleted → login. Services re-check role and ownership on every write. |
-| **Role separation** | Pages live in role folders; the sidebar menu is built per role (`components/sidebar.js`); `pages/shared/notifications.html` is open to every role. |
-| **Student** | Browse Jobs (`job-service.searchJobs`) → Job Details (`getVisibleJob`, `application-service.getApplyStatus`) → apply (`applyToJob`) → My Applications (`getApplicationsByStudent`, `withdrawApplication`); Saved Jobs (`saved-job-service`); Profile (`profile-service`). |
-| **Recruiter** | Company Profile (`profile-service.updateCompanyProfile`) → Post a Job (`job-service.createJob`, status `pending`) → My Jobs (`getOwnJobs`, `updateJob`, `closeJob`) → Applicants (`application-service.getApplicantsForJob`, `getApplicantDetails`, `updateApplicationStatus`). Requires an `active` account (BR-07). |
-| **Admin** | Dashboard / Users / Jobs / Announcements (`admin-service`: `approveRecruiter`, `blockUser`, `deleteUser`, `approveJob`, `rejectJob`, `deleteJob`, `sendAnnouncement`, `resetDemoData`); Reports (`analytics-service`). |
-| **Job lifecycle** | `pending` (created or core fields edited) → admin `approved` / `rejected` (with reason) → recruiter may `close` an approved job. "Expired" is computed from the deadline, never stored. |
-| **Application lifecycle** | `applied` → `under_review` → `shortlisted` → `interview` → `selected`, or `rejected` from any of these (recruiter); `withdrawn` from `applied` / `under_review` (student). Every change is appended to `statusHistory`. |
-| **Notifications** | Created inside the service that made the change (apply, status change, job decision, recruiter approval, announcement) → `fh_notifications`; read, counted and marked read only for the session user (`notification-service`); the bell count is read by `app-shell`. |
-| **Analytics** | `analytics-service` counts stored records on demand (student: own applications; recruiter: own jobs and their applicants; admin: platform report) → `components/charts.js` draws SVG; reports add a table and a CSV download (Blob). |
+On `localhost` the frontend calls the API on port 5000 automatically. In production the server
+refuses to start without `MONGODB_URI`, a `JWT_SECRET` of at least 32 characters and `FRONTEND_URL`.
+Secrets exist only in environment variables — never in the repository or in any frontend file.
 
-## 8. Running the Project
+Deadlines are calendar dates; a deadline day ends at midnight in the application's time zone
+(`APP_TIMEZONE_OFFSET_MINUTES`, default India), wherever the server runs.
 
-Because ES modules and `fetch()` are blocked on the `file://` protocol, the project must be opened through a **static file server**:
-- **Recommended:** VS Code → install "Live Server" extension → right-click `index.html` → "Open with Live Server".
-- Any other static server works too. The server only delivers files; it executes no project code and is not part of the project.
+## 9. Running and Deploying
 
-## 9. Deployment (optional)
-The folder can be published as-is to any static host (e.g. GitHub Pages). No build step is required.
+- Local: `README.md` ("Run it on your computer").
+- Deployment on Netlify + Render + MongoDB Atlas: `DEPLOYMENT.md`.

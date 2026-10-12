@@ -1,0 +1,24 @@
+# Netlify — static frontend only (see DEPLOYMENT.md).
+# There is no frontend build tool: the "build" just copies the pages into dist/, so the API source
+# (server/), the seed data (data/) and the project documents are not published on the website.
+
+[build]
+  command = "rm -rf dist && mkdir dist && cp -r index.html assets pages dist/"
+  publish = "dist"
+
+# Security headers for every page. connect-src lists where the pages may send requests: the site
+# itself and the API on Render. If the API is not on *.onrender.com, change that entry to its origin.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.onrender.com; object-src 'self' blob:; frame-src 'self' blob:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Pages and scripts are small and change with every deploy, so browsers always re-check them.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

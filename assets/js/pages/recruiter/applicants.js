@@ -3,7 +3,7 @@
  * Only the logged-in recruiter's own job is shown; any other id shows "Job not found".
  * Each applicant row has a status select limited to the allowed next steps (BR-15) and a
  * "View profile" dialog with the application, its timeline, the student's profile and resume.
- * Every rule is checked again in application-service (ownership via job.recruiterId).
+ * The server checks ownership (the job's recruiter) and every rule again on each request.
  */
 
 import { ROLES, PAGE_PATHS, APPLICATION_STATUS, JOB_STATUS } from '../../core/config.js';
@@ -18,7 +18,9 @@ import { renderApprovalBanner } from '../../components/approval-banner.js';
 import { createResumeSheet } from '../../components/resume-sheet.js';
 import { renderIconsBefore } from '../../components/icons.js';
 import { watchScrollRegion } from '../../components/scroll-region.js';
-import { getOwnJob, isJobExpired, isActiveRecruiter } from '../../services/job-service.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
+import { openFile } from '../../components/file-viewer.js';
+import { isJobExpired, isActiveRecruiter, JOB_ERRORS } from '../../services/job-service.js';
 import {
   getApplicantsForJob, getApplicantDetails, getApplicantResumeFile, getNextStatuses, updateApplicationStatus,
 } from '../../services/application-service.js';
@@ -27,6 +29,7 @@ const FINAL_STATUSES = [APPLICATION_STATUS.SELECTED, APPLICATION_STATUS.REJECTED
 const $ = (selector, root = document) => root.querySelector(selector);
 
 let job = null;
+let applicants = []; // { application, candidateName } for this job, newest first
 
 function createElement(tag, className, text) {
   const el = document.createElement(tag);
@@ -128,8 +131,8 @@ function createRow({ application, candidateName }) {
   return rowEl;
 }
 
+/** Draw the page from the job and applicants already loaded. */
 function render() {
-  const applicants = getApplicantsForJob(job.id);
   renderJobSummary(applicants);
   $('[data-applicants-count]').textContent = pluralize(applicants.length, 'applicant');
 
@@ -162,6 +165,23 @@ function render() {
   $('[data-applicants-list]').replaceChildren(wrapperEl);
 }
 
+/**
+ * Fetch the job and its applicants from the server.
+ * @returns {Promise<object>} the API result (ok = the data is ready to render)
+ */
+async function load(jobId) {
+  const result = await getApplicantsForJob(jobId);
+  if (result.ok) ({ job, items: applicants } = result.data);
+  return result;
+}
+
+/** Load again after a change and redraw; a failure is shown instead of stale data. */
+async function refresh() {
+  const result = await load(job.id);
+  if (result.ok) render();
+  else renderLoadError($('[data-applicants-list]'), { title: 'Applicants could not be loaded', message: result.error });
+}
+
 /* ---------- Status change ---------- */
 
 async function handleStatusSubmit(event) {
@@ -188,36 +208,23 @@ async function handleStatusSubmit(event) {
   }
 
   buttonEl.disabled = true;
-  const result = updateApplicationStatus(applicationId, newStatus);
+  const result = await updateApplicationStatus(applicationId, newStatus);
   buttonEl.disabled = false;
   if (!result.ok) {
     showToast(result.error, { type: 'error' });
-    render();
+    await refresh();
     return;
   }
   showToast(`Status updated to ${getLabel(newStatus)}.`, { type: 'success' });
-  render();
+  await refresh();
   $(`tr[data-application-id="${CSS.escape(applicationId)}"] [data-view-application]`)?.focus();
 }
 
 /* ---------- View profile dialog ---------- */
 
-function openResumeFile(applicationId, { download }) {
-  const result = getApplicantResumeFile(applicationId);
-  if (!result.ok) {
-    showToast(result.error, { type: 'error' });
-    return;
-  }
-  const url = URL.createObjectURL(result.data.blob);
-  const linkEl = createElement('a');
-  linkEl.href = url;
-  if (download) linkEl.download = result.data.fileName;
-  else linkEl.target = '_blank';
-  linkEl.rel = 'noopener';
-  document.body.append(linkEl);
-  linkEl.click();
-  linkEl.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60000); // time for the new tab to load it
+/** Open or download the applicant's resume (the server allows it only for the recruiter's own job). */
+function openResumeFile(applicationId, fileName, { download }) {
+  return openFile(() => getApplicantResumeFile(applicationId), { download, fileName });
 }
 
 function createTimeline(application) {
@@ -251,17 +258,17 @@ function createResumeBlock(application, candidate) {
   const actionsEl = createElement('div', 'candidate__actions');
   const viewEl = createElement('button', 'btn btn--outline btn--sm', 'View resume');
   viewEl.type = 'button';
-  viewEl.addEventListener('click', () => openResumeFile(application.id, { download: false }));
+  viewEl.addEventListener('click', () => openResumeFile(application.id, current.fileName, { download: false }));
   const downloadEl = createElement('button', 'btn btn--outline btn--sm', 'Download resume');
   downloadEl.type = 'button';
-  downloadEl.addEventListener('click', () => openResumeFile(application.id, { download: true }));
+  downloadEl.addEventListener('click', () => openResumeFile(application.id, current.fileName, { download: true }));
   actionsEl.append(viewEl, downloadEl);
   blockEl.append(actionsEl);
   return blockEl;
 }
 
-function openCandidate(applicationId) {
-  const result = getApplicantDetails(applicationId);
+async function openCandidate(applicationId) {
+  const result = await getApplicantDetails(applicationId);
   if (!result.ok) {
     showToast(result.error, { type: 'error' });
     return;
@@ -307,11 +314,14 @@ async function init() {
     showMessage('Applicants are not available yet', 'You can review applicants once your account is approved.');
     return;
   }
-  job = getOwnJob(getQueryParam('jobId')); // another recruiter's job looks exactly like a missing one
-  if (!job) {
-    showMessage('Job not found', 'This job does not exist or is not one of yours.');
+  renderLoading($('[data-page-message]'), 'Loading applicants…');
+  const result = await load(getQueryParam('jobId') ?? ''); // another recruiter's job looks exactly like a missing one
+  if (!result.ok) {
+    if (result.code === JOB_ERRORS.NOT_FOUND) showMessage('Job not found', 'This job does not exist or is not one of yours.');
+    else showMessage('Applicants could not be loaded', result.error);
     return;
   }
+  $('[data-page-message]').replaceChildren();
   document.title = `Applicants: ${job.title} · FreshHire`;
   $('[data-applicants-content]').hidden = false;
   $('[data-applicants-list]').addEventListener('submit', handleStatusSubmit);

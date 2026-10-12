@@ -2,7 +2,8 @@
  * users.js — Admin "Users" page (Phase 9, PROJECT_SPEC §3.4).
  * Search + role/status filters and a table with the actions the rules allow per account:
  * Approve (pending recruiter), Block (active), Unblock (blocked), Delete (with confirmation).
- * The admin's own account and other admin accounts have no actions. Passwords are never shown.
+ * The admin's own account and other admin accounts have no actions; the server decides which
+ * actions each account allows and checks them again when one is used. Passwords are never sent.
  * ?role=&status= in the URL only preselect the filters.
  */
 
@@ -17,13 +18,18 @@ import { createEmptyState } from '../../components/empty-state.js';
 import { confirmDialog } from '../../components/modal.js';
 import { showToast } from '../../components/toast.js';
 import { watchScrollRegion } from '../../components/scroll-region.js';
+import { renderPagination } from '../../components/pagination.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
 import {
-  listUsers, getUserActions, approveRecruiter, blockUser, unblockUser, deleteUser,
+  listUsers, approveRecruiter, blockUser, unblockUser, deleteUser,
 } from '../../services/admin-service.js';
 
 const $ = (selector) => document.querySelector(selector);
 let formEl = null;
 let admin = null;
+let users = []; // the page of users last loaded
+let currentPage = 1;
+let latestRequest = 0; // only the newest search may update the table
 
 function createElement(tag, className, text) {
   const el = document.createElement(tag);
@@ -59,7 +65,7 @@ function createActionButton(label, action, user, className = 'btn btn--outline b
 }
 
 function createActions(user) {
-  const allowed = getUserActions(user, admin.id);
+  const allowed = user.actions ?? {};
   const actionsEl = createElement('div', 'table-actions');
   if (allowed.approve) actionsEl.append(createActionButton('Approve', 'approve', user, 'btn btn--primary btn--sm'));
   if (allowed.block) actionsEl.append(createActionButton('Block', 'block', user));
@@ -101,9 +107,32 @@ function createRow(user) {
   return rowEl;
 }
 
-function render() {
-  const users = listUsers(readFilters());
-  $('[data-users-count]').textContent = `${pluralize(users.length, 'user')} found`;
+/** Load one page of users for the current search and filters, then draw the table. */
+async function render() {
+  latestRequest += 1;
+  const requestId = latestRequest;
+  const result = await listUsers({ ...readFilters(), page: currentPage });
+  if (requestId !== latestRequest) return; // the filters changed while this request was running
+  if (!result.ok) {
+    $('[data-users-count]').textContent = '';
+    $('[data-users-pagination]').replaceChildren();
+    renderLoadError($('[data-users-list]'), { title: 'Users could not be loaded', message: result.error });
+    return;
+  }
+  users = result.data.items;
+  currentPage = result.data.page;
+  const { total, from, to } = result.data;
+  $('[data-users-count]').textContent = total > users.length
+    ? `${pluralize(total, 'user')} found · showing ${from}–${to}`
+    : `${pluralize(total, 'user')} found`;
+  renderPagination($('[data-users-pagination]'), {
+    page: currentPage,
+    totalPages: result.data.totalPages,
+    onChange: (page) => {
+      currentPage = page;
+      render();
+    },
+  });
   if (users.length === 0) {
     $('[data-users-list]').replaceChildren(createEmptyState({
       title: 'No users found', message: 'Try another search or filter.', icon: 'users',
@@ -165,20 +194,21 @@ const ACTIONS = {
 
 async function handleAction(buttonEl) {
   const { userAction: action, userId } = buttonEl.dataset;
-  const user = listUsers().find((item) => item.id === userId);
+  const user = users.find((item) => item.id === userId);
   if (!user || !ACTIONS[action]) return;
 
   const confirmation = getConfirmation(action, user);
   if (confirmation && !(await confirmDialog(confirmation))) return;
 
-  const result = ACTIONS[action].run(userId);
+  buttonEl.disabled = true; // one request, even on a double click
+  const result = await ACTIONS[action].run(userId);
   if (!result.ok) {
     showToast(result.error, { type: 'error' });
-    render();
+    await render();
     return;
   }
   showToast(ACTIONS[action].done(user, result.data), { type: 'success' });
-  render();
+  await render();
   $('[data-users-count]').focus();
 }
 
@@ -190,16 +220,21 @@ async function init() {
   fillSelect(formEl.elements.role, Object.values(ROLES), 'All roles', getQueryParam('role'));
   fillSelect(formEl.elements.status, Object.values(USER_STATUS), 'All statuses', getQueryParam('status'));
 
+  // A new search or filter always starts again from the first page.
+  const search = () => {
+    currentPage = 1;
+    render();
+  };
   formEl.addEventListener('submit', (event) => event.preventDefault());
-  formEl.elements.query.addEventListener('input', debounce(render, SEARCH_DEBOUNCE_MS));
-  formEl.elements.role.addEventListener('change', render);
-  formEl.elements.status.addEventListener('change', render);
+  formEl.elements.query.addEventListener('input', debounce(search, SEARCH_DEBOUNCE_MS));
+  formEl.elements.role.addEventListener('change', search);
+  formEl.elements.status.addEventListener('change', search);
   $('[data-users-list]').addEventListener('click', (event) => {
     const buttonEl = event.target.closest('[data-user-action]');
     if (buttonEl) handleAction(buttonEl);
   });
-  window.addEventListener('storage', render); // data changed in another tab
-  render();
+  renderLoading($('[data-users-list]'), 'Loading users…');
+  await render();
 }
 
 init();

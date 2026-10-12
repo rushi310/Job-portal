@@ -1,8 +1,8 @@
 /**
  * job-details.js — Job Details page (Phase 5; UI_SPEC.md §5 "Job Details").
  * Shows one approved job (?id=<jobId>), the student's eligibility per rule, and the apply flow
- * (modal with an optional cover note). All rules live in application-service.js and are checked
- * again when the application is saved; this page only reflects them.
+ * (modal with an optional cover note). The server works out eligibility and whether the student
+ * can apply, and checks every rule again when the application is saved; this page only shows it.
  */
 
 import {
@@ -17,12 +17,10 @@ import { createEmptyState } from '../../components/empty-state.js';
 import { openModal } from '../../components/modal.js';
 import { showToast } from '../../components/toast.js';
 import { setFieldError, setButtonLoading } from '../../components/form-field.js';
-import { getVisibleJob, isJobExpired } from '../../services/job-service.js';
-import { isJobSaved } from '../../services/saved-job-service.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
+import { getJobDetails, isJobExpired, JOB_ERRORS } from '../../services/job-service.js';
 import { createSaveButton, bindSaveButtons } from '../../components/save-button.js';
-import {
-  checkEligibility, getApplyStatus, validateApplicationForm, applyToJob, APPLY_ERRORS,
-} from '../../services/application-service.js';
+import { validateApplicationForm, applyToJob, APPLY_ERRORS } from '../../services/application-service.js';
 
 const containerEl = document.querySelector('[data-job-details]');
 
@@ -145,8 +143,7 @@ function createSkills(job, student) {
   return sectionEl;
 }
 
-function createEligibility(job, student) {
-  const { isEligible, rules } = checkEligibility(student, job);
+function createEligibility({ isEligible, rules }) {
   const sectionEl = createSection('Eligibility', 'eligibility-title');
   sectionEl.classList.add('eligibility');
   sectionEl.append(createElement('p', `eligibility__summary ${isEligible ? 'text-success' : 'text-danger'}`,
@@ -194,8 +191,10 @@ function createPanelLinks() {
   return linksEl;
 }
 
-function renderApplyPanel(panelEl, job, student) {
-  const status = getApplyStatus(student, job);
+function renderApplyPanel(panelEl, details, student) {
+  const {
+    job, application, applyStatus: status, isSaved,
+  } = details;
   const headingEl = createElement('h2', 'card__title mb-4', 'Apply for this job');
   headingEl.id = 'apply-title';
   headingEl.tabIndex = -1; // receives focus after a successful application
@@ -212,8 +211,7 @@ function renderApplyPanel(panelEl, job, student) {
     applyEl.type = 'button';
     applyEl.dataset.action = 'apply';
     children.push(applyEl);
-  } else if (status.code === APPLY_ERRORS.ALREADY_APPLIED) {
-    const { application } = status;
+  } else if (status.code === APPLY_ERRORS.ALREADY_APPLIED && application) {
     const statusLabel = getLabel(application.status) || 'Unknown';
     const messageEl = createElement('div', 'alert alert--success alert--stacked');
     messageEl.setAttribute('role', 'status');
@@ -234,7 +232,7 @@ function renderApplyPanel(panelEl, job, student) {
     children.push(applyEl);
   }
 
-  children.push(createSaveButton(job, isJobSaved(student.id, job.id), { block: true }), createPanelLinks());
+  children.push(createSaveButton(job, isSaved, { block: true }), createPanelLinks());
   panelEl.replaceChildren(...children);
 }
 
@@ -294,7 +292,7 @@ function openApplyModal(job, student, onApplied) {
     alertEl.hidden = false;
   };
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (isSubmitting) return; // blocks double clicks
     const submitEl = modal.element.querySelector('[data-action="submit-application"]');
     alertEl.hidden = true;
@@ -308,7 +306,7 @@ function openApplyModal(job, student, onApplied) {
 
     isSubmitting = true;
     setButtonLoading(submitEl, true, { idleText: 'Submit application', loadingText: 'Submitting…' });
-    const result = applyToJob(job.id, { coverNote: textareaEl.value });
+    const result = await applyToJob(job.id, { coverNote: textareaEl.value });
     if (result.ok) {
       modal.close();
       onApplied(result.data);
@@ -357,8 +355,8 @@ function openApplyModal(job, student, onApplied) {
 
 /* ---------- Page ---------- */
 
-function renderJob(job, student) {
-  const application = getApplyStatus(student, job).application ?? null;
+function renderJob(details, student) {
+  const { job, application, eligibility } = details;
   const isExpired = isJobExpired(job);
   document.title = `${job.title} · FreshHire`;
 
@@ -372,14 +370,14 @@ function renderJob(job, student) {
     createDescription(job),
     createResponsibilities(job),
     createSkills(job, student),
-    createEligibility(job, student),
+    createEligibility(eligibility),
   );
 
   const asideEl = createElement('aside', 'job-details__aside');
   const panelEl = createElement('section', 'card apply-panel');
   panelEl.setAttribute('aria-labelledby', 'apply-title');
   panelEl.dataset.applyPanel = '';
-  renderApplyPanel(panelEl, job, student);
+  renderApplyPanel(panelEl, details, student);
   asideEl.append(panelEl);
 
   layoutEl.append(headerEl, asideEl, mainEl);
@@ -390,15 +388,33 @@ function renderJob(job, student) {
     const applyEl = event.target.closest('[data-action="apply"]');
     if (!applyEl) return;
     applyEl.focus(); // some browsers don't focus buttons on click; the modal returns focus here
-    openApplyModal(job, student, (application) => {
-      renderJob(job, student); // refresh badges + panel from storage
-      const freshPanelEl = containerEl.querySelector('[data-apply-panel]');
-      if (application) {
+    openApplyModal(job, student, async (newApplication) => {
+      const isShown = await loadJob(job.id, student); // refresh badges + panel from the server
+      if (newApplication && isShown) {
         showToast(`Application submitted for ${job.title}.`, { type: 'success' });
-        freshPanelEl.querySelector('#apply-title').focus();
+        containerEl.querySelector('[data-apply-panel] #apply-title').focus();
       }
     });
   });
+}
+
+/**
+ * Load the job from the server and show it (or "Job not found" / an error message).
+ * @returns {Promise<boolean>} true when the job is on the page
+ */
+async function loadJob(jobId, student) {
+  const result = await getJobDetails(jobId);
+  if (result.ok) {
+    renderJob(result.data, student);
+    return true;
+  }
+  // A missing, unapproved or closed job and a malformed id all look the same: "Job not found".
+  if ([APPLY_ERRORS.JOB_NOT_FOUND, JOB_ERRORS.NOT_FOUND].includes(result.code)) {
+    renderNotFound();
+  } else {
+    renderLoadError(containerEl, { title: 'This job could not be loaded', message: result.error, headingLevel: 2 });
+  }
+  return false;
 }
 
 async function init() {
@@ -406,10 +422,14 @@ async function init() {
   if (!student) return;
   renderIconsBefore();
 
+  const jobId = getQueryParam('id'); // the job comes from the URL; the student never does
+  if (!jobId) {
+    renderNotFound();
+    return;
+  }
+  renderLoading(containerEl, 'Loading job…');
   try {
-    const job = getVisibleJob(getQueryParam('id')); // the job comes from the URL; the student never does
-    if (job) renderJob(job, student);
-    else renderNotFound();
+    await loadJob(jobId, student);
   } catch (error) {
     console.error('job-details: could not render the job', error);
     renderNotFound();

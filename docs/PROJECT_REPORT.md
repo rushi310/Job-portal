@@ -1,5 +1,10 @@
 # FreshHire — A Frontend-Only Job Portal for Freshers
 
+> **Note (Phase 15):** this document was written for the earlier **frontend-only** version of FreshHire.
+> The project is now full-stack (Express API + MongoDB): data is stored on the server, not in the browser, and
+> the sections on architecture, storage, security, testing and limitations describe the old design.
+> Current descriptions: [README](../README.md), [ARCHITECTURE](../ARCHITECTURE.md), [SECURITY](SECURITY.md).
+
 **Project report** · Final-year college project
 
 ---

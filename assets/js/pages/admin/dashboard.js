@@ -2,21 +2,19 @@
  * dashboard.js — Admin dashboard (Phase 9).
  * Platform totals (PROJECT_SPEC §3.4), jobs by status, quick lists of recruiters and jobs waiting for
  * approval (linking to Users / Jobs), and the "Reset demo data" danger zone (BR-20).
- * Everything is read through admin-service and re-rendered when data changes (also in other tabs).
+ * Everything comes from the server in one request (admin-service) and is loaded again after a reset.
  */
 
-import { ROLES, JOB_STATUS, USER_STATUS, PAGE_PATHS } from '../../core/config.js';
+import { ROLES, JOB_STATUS, PAGE_PATHS } from '../../core/config.js';
 import { toRoot, getLabel, formatRelativeTime } from '../../core/utils.js';
 import { initProtectedPage } from '../../components/app-shell.js';
 import { createIcon } from '../../components/icons.js';
 import { createEmptyState } from '../../components/empty-state.js';
 import { confirmDialog } from '../../components/modal.js';
 import { showToast } from '../../components/toast.js';
-import {
-  getPlatformStats, listUsers, listJobs, resetDemoData,
-} from '../../services/admin-service.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
+import { getAdminDashboard, resetDemoData } from '../../services/admin-service.js';
 
-const QUICK_LIST_SIZE = 5;
 const $ = (selector) => document.querySelector(selector);
 
 function createElement(tag, className, text) {
@@ -66,7 +64,7 @@ function renderQuickList(containerEl, items, emptyTitle, createItem) {
   }
   const listEl = createElement('ul', 'dashboard-list');
   listEl.setAttribute('role', 'list');
-  listEl.append(...items.slice(0, QUICK_LIST_SIZE).map(createItem));
+  listEl.append(...items.map(createItem));
   containerEl.replaceChildren(listEl);
 }
 
@@ -94,20 +92,32 @@ function createJobItem({ job, recruiterName }) {
   return itemEl;
 }
 
-function render() {
-  const stats = getPlatformStats();
-  if (!stats) return; // session ended (e.g. in another tab); the next page load redirects
+/** The reset erases real data, so the button works only where the server allows it. */
+function renderResetAvailability(isEnabled) {
+  $('[data-reset-demo]').disabled = !isEnabled;
+  $('[data-reset-note]').hidden = isEnabled;
+}
+
+/** Load the dashboard from the server and draw it. */
+async function render() {
+  const listEls = [$('[data-pending-recruiters]'), $('[data-pending-jobs]')];
+  const result = await getAdminDashboard();
+  if (!result.ok) {
+    listEls.forEach((el) => renderLoadError(el, { title: 'This list could not be loaded', message: result.error }));
+    return;
+  }
+  const { stats, pendingRecruiters, pendingJobs, demoResetEnabled } = result.data;
   renderStats(stats);
-  renderQuickList($('[data-pending-recruiters]'),
-    listUsers({ role: ROLES.RECRUITER, status: USER_STATUS.PENDING }), 'No recruiters waiting', createRecruiterItem);
-  renderQuickList($('[data-pending-jobs]'), listJobs({ status: JOB_STATUS.PENDING }), 'No jobs waiting', createJobItem);
+  renderQuickList(listEls[0], pendingRecruiters, 'No recruiters waiting', createRecruiterItem);
+  renderQuickList(listEls[1], pendingJobs, 'No jobs waiting', createJobItem);
+  renderResetAvailability(demoResetEnabled);
 }
 
 async function handleReset(buttonEl) {
   const confirmed = await confirmDialog({
     title: 'Reset all demo data?',
-    message: 'Every account, job, application, saved job and notification is replaced with the original demo data. '
-      + 'Changes made in this browser cannot be recovered.',
+    message: 'Every job, application, saved job, notification, resume and non-admin account is deleted from the '
+      + 'database and replaced with the original demo data. This cannot be undone.',
     confirmLabel: 'Reset demo data',
   });
   if (!confirmed) return;
@@ -118,7 +128,7 @@ async function handleReset(buttonEl) {
     showToast(result.error, { type: 'error' });
     return;
   }
-  render();
+  await render();
   showToast('Demo data has been reset.', { type: 'success' });
 }
 
@@ -126,10 +136,10 @@ async function init() {
   const user = await initProtectedPage(ROLES.ADMIN);
   if (!user) return;
   $('[data-user-name]').textContent = user.name;
-  render();
   $('[data-reset-demo]').addEventListener('click', (event) => handleReset(event.currentTarget));
-  // Another tab changed the data (e.g. a recruiter posted a job): refresh the numbers.
-  window.addEventListener('storage', render);
+  renderLoading($('[data-pending-recruiters]'));
+  renderLoading($('[data-pending-jobs]'));
+  await render();
 }
 
 init();

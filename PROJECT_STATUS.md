@@ -1,6 +1,7 @@
 # PROJECT_STATUS.md — FreshHire Progress Tracker
 
-> Frontend-only project (HTML5, CSS3, Vanilla JS ES6+, JSON mock data, localStorage, sessionStorage).
+> Full-stack project since Phase 15: Vanilla JS frontend + Express API + MongoDB.
+> (Phases 0–14 were frontend-only; their records below are kept unchanged as history.)
 > Update this file at the end of every work session and every phase.
 
 ---
@@ -9,12 +10,12 @@
 
 | Field | Value |
 |---|---|
-| **Current phase** | **Phase 14 — Documentation & Viva** (final phase) |
-| Phase status | ✅ Complete |
-| **Overall project status** | **Documentation complete; NOT marked final** — Phase 13 (Testing & QA) was stopped before completion at the user's request (see "Phase 13" below) |
-| Last updated | 2026-09-30 |
+| **Current phase** | **Phase 15 — Full-Stack Migration & Free Deployment Preparation** |
+| Phase status | ✅ Code complete and verified locally · ⏳ **not deployed** (needs the user's Atlas, Render and Netlify accounts) |
+| **Overall project status** | Full-stack application working locally with 83 API tests and a 92-check browser journey passing. Live deployment, other browsers and the Phase 13 test-case document are open (see "Phase 15" and "Next Task"). |
+| Last updated | 2026-10-12 |
 | Current task | None |
-| Next phase | None — Phase 14 is the last phase. Open items: the unfinished Phase 13 deliverables (listed below). |
+| Next phase | None planned. Next actions are the user's deployment steps in DEPLOYMENT.md. |
 
 ## Phase Overview
 
@@ -35,6 +36,7 @@
 | 12 | Responsive Design & UI Polish | ✅ Complete |
 | 13 | Testing | ⚠️ Stopped before completion (tests run and 3 defects fixed; test-case document and final write-up not done) |
 | 14 | Documentation & Viva | ✅ Complete |
+| 15 | Full-Stack Migration & Free Deployment Preparation | ✅ Code complete, verified locally · ⏳ deployment pending (user accounts) |
 
 Legend: ⏳ Not started · 🔄 In progress · ✅ Complete · ⚠️ Incomplete
 
@@ -658,16 +660,157 @@ Out of scope: at 320px (below the 360px minimum, UI_SPEC §2.5) the app header i
 - Documentation: every relative Markdown link and image path resolves; screenshot files match the checklist;
   test numbers are the recorded Phase 13 values; `git diff --check` clean.
 
+## Phase 15 — Full-Stack Migration & Free Deployment Preparation (2026-10-12)
+
+Requested by the user as one task: turn the frontend-only project into a working full-stack application
+(Express + MongoDB), keep the vanilla frontend and every feature, and prepare a free deployment on Netlify,
+Render and MongoDB Atlas. This replaces the earlier "frontend-only, no backend" rule (CLAUDE.md updated).
+
+| ID | Task | Status |
+|---|---|---|
+| P15-T01 | Inspect repository and documents; record Git state (clean, `master`, last commit `f13f68d`) | ✅ |
+| P15-T02 | Backend foundation: `server/` (config, database, app, error handling, helmet, CORS allow-list, rate limits, health check, request log) | ✅ |
+| P15-T03 | Models + indexes: User (embedded student / recruiter profile), Job, Application, SavedJob, Notification, Resume | ✅ |
+| P15-T04 | Authentication (register, login, logout, current user; bcrypt; JWT bearer token) and authorization middleware (role, approved recruiter, id check) | ✅ |
+| P15-T05 | Business APIs: jobs + search, applications, saved jobs, profile + resume, recruiter, admin, notifications, analytics — every BR-01 … BR-20 enforced in services | ✅ |
+| P15-T06 | Seed script (repeatable import of `data/*.json`, hashed passwords, legacy id → ObjectId mapping, never overwrites) and `dev:memory` zero-setup script | ✅ |
+| P15-T07 | Frontend: `core/api.js`, `core/app-config.js`; 8 service modules call the API (user-service keeps form rules only); all 20 page scripts converted to async with loading / error states; browser seeding removed | ✅ |
+| P15-T08 | API tests (`server/tests`, 6 files) | ✅ |
+| P15-T09 | End-to-end browser check of every role (scratch script, not in the repository) | ✅ |
+| P15-T10 | Deployment files: `netlify.toml`, `render.yaml`, `server/.env.example`, `.gitignore` | ✅ prepared |
+| P15-T11 | Documentation: README, ARCHITECTURE, PROJECT_SPEC, CODING_RULES, UI_SPEC, CLAUDE.md, DEVELOPMENT_PHASES, DEPLOYMENT.md, docs/API.md, docs/SECURITY.md | ✅ |
+| P15-T12 | Live deployment (Atlas cluster, Render service, Netlify site) and its verification | ⏳ **Not done — needs the user's accounts** |
+
+### Phase 15 Acceptance Criteria (DEVELOPMENT_PHASES.md)
+
+| Criterion | Result |
+|---|---|
+| Every feature of Phases 1–12 works against the API; data survives a reload and a new login | ✅ PASS locally (browser journey, 92 checks) |
+| A user cannot read or change another user's data, act in another role, or approve their own job | ✅ PASS (API tests: authorization, ownership, spoofed ids / roles / statuses) |
+| Passwords stored only as hashes and never returned; no secret in the repository or frontend | ✅ PASS (tests; `.env` ignored; no values in `.env.example` / `render.yaml`; API address is the only frontend setting) |
+| `npm test` passes; no console errors from the application in the browser check | ✅ PASS |
+| Deployment files match the repository and contain no secrets | ✅ Prepared; ⚠️ **not exercised on Netlify or Render** |
+| Documentation separates implemented / prepared / needs accounts; no live deployment claimed | ✅ |
+
+### Phase 15 Decisions
+
+- **Login:** bearer token (JWT, 2 h) in `sessionStorage`, not a cookie — the frontend and API are on different
+  sites, where cookies would be third-party and need CSRF protection. Logout raises the user's token version, so
+  older tokens stop working (for all of that user's sessions). Trade-off recorded in docs/SECURITY.md.
+- **Ids:** MongoDB ObjectIds everywhere; the seed keeps the JSON ids in `legacyId` so it can run repeatedly.
+- **Profiles** are embedded in the user document; the application no longer stores a copy of the recruiter id.
+- **Resumes** are stored as bytes in MongoDB (500 KB cap) and served only through authorised routes — no file
+  storage service is needed on the free tier. View / download fetch the file with the token.
+- **Search, filters, sorting and paging** moved to MongoDB queries. Admin Users and Jobs tables are now paged
+  (25 per page, new pagination under each table). My Applications and Notifications load the newest 100 and say
+  so if there are more.
+- **Dashboards** load in one request each; analytics are counted on the server; the browser adds labels and
+  builds the CSV from the numbers it received.
+- **Deadlines** end at midnight in one application time zone (`APP_TIMEZONE_OFFSET_MINUTES`, default India)
+  instead of each visitor's own clock.
+- **Reset demo data** is kept but is off unless `ALLOW_DEMO_RESET=true`, because it now erases a real database;
+  it keeps admin accounts. The dashboard shows a note when it is off.
+- **Seed safety:** the seed refuses to create the admin with the public demo password on any database that is
+  not on the local computer (`SEED_ADMIN_PASSWORD` required). The login page's admin shortcut appears only on
+  `localhost`.
+- **Login rate limit** counts failed attempts only (20 per IP per 15 minutes), so a class sharing one network
+  address is not locked out by normal use. Found during the browser run with default settings.
+- **Registration** no longer checks "email already used" while typing (that needed the whole user list in the
+  browser); the server reports it on submit.
+- **Cross-tab refresh** through the `storage` event is gone (there is no shared browser data); pages show new
+  data when they load.
+- **Footer notice** changed to "Demo project — not a real hiring service. Please do not enter real personal data."
+- **Render** runs from the repository root (commands `cd server && …`) so the reset feature can read `/data`.
+  **Netlify** publishes a copy of `index.html`, `assets/` and `pages/` only (`dist/`), so `server/`, `data/` and
+  the documents are not on the website.
+- **Dependencies** (server only): express, mongoose, bcryptjs, jsonwebtoken, cors, helmet, express-rate-limit,
+  dotenv; dev: supertest, mongodb-memory-server. The frontend still has none.
+- Removed as obsolete after the API versions were verified: `assets/js/core/seed.js`, the `localStorage`
+  helpers, the simulated login delay, `paginate` / `generateId` and the browser-side copies of search,
+  eligibility, recommendation and analytics calculations. The JSON files in `/data` stay as seed input.
+
+### Phase 15 Validation (everything below was actually run on the final code)
+
+- **API tests** — `cd server && npm test`: 6 files, **83 tests, 83 passed, 0 failed, 0 skipped**
+  (auth 18, authorization 9, jobs 15, applications 14, student 12, platform 15). Node 16.20.2, in-memory
+  MongoDB 6.0.14. Covered: registration (valid, duplicate email, no admin, injected status), login (valid,
+  wrong password = unknown email, blocked, operator objects), sessions (no / malformed / forged / expired token,
+  logout, blocked or deleted mid-session, role claim in a token), rate limit; every protected route refused when
+  logged out; admin routes refused for student / recruiter / pending recruiter; role separation; pending
+  recruiter limits and immediate effect of approval; job posting, validation, visibility, approval rules,
+  ownership between two recruiters, BR-11, close; search words, every filter, expired, sorts, paging, operator
+  injection; apply, duplicate and 5 simultaneous applications (exactly one stored), spoofed student id / status,
+  ineligible / expired / pending / closed / unknown jobs, cover note; student and recruiter isolation; status
+  flow and timeline; withdrawal rules; history after job close / delete; saved-job ownership; profile sections,
+  protected fields, validation; resume type / content / size checks, owner-only and job-recruiter-only access;
+  notification isolation, unread count, creation only by events; announcements; user management and delete
+  cleanup; analytics on empty data, time grouping, per-recruiter isolation, admin report = database counts;
+  seed import (hashes, relationships, repeatability, nothing overwritten) and reset; health check incl. database
+  down (503, no connection details), CORS allow-list, production configuration checks, error format, headers.
+- **Browser journey** (scratch script driving headless Microsoft Edge with puppeteer-core, kept outside the
+  repository): **92 checks, all passed**, run three ways — pages served by the API itself; pages on another
+  origin (port 5500 → API on 5000, i.e. real CORS); and that again with the Content-Security-Policy from
+  `netlify.toml`. Covered: landing; guards (logged out, wrong role, invalid token → login); registration and
+  duplicate email; login errors and blocked account; student dashboard, search / filter / sort / paging, save,
+  apply, withdraw, saved jobs, profile save and validation, resume upload and download, notifications; recruiter
+  dashboard, post job, applicants, status change, candidate dialog, company profile, pending-recruiter limits;
+  admin dashboard, approve recruiter, block user, approve / reject job, announcement, reports and CSV;
+  cross-role effects after re-login; 360px width on five pages; no request for `/data/*.json`; nothing in
+  `localStorage`; no console errors or warnings from the application (the browser's own log lines for the
+  intentionally refused requests were excluded).
+- **Resume View / Download** buttons: checked separately for the student and for the job's recruiter (a new tab
+  opens on the private `blob:` address) under the same policy.
+- **Static checks:** every frontend module parses; every import resolves and names an existing export; no
+  `fetch` outside `core/api.js`, no storage access outside `core/storage.js`, no `innerHTML`, `console.log`,
+  `var` or `eval`; every page references existing files and has one script; `node --check` on all 50 server
+  files (source and tests); the seed's refusal paths (remote database without admin password, weak password, unreachable database).
+- **`npm run dev:memory`** starts, seeds and serves the site (used for the final same-origin browser run).
+
+### Phase 15 — Not verified / not done (be explicit in any demo or report)
+
+- **No live deployment exists.** `netlify.toml` and `render.yaml` were written from the providers' documented
+  formats and were not run on Netlify or Render. Atlas was not used: all runs used an in-memory MongoDB.
+- **Browsers:** Microsoft Edge (headless) only. Chrome and Firefox were not re-run after the migration; the
+  1,254 checks recorded for Phases 1–13 tested the old browser-only code and no longer apply to the data layer.
+- **Node versions:** developed and tested on Node 16.20.2 only; Render is set to Node 20 (not tested here).
+- Not re-run after the migration: Lighthouse accessibility, the 240-render layout audit, keyboard-only and
+  touch-emulation checks, printing the generated resume. The HTML and CSS were changed only in five small
+  places (two pagination containers, three texts), but this was not re-measured.
+- No load, penetration or security-scanner testing.
+- The Phase 14 documents (user guide, report, viva questions, presentation, demo flow, screenshots) still
+  describe the frontend-only version; each now says so at the top but was **not rewritten**.
+- `docs/TEST_CASES.md` (Phase 13) is still not written.
+
+### Phase 15 Known Limitations
+
+- No email verification, password reset or password change; no account lockout beyond the rate limit.
+- Token in `sessionStorage` (see docs/SECURITY.md); demo student and recruiter passwords are public.
+- Free hosting: slow first request after idle; rate-limit counters reset on restart; 512 MB database shared
+  with resume files; no backups.
+- First `npm test` / `npm run dev:memory` downloads a MongoDB binary of about 500 MB.
+- Notification bell and lists update on page load, not in real time.
+
 ## Next Task
 
-None — Phase 14 is the final phase. If the project is to be marked final, complete the open Phase 13 items above
-(`docs/TEST_CASES.md` with the defect log, and a Chrome re-run).
+**For the user (nothing here can be done without your accounts):** follow DEPLOYMENT.md —
+1. create the Atlas free cluster, database user and network rule;
+2. run `npm run seed` against it with your own `SEED_ADMIN_PASSWORD`;
+3. commit and push; create the Netlify site and note its address;
+4. create the Render service (Blueprint) with `MONGODB_URI` and `FRONTEND_URL`;
+5. put the Render address in `assets/js/core/app-config.js`, commit and push;
+6. go through the verification checklist in DEPLOYMENT.md §6.
+
+Optional later work: re-run the checks in Chrome and Firefox; rewrite the Phase 14 report / viva material for the
+full-stack design; `docs/TEST_CASES.md`.
 
 ## Known Issues / Open Questions
 
-- Phase 13 incomplete (see above): `docs/TEST_CASES.md` not written; Chrome not re-run after the last fixes.
-- Automated test pages are not stored in the repository.
-- Note: browsers block ES modules on `file://`, so the app must be opened through a static server (documented in README).
+- Not deployed; deployment files untested on the real services (see above).
+- Phase 13 still incomplete: `docs/TEST_CASES.md` not written.
+- The end-to-end browser script is not stored in the repository (it needs a browser driver, which the project
+  rules keep out of the frontend); only the API tests are.
+- Phase 14 documents describe the previous architecture (flagged at the top of each).
+- Note: browsers block ES modules on `file://`, so the pages must be opened through a server (documented in README).
 
 ## Change Log
 
@@ -693,3 +836,4 @@ None — Phase 14 is the final phase. If the project is to be marked final, comp
 | 2026-09-30 | 12 | Phase 12: Responsive Design & UI Polish — every page reviewed at 8 widths; header fit at 360, stacked tables with label / value rows, focusable scroll regions for wide tables (components/scroll-region.js), phone form pairs and card padding, apply alert, contrast and label-in-name fixes, empty-state heading levels, back link / footer / landing consistency. Lighthouse accessibility 100 on 20 pages (desktop + mobile). Docs: DEVELOPMENT_PHASES, PROJECT_STATUS. 1185/1185. **Phase 12 complete.** |
 | 2026-09-30 | 13 | Phase 13 (stopped before completion): QA suites (access matrix, empty / corrupted / full storage, invalid URLs, journeys, long data), cross-browser runs (Edge 1254/1254, Firefox 1254/1254, Chrome 1247/1247 before last fixes), keyboard 22/22, mobile emulation 24/24, Lighthouse 100. Fixed D-01 focus ring (variables.css, components.css), D-02 company-size select (company-profile.html), D-03 long words widening pages (base.css). Not done: docs/TEST_CASES.md, final write-up, Chrome re-run. |
 | 2026-09-30 | 14 | Phase 14: README rewritten; docs/ USER_GUIDE, PROJECT_REPORT, SECURITY, VIVA_QUESTIONS, PRESENTATION_OUTLINE, DEMO_FLOW, SCREENSHOT_CHECKLIST, 24 screenshots; ARCHITECTURE, PROJECT_SPEC, UI_SPEC, CODING_RULES corrected against the code; DEVELOPMENT_PHASES notes for Phases 13–14. **Phase 14 complete; project not marked final (Phase 13 incomplete).** |
+| 2026-10-12 | 15 | Phase 15: full-stack migration (user-directed; replaces the frontend-only rule). Added `server/` (Express API, Mongoose models, validators, services, controllers, routes, middleware, seed and dev scripts, 83 API tests), `core/api.js` + `core/app-config.js`, `dashboard-service.js`, `load-state` / `server-status` / `file-viewer` components; converted all services and 20 page scripts to the API; removed browser seeding and `localStorage` use; added `netlify.toml`, `render.yaml`, `.gitignore`, DEPLOYMENT.md, docs/API.md; rewrote README, ARCHITECTURE, docs/SECURITY.md, CLAUDE.md; updated PROJECT_SPEC, CODING_RULES, UI_SPEC, DEVELOPMENT_PHASES. Verified locally (83 API tests, 92-check browser journey ×3). **Not deployed.** |

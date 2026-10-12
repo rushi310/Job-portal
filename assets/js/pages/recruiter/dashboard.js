@@ -1,13 +1,13 @@
 /**
  * dashboard.js — Recruiter dashboard (Phase 8).
- * Built only from the logged-in recruiter's own jobs and the applications to them:
+ * Built by the server only from the logged-in recruiter's own jobs and the applications to them:
  * stat cards (active jobs, total applicants, shortlisted, pending approval — PROJECT_SPEC §3.3),
  * recent applicants and quick actions. Pending recruiters see the approval banner.
  * Phase 11: applicants per job and the application status funnel (PROJECT_SPEC §3.3).
  */
 
 import {
-  ROLES, ROLE_HOME_PATHS, JOB_STATUS, APPLICATION_STATUS, PAGE_PATHS,
+  ROLES, ROLE_HOME_PATHS, JOB_STATUS, PAGE_PATHS,
 } from '../../core/config.js';
 import {
   toRoot, getLabel, formatRelativeTime, pluralize,
@@ -17,12 +17,13 @@ import { createIcon } from '../../components/icons.js';
 import { createEmptyState } from '../../components/empty-state.js';
 import { renderApprovalBanner } from '../../components/approval-banner.js';
 import { NAV_ITEMS } from '../../components/sidebar.js';
-import { getOwnJobs, isJobExpired, isActiveRecruiter } from '../../services/job-service.js';
-import { getRecruiterApplicants, countApplicationsByStatus } from '../../services/application-service.js';
-import { getRecruiterAnalytics } from '../../services/analytics-service.js';
+import { renderLoading, renderLoadError } from '../../components/load-state.js';
+import { getRecruiterDashboard } from '../../services/dashboard-service.js';
 import { renderBarChart } from '../../components/charts.js';
 
-const RECENT_APPLICANTS = 5;
+/** Sections filled from the dashboard request (they show "Loading…" until it answers). */
+const DATA_SECTIONS = ['[data-recent-applicants]', '[data-per-job-chart]', '[data-funnel-chart]'];
+
 const $ = (selector) => document.querySelector(selector);
 
 function createElement(tag, className, text) {
@@ -42,33 +43,17 @@ function createStatCard({ label, value, icon, tone }) {
   return itemEl;
 }
 
-function renderStats(jobs, applicants) {
-  const applications = applicants.map(({ application }) => application);
+function renderStats(totals) {
   const stats = [
-    {
-      label: 'Active jobs',
-      value: jobs.filter((job) => job.status === JOB_STATUS.APPROVED && !isJobExpired(job)).length,
-      icon: 'briefcase',
-    },
-    { label: 'Total applicants', value: applications.length, icon: 'users', tone: 'info' },
-    {
-      label: 'Shortlisted',
-      value: countApplicationsByStatus(applications, APPLICATION_STATUS.SHORTLISTED),
-      icon: 'userPlus',
-      tone: 'success',
-    },
-    {
-      label: 'Pending approval',
-      value: jobs.filter((job) => job.status === JOB_STATUS.PENDING).length,
-      icon: 'clock',
-      tone: 'warning',
-    },
+    { label: 'Active jobs', value: totals.activeJobs, icon: 'briefcase' },
+    { label: 'Total applicants', value: totals.totalApplicants, icon: 'users', tone: 'info' },
+    { label: 'Shortlisted', value: totals.shortlisted, icon: 'userPlus', tone: 'success' },
+    { label: 'Pending approval', value: totals.pendingApproval, icon: 'clock', tone: 'warning' },
   ];
   $('[data-stats]').replaceChildren(...stats.map((stat) => createStatCard({ ...stat, value: String(stat.value) })));
 }
 
-function createApplicantItem({ application, candidateName }, jobsById) {
-  const job = jobsById.get(application.jobId);
+function createApplicantItem({ application, candidateName, jobTitle }) {
   const itemEl = createElement('li', 'dashboard-list__item');
   const bodyEl = createElement('div', 'dashboard-list__body');
   const nameEl = createElement('p', 'dashboard-list__title');
@@ -77,7 +62,7 @@ function createApplicantItem({ application, candidateName }, jobsById) {
   nameEl.append(linkEl);
   bodyEl.append(
     nameEl,
-    createElement('p', 'dashboard-list__text', job?.title ?? 'Job'),
+    createElement('p', 'dashboard-list__text', jobTitle ?? 'Job'),
     createElement('p', 'dashboard-list__meta', `Applied ${formatRelativeTime(application.appliedAt)}`),
   );
   const label = getLabel(application.status) || 'Unknown';
@@ -87,7 +72,7 @@ function createApplicantItem({ application, candidateName }, jobsById) {
   return itemEl;
 }
 
-function renderRecentApplicants(jobs, applicants, isPending) {
+function renderRecentApplicants(applicants, isPending) {
   const containerEl = $('[data-recent-applicants]');
   if (applicants.length === 0) {
     containerEl.replaceChildren(createEmptyState({
@@ -99,10 +84,9 @@ function renderRecentApplicants(jobs, applicants, isPending) {
     }));
     return;
   }
-  const jobsById = new Map(jobs.map((job) => [job.id, job]));
   const listEl = createElement('ul', 'dashboard-list');
   listEl.setAttribute('role', 'list');
-  listEl.append(...applicants.slice(0, RECENT_APPLICANTS).map((item) => createApplicantItem(item, jobsById)));
+  listEl.append(...applicants.map(createApplicantItem));
   containerEl.replaceChildren(listEl);
 }
 
@@ -156,9 +140,7 @@ function getAnalyticsEmptyState({ isActive, jobs }, message) {
   return { title: 'No applicants yet', message };
 }
 
-function renderAnalytics() {
-  const analytics = getRecruiterAnalytics();
-  if (!analytics) return;
+function renderAnalytics(analytics) {
   renderApplicantsPerJob(analytics);
   renderFunnel(analytics);
 }
@@ -182,12 +164,19 @@ async function init() {
   $('[data-user-name]').textContent = user.name;
 
   const isPending = renderApprovalBanner($('[data-approval-banner]'), user);
-  const jobs = getOwnJobs();
-  const applicants = isActiveRecruiter(user) ? getRecruiterApplicants() : [];
-  renderStats(jobs, applicants);
-  renderRecentApplicants(jobs, applicants, isPending);
-  renderAnalytics();
   renderQuickActions();
+  DATA_SECTIONS.forEach((selector) => renderLoading($(selector)));
+
+  const result = await getRecruiterDashboard();
+  if (!result.ok) {
+    DATA_SECTIONS.forEach((selector) => renderLoadError($(selector), {
+      title: 'This section could not be loaded', message: result.error,
+    }));
+    return;
+  }
+  renderStats(result.data.stats);
+  renderRecentApplicants(result.data.recentApplicants, isPending);
+  renderAnalytics(result.data.analytics);
 }
 
 init();

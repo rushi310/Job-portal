@@ -1,5 +1,10 @@
 # FreshHire — Presentation Outline
 
+> **Note (Phase 15):** this document was written for the earlier **frontend-only** version of FreshHire.
+> The project is now full-stack (Express API + MongoDB): data is stored on the server, not in the browser, and
+> the architecture and limitation slides describe the old design.
+> Current descriptions: [README](../README.md), [ARCHITECTURE](../ARCHITECTURE.md), [SECURITY](SECURITY.md).
+
 About 15 slides for a 10–15 minute talk, followed by the live demo ([DEMO_FLOW.md](DEMO_FLOW.md)). Screenshots
 for the slides are in [screenshots/](screenshots/).
 

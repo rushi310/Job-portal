@@ -1,5 +1,10 @@
 # FreshHire — Viva Questions and Answers
 
+> **Note (Phase 15):** this document was written for the earlier **frontend-only** version of FreshHire.
+> The project is now full-stack (Express API + MongoDB): data is stored on the server, not in the browser, and
+> answers about localStorage, plain-text passwords, client-side checks and "no backend" describe the old design.
+> Current descriptions: [README](../README.md), [ARCHITECTURE](../ARCHITECTURE.md), [SECURITY](SECURITY.md).
+
 Short answers meant to be spoken. Where it matters, answers separate **the current project** from **what a
 production system would do**.
 
