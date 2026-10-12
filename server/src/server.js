@@ -14,6 +14,15 @@ async function start() {
     if (config.serveFrontend) console.info(`Frontend served at http://localhost:${config.port}/`);
   });
 
+  server.on('error', (error) => {
+    const reason = error.code === 'EADDRINUSE'
+      ? `port ${config.port} is already in use — another copy of the server is probably still running. `
+        + 'Stop it (Ctrl+C in its terminal) or set another PORT'
+      : error.message;
+    console.error(`FreshHire API could not start: ${reason}.`);
+    process.exit(1);
+  });
+
   // Finish open requests and close the database connection when the platform stops the service.
   const shutdown = () => {
     server.close(async () => {

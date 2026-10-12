@@ -9,10 +9,12 @@
   },
   "scripts": {
     "start": "node src/server.js",
+    "start:prod": "node src/server.js --production",
     "dev": "node src/server.js",
     "dev:watch": "node --watch src/server.js",
     "dev:memory": "node src/scripts/dev-memory.js",
     "seed": "node src/scripts/seed.js",
+    "seed:prod": "node src/scripts/seed.js --production",
     "test": "node --test"
   },
   "dependencies": {

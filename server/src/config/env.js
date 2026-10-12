@@ -5,7 +5,18 @@
 
 const path = require('path');
 const crypto = require('crypto');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+
+// "npm run start:prod" / "seed:prod" pass --production (works the same on Windows, macOS and Linux).
+if (process.argv.includes('--production')) process.env.NODE_ENV = 'production';
+
+/**
+ * Settings files (both ignored by Git): server/.env for everyday local work, and
+ * server/.env.production when running in production mode on this computer.
+ * A hosting platform (Vercel) has neither file — it supplies the same variables from its dashboard,
+ * and variables that are already set always win over a file.
+ */
+const ENV_FILE = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+require('dotenv').config({ path: path.join(__dirname, '../..', ENV_FILE) });
 
 const MIN_SECRET_LENGTH = 32;
 const LOCAL_ORIGINS = ['http://localhost:5500', 'http://127.0.0.1:5500'];
