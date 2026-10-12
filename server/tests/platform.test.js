@@ -319,13 +319,16 @@ describe('platform API', () => {
       assert.deepEqual(loadConfig(production).corsOrigins, ['https://app.netlify.app']);
       assert.equal(loadConfig(production).serveFrontend, false);
       assert.equal(loadConfig({ ...production, PORT: '10000' }).port, 10000);
-      for (const missing of ['MONGODB_URI', 'JWT_SECRET', 'FRONTEND_URL']) {
+      for (const missing of ['MONGODB_URI', 'JWT_SECRET']) {
         assert.throws(() => loadConfig({ ...production, [missing]: '' }), new RegExp(missing));
       }
+      // Same-origin hosting (pages and API on one domain) sets no FRONTEND_URL: then no other origin is allowed.
+      assert.deepEqual(loadConfig({ ...production, FRONTEND_URL: '' }).corsOrigins, []);
+      assert.ok(loadConfig({ NODE_ENV: 'development' }).corsOrigins.includes('http://localhost:5500'));
       assert.throws(() => loadConfig({ ...production, JWT_SECRET: 'short' }), /JWT_SECRET/);
       assert.throws(() => loadConfig({ ...production, FRONTEND_URL: '*' }), /FRONTEND_URL/);
       // The thrown message names the setting but never repeats its value.
-      assert.throws(() => loadConfig({ ...production, FRONTEND_URL: '' }), (error) => !error.message.includes('mongodb+srv'));
+      assert.throws(() => loadConfig({ ...production, JWT_SECRET: 'short' }), (error) => !error.message.includes('mongodb+srv'));
     });
 
     it('uses one error format, hides internals and sets security headers', async () => {

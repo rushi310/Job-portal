@@ -8,7 +8,7 @@ const { connectDatabase, disconnectDatabase } = require('./config/database');
 const { createApp } = require('./app');
 
 async function start() {
-  await connectDatabase(config.mongodbUri);
+  await connectDatabase(config.mongodbUri, { attempts: 3 });
   const server = createApp().listen(config.port, () => {
     console.info(`FreshHire API listening on port ${config.port} (${config.nodeEnv})`);
     if (config.serveFrontend) console.info(`Frontend served at http://localhost:${config.port}/`);

@@ -42,7 +42,6 @@ function loadConfig(env = process.env) {
     if (jwtSecret.length < MIN_SECRET_LENGTH) {
       problems.push(`JWT_SECRET is required and must be at least ${MIN_SECRET_LENGTH} characters.`);
     }
-    if (corsOrigins.length === 0) problems.push('FRONTEND_URL is required (the deployed frontend origin).');
   } else if (!jwtSecret) {
     // Development convenience: a random secret per start, so no default secret lives in the code.
     jwtSecret = crypto.randomBytes(48).toString('hex');
@@ -58,7 +57,9 @@ function loadConfig(env = process.env) {
     mongodbUri: env.MONGODB_URI || 'mongodb://127.0.0.1:27017/freshhire',
     jwtSecret,
     jwtExpiresIn: env.JWT_EXPIRES_IN || '2h',
-    corsOrigins: corsOrigins.length > 0 ? corsOrigins : LOCAL_ORIGINS,
+    // No FRONTEND_URL in production means the pages and the API share one origin (e.g. one Vercel
+    // project): browsers need no CORS permission for that, so no other origin is allowed at all.
+    corsOrigins: corsOrigins.length > 0 || isProduction ? corsOrigins : LOCAL_ORIGINS,
     bcryptRounds: toInteger(env.BCRYPT_ROUNDS, 10),
     authRateLimitMax: toInteger(env.AUTH_RATE_LIMIT_MAX, 20),
     apiRateLimitMax: toInteger(env.API_RATE_LIMIT_MAX, 300),

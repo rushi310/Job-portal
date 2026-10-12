@@ -15,6 +15,24 @@ mongoose.set('autoIndex', false);
 mongoose.set('autoCreate', false);
 
 const CONNECT_OPTIONS = { serverSelectionTimeoutMS: 10000 };
+const RETRY_DELAY_MS = 3000;
+
+/** Likely cause of a failed connection, from the error's kind and code — never from the address. */
+function describeFailure(error) {
+  const code = error.code || error.name;
+  if (/querySrv|ENOTFOUND|ETIMEOUT|ECONNREFUSED|EAI_AGAIN/.test(`${error.code} ${error.message}`)) {
+    return `${code}: the database address could not be looked up (DNS). Check the internet connection, `
+      + 'turn off any VPN, or try another network / DNS server, then start again';
+  }
+  if (/auth/i.test(error.message)) return `${code}: the username or password in MONGODB_URI was refused`;
+  if (error.name === 'MongooseServerSelectionError') {
+    return `${code}: the database did not answer. In Atlas, check Network Access (is this computer's IP allowed?) `
+      + 'and that the cluster is not paused';
+  }
+  return `${code}: check MONGODB_URI and network access`;
+}
+
+const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 const MODEL_FILES = ['user', 'job', 'application', 'saved-job', 'notification', 'resume'];
 
 /** Create any missing indexes (unique email, one application per student and job, …). */
@@ -23,13 +41,25 @@ async function ensureIndexes() {
   await Promise.all(models.map((model) => model.createIndexes()));
 }
 
-/** @returns {Promise<void>} rejects with a message that is safe to log */
-async function connectDatabase(uri) {
-  try {
-    await mongoose.connect(uri, CONNECT_OPTIONS);
-  } catch (error) {
-    // Only the kind of error is reported, so the connection string can never reach the logs.
-    throw new Error(`Could not connect to MongoDB (${error.name}). Check MONGODB_URI and network access.`);
+/**
+ * Connect and make sure the indexes exist.
+ * @param {string} uri
+ * @param {{ attempts?: number }} [options] attempts > 1 retries after a short pause — home networks
+ *   sometimes fail the first DNS lookup of an Atlas address
+ * @returns {Promise<void>} rejects with a message that is safe to log
+ */
+async function connectDatabase(uri, { attempts = 1 } = {}) {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await mongoose.connect(uri, CONNECT_OPTIONS);
+      break;
+    } catch (error) {
+      // Only the kind of error is reported, so the connection string can never reach the logs.
+      const reason = describeFailure(error);
+      if (attempt >= attempts) throw new Error(`Could not connect to MongoDB (${reason}).`);
+      console.warn(`MongoDB connection attempt ${attempt} of ${attempts} failed (${error.code || error.name}); trying again…`);
+      await wait(RETRY_DELAY_MS);
+    }
   }
   await ensureIndexes();
 }
